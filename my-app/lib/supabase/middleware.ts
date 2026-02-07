@@ -1,0 +1,46 @@
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
+
+type CookieOption = { name: string; value: string; options?: object };
+
+export async function updateSession(request: NextRequest) {
+  let response = NextResponse.next({
+    request,
+  });
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet: CookieOption[]) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const path = request.nextUrl.pathname;
+  const isAuthRoute =
+    path === "/login" || path === "/sign-up" || path === "/forgot-password";
+  const isAuthCallback = path.startsWith("/auth/");
+
+  if (user && isAuthRoute) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  if (!user && path === "/" && !isAuthCallback) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  return response;
+}
