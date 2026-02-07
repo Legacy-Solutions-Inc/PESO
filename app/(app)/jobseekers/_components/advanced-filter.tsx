@@ -77,7 +77,7 @@ export function AdvancedFilter({
         <Tabs
           defaultValue="basic"
           orientation="vertical"
-          className="grid h-[600px] min-h-0 grid-cols-[11rem_1fr] overflow-hidden"
+          className="grid h-150 min-h-0 grid-cols-[11rem_1fr] overflow-hidden"
         >
           <TabsList className="flex h-full w-full flex-col justify-start gap-0.5 overflow-y-auto rounded-none border-r border-slate-200 bg-slate-50 p-2 dark:border-slate-700 dark:bg-slate-800/50">
             {FILTER_SECTIONS.map(({ id, label, icon: Icon }) => (

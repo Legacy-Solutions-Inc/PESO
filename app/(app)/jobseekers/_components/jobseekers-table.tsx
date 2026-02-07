@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useMemo } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, Filter, Eye, Edit, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -28,7 +29,6 @@ import {
 import { AdvancedFilter } from "./advanced-filter";
 import { ExportButton } from "./export-button";
 import { BulkActions } from "./bulk-actions";
-import type { JobseekerFilters } from "../actions";
 
 interface JobseekerRecord {
   id: number;
@@ -177,11 +177,11 @@ export function JobseekersTable({
           </Button>
 
           <ExportButton
-            filters={{
-              ...currentFilters,
-              page: initialPage,
-              pageSize,
-            }}
+            filters={Object.fromEntries(
+              Object.entries(currentFilters).filter(
+                ([k]) => k !== "page" && k !== "pageSize"
+              )
+            )}
           />
 
           {selectedIds.size > 0 && (
@@ -300,15 +300,21 @@ export function JobseekersTable({
                             variant="ghost"
                             size="icon"
                             title="View details"
+                            asChild
                           >
-                            <Eye className="size-4" />
+                            <Link href={`/jobseekers/${jobseeker.id}`}>
+                              <Eye className="size-4" />
+                            </Link>
                           </Button>
                           <Button
                             variant="ghost"
                             size="icon"
                             title="Edit record"
+                            asChild
                           >
-                            <Edit className="size-4" />
+                            <Link href={`/jobseekers/${jobseeker.id}/edit`}>
+                              <Edit className="size-4" />
+                            </Link>
                           </Button>
                         </div>
                       </TableCell>
@@ -356,7 +362,7 @@ export function JobseekersTable({
                       size="sm"
                       onClick={() => handlePageChange(pageNum)}
                       disabled={isPending}
-                      className="min-w-[2.5rem]"
+                      className="min-w-10"
                     >
                       {pageNum}
                     </Button>

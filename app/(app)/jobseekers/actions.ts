@@ -69,6 +69,65 @@ interface GetJobseekersResult {
   totalPages: number;
 }
 
+/** Full jobseeker row for profile view (all JSONB + system fields). */
+export interface JobseekerFullRecord {
+  id: number;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+  status: string;
+  personal_info: JobseekerRegistrationData["personalInfo"];
+  employment: JobseekerRegistrationData["employment"];
+  job_preference: JobseekerRegistrationData["jobPreference"];
+  language: JobseekerRegistrationData["language"];
+  education: JobseekerRegistrationData["education"];
+  training: JobseekerRegistrationData["training"];
+  eligibility: JobseekerRegistrationData["eligibility"];
+  work_experience: JobseekerRegistrationData["workExperience"];
+  skills: JobseekerRegistrationData["skills"];
+}
+
+export async function getJobseekerById(
+  id: number
+): Promise<{ data?: JobseekerFullRecord; error?: string }> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { error: "Unauthorized" };
+    }
+
+    const { data, error } = await supabase
+      .from("jobseekers")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error) {
+      if (error.code === "PGRST116") {
+        return { error: "Not found" };
+      }
+      console.error("getJobseekerById error:", error);
+      return { error: error.message };
+    }
+
+    if (!data) {
+      return { error: "Not found" };
+    }
+
+    return { data: data as unknown as JobseekerFullRecord };
+  } catch (err) {
+    console.error("getJobseekerById error:", err);
+    if (err instanceof Error) {
+      return { error: err.message };
+    }
+    return { error: "Failed to fetch jobseeker" };
+  }
+}
+
 export async function getJobseekers(
   filters: JobseekerFilters
 ): Promise<{ data?: GetJobseekersResult; error?: string }> {
@@ -823,5 +882,143 @@ export async function bulkArchiveJobseekers(
       return { error: error.message };
     }
     return { error: "Failed to archive jobseekers" };
+  }
+}
+
+// ============================================================================
+// Dashboard Statistics
+// ============================================================================
+
+export interface DashboardStats {
+  totalJobseekers: number;
+  newThisMonth: number;
+  newLastMonth: number;
+  employed: number;
+  unemployed: number;
+  ofwCount: number;
+  fourPsCount: number;
+}
+
+export async function getDashboardStats(): Promise<{
+  data: DashboardStats | null;
+  error: string | null;
+}> {
+  try {
+    const supabase = await createClient();
+
+    // Call database function for efficient stats computation
+    const { data, error } = await supabase.rpc("get_dashboard_stats");
+
+    if (error) {
+      console.error("Dashboard stats error:", error);
+      return { data: null, error: error.message };
+    }
+
+    const row = Array.isArray(data) ? data[0] : data;
+
+    return {
+      data: {
+        totalJobseekers: Number(row?.total ?? 0),
+        newThisMonth: Number(row?.new_this_month ?? 0),
+        newLastMonth: Number(row?.new_last_month ?? 0),
+        employed: Number(row?.employed ?? 0),
+        unemployed: Number(row?.unemployed ?? 0),
+        ofwCount: Number(row?.ofw ?? 0),
+        fourPsCount: Number(row?.four_ps ?? 0),
+      },
+      error: null,
+    };
+  } catch (error) {
+    return {
+      data: null,
+      error: error instanceof Error ? error.message : "Failed to fetch stats",
+    };
+  }
+}
+
+export interface RecentJobseeker {
+  id: number;
+  name: string;
+  initials: string;
+  sex: string;
+  age: number | null;
+  barangay: string;
+  employmentStatus: string;
+  dateRegistered: string;
+}
+
+export async function getRecentJobseekers(
+  limit = 10
+): Promise<{ data: RecentJobseeker[] | null; error: string | null }> {
+  try {
+    const supabase = await createClient();
+
+    const { data: jobseekers, error } = await supabase
+      .from("jobseekers")
+      .select("id, personal_info, employment, created_at")
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      return { data: null, error: error.message };
+    }
+
+    const recent: RecentJobseeker[] =
+      jobseekers?.map((j) => {
+        const personalInfo = j.personal_info as Record<string, unknown> | null;
+        const employment = j.employment as Record<string, unknown> | null;
+        const address = personalInfo?.address as Record<string, unknown> | undefined;
+
+        const surname = (personalInfo?.surname as string) || "";
+        const firstName = (personalInfo?.firstName as string) || "";
+        const name = [surname, firstName].filter(Boolean).join(", ") || "—";
+        const initials = ((surname[0] || "") + (firstName[0] || "")).toUpperCase() || "—";
+
+        const dateOfBirth = personalInfo?.dateOfBirth as string | undefined;
+        let age: number | null = null;
+        if (dateOfBirth) {
+          const dob = new Date(dateOfBirth);
+          const today = new Date();
+          age = today.getFullYear() - dob.getFullYear();
+          const monthDiff = today.getMonth() - dob.getMonth();
+          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+            age--;
+          }
+        }
+
+        const sex = (personalInfo?.sex as string) || "—";
+        const barangay = (address?.barangay as string) || "—";
+        const employmentStatus =
+          (employment?.status as string) === "EMPLOYED"
+            ? "Employed"
+            : (employment?.status as string) === "UNEMPLOYED"
+              ? "Unemployed"
+              : "—";
+
+        const dateRegistered = new Date(j.created_at).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        });
+
+        return {
+          id: j.id,
+          name,
+          initials,
+          sex,
+          age,
+          barangay,
+          employmentStatus,
+          dateRegistered,
+        };
+      }) || [];
+
+    return { data: recent, error: null };
+  } catch (error) {
+    return {
+      data: null,
+      error: error instanceof Error ? error.message : "Failed to fetch recent jobseekers",
+    };
   }
 }
