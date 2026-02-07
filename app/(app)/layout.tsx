@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { getUserProfile } from "@/lib/auth/get-user-profile";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { Toaster } from "@/components/ui/toaster";
 
@@ -8,12 +8,9 @@ interface AppLayoutProps {
 }
 
 export default async function AppLayout({ children }: AppLayoutProps) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data, error } = await getUserProfile();
 
-  if (!user) {
+  if (error || !data) {
     redirect("/login");
   }
 
@@ -27,7 +24,7 @@ export default async function AppLayout({ children }: AppLayoutProps) {
         <div className="absolute -left-40 top-1/2 h-96 w-96 rounded-full bg-slate-200/40 blur-[100px] dark:bg-slate-600/10" />
       </div>
       <div className="relative flex min-h-svh w-full">
-        <DashboardShell userEmail={user.email ?? ""}>
+        <DashboardShell userEmail={data.user.email} userRole={data.profile.role}>
           {children}
         </DashboardShell>
       </div>
