@@ -1,36 +1,123 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PESO Lambunao – NSRP Jobseeker Registration & Management System
 
-## Getting Started
+A web-based internal system for **PESO Lambunao** that digitizes the DOLE **National Skills Registration Program (NSRP)** Jobseeker Registration Form. Staff can encode, manage, search, filter, and export jobseeker data in one place.
 
-First, run the development server:
+**Client:** Public Employment Service Office (PESO) – Lambunao  
+**Program:** Department of Labor and Employment (DOLE) – NSRP
+
+---
+
+## Features
+
+- **User management** — Role-based access (Admin, Encoder, Viewer); login, password reset
+- **Jobseeker registration** — Encode the full NSRP form (personal info, employment status, job preference, education, training, eligibility, work experience, skills, certification, PESO-only fields)
+- **Dashboard & records** — Table view, search, filters (age, sex, address, employment, skills, education, OFW/4Ps, etc.), view and edit profiles
+- **Export** — CSV export (all or filtered) with DOLE reporting column consistency
+
+*Phase 1 is internal use only; public self-registration and SMS/email blasting are out of scope.*
+
+---
+
+## Tech stack
+
+| Layer      | Technology                    |
+|-----------|-------------------------------|
+| Framework | [Next.js](https://nextjs.org) 16 (App Router) |
+| UI        | React 19, [shadcn/ui](https://ui.shadcn.com), [Tailwind CSS](https://tailwindcss.com) v4, Radix UI |
+| Backend   | [Supabase](https://supabase.com) (auth, database) |
+| Validation| [Zod](https://zod.dev), React Hook Form |
+| Language  | TypeScript                    |
+
+---
+
+## Prerequisites
+
+- **Node.js** 18+ (or 20+ recommended)
+- **npm** (or yarn/pnpm/bun)
+- **Supabase** project (for auth and database)
+
+---
+
+## Getting started
+
+### 1. Clone and install
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <repository-url>
+cd my-app
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Environment variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Create a `.env.local` in the project root and add your Supabase keys:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
-## Learn More
+Get these from your [Supabase project](https://supabase.com/dashboard) → **Settings** → **API**.
 
-To learn more about Next.js, take a look at the following resources:
+### 3. Run the app
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+# Development
+npm run dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## Deploy on Vercel
+### 4. Build for production
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm run build
+npm start
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Other scripts
+
+| Command       | Description        |
+|---------------|--------------------|
+| `npm run dev` | Start dev server   |
+| `npm run build` | Production build  |
+| `npm start`   | Run production server |
+| `npm run lint`| Run ESLint        |
+
+---
+
+## Project structure
+
+```
+my-app/
+├── app/              # Next.js App Router (pages, layouts, API routes)
+├── components/       # React components (ui/ = primitives, domain-specific elsewhere)
+├── lib/              # Utilities, Supabase client, helpers
+├── hooks/            # Custom React hooks
+├── docs/             # Requirements and project documentation
+├── public/           # Static assets
+└── supabase/         # Supabase config (optional local tooling)
+```
+
+---
+
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [docs/requirements.md](docs/requirements.md) | **Software Requirements Specification (SRS)** — functional and non-functional requirements, full form field specification |
+| [AGENTS.md](AGENTS.md) | Development and AI/agent guidelines (stack conventions, Clean Code, Vercel) |
+
+Feature work and form fields are based on **docs/requirements.md**; refer to it for exact field names, options, and business rules.
+
+---
+
+## Deployment
+
+The app is built for [Vercel](https://vercel.com). Connect the repository in Vercel and set the same environment variables in the project settings. Preview deployments are created for pull requests; production deploys from the default branch.
+
+---
+
+## License
+
+Proprietary — developed for PESO Lambunao under the DOLE NSRP program.
