@@ -55,9 +55,11 @@ Create a `.env.local` in the project root and add your Supabase keys:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+# Optional: full app URL for email links (e.g. password reset, sign-up confirmation)
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
-Get these from your [Supabase project](https://supabase.com/dashboard) → **Settings** → **API**.
+Get the Supabase values from your [Supabase project](https://supabase.com/dashboard) → **Settings** → **API**. For production, set `NEXT_PUBLIC_SITE_URL` to your deployed URL.
 
 ### 3. Run the app
 
