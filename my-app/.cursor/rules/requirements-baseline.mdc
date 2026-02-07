@@ -1,0 +1,15 @@
+---
+description: Development must follow docs/requirements.md (SRS)
+alwaysApply: true
+---
+
+# Requirements baseline
+
+**Base all feature work on `docs/requirements.md`.** That file is the Software Requirements Specification (SRS) for PESO Lambunao – NSRP Jobseeker Registration & Management System.
+
+- Before implementing or changing a feature, read the relevant section in `docs/requirements.md` (User Management, Jobseeker Registration, Dashboard & Records, Export, NFRs).
+- Match form fields and behavior to the SRS (e.g. personal info, employment status, job preference, education, training, eligibility, work experience, other skills, certification, PESO-only section).
+- Respect scope: no public registration, employer module, or SMS/email blasting in Phase 1.
+- Honor non-functional requirements: performance (search &lt; 2s for 10k+ records), security (RBAC, hashing, audit), data privacy, usability (encoder-friendly, keyboard nav).
+
+When in doubt, prefer the wording and structure in `docs/requirements.md`.

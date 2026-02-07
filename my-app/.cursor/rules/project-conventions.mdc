@@ -1,0 +1,18 @@
+---
+description: Project conventions summary — Next.js, shadcn, Tailwind, Supabase
+alwaysApply: true
+---
+
+# Project conventions
+
+**Requirements:** Base all feature work on **`docs/requirements.md`** (see `.cursor/rules/requirements-baseline.mdc`).
+
+Follow **AGENTS.md** and the full rules in `.cursor/*.mdc` when editing this app.
+
+**Next.js:** `app/` feature structure; Server Components first; `"use client"` low in tree; fetch in server, Route Handlers for mutations; `next/image`, `<Link>`, `loading.tsx`/`error.tsx`.
+
+**shadcn:** `components/ui` for primitives, `components/<domain>` for features; CVA + `cn`; forwardRef + asChild; Zod + React Hook Form; don’t edit shadcn source.
+
+**Tailwind:** Design tokens in config; avoid arbitrary values and broad `@apply`; class order Layout → Flex → Grid → Box → Type → BG → Border → Effects → States; mobile-first; `outline-hidden` + focus ring for a11y.
+
+**Supabase:** snake_case, RLS on all tables, index FKs, SECURITY INVOKER default; use `supabase test db` and `supabase db lint`.
