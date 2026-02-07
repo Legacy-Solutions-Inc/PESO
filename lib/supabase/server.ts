@@ -1,4 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
 type CookieOption = { name: string; value: string; options?: object };
@@ -26,4 +27,19 @@ export async function createClient() {
       },
     }
   );
+}
+
+/**
+ * Server-only admin client using the service role key. Use only in trusted
+ * server code (e.g. after requireAdmin()). Required for auth.admin.listUsers().
+ */
+export function createAdminClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !serviceRoleKey) {
+    return null;
+  }
+  return createSupabaseClient(url, serviceRoleKey, {
+    auth: { persistSession: false },
+  });
 }

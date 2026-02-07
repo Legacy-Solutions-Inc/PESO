@@ -39,6 +39,6 @@ export async function signUp(formData: FormData) {
 
   redirect(
     "/login?message=" +
-      encodeURIComponent("Check your email to confirm your account.")
+      encodeURIComponent("Account created! Please check your email to confirm, then wait for admin approval before accessing the system.")
   );
 }
