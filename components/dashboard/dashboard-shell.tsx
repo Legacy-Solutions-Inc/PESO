@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  BarChart3,
   Bell,
   FolderOpen,
   LayoutDashboard,
@@ -12,6 +11,7 @@ import {
   UserPlus,
   Users,
 } from "lucide-react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/app/(auth)/login/actions";
 import {
@@ -69,8 +69,15 @@ export function DashboardShell({ userEmail, userRole, children }: DashboardShell
         variant="sidebar"
       >
         <SidebarHeader className="flex h-16 flex-row items-center gap-3 border-b border-slate-200/80 px-6 dark:border-slate-700/50">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-dashboard-primary text-white shadow-sm">
-            <BarChart3 className="size-5" aria-hidden />
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-slate-200/80 dark:ring-slate-600">
+            <Image
+              src="/peso-logo.jpg"
+              alt="PESO Lambunao"
+              width={36}
+              height={36}
+              className="object-cover"
+              priority
+            />
           </div>
           <div className="min-w-0">
             <h2 className="truncate text-base font-bold leading-tight text-slate-900 dark:text-white">
