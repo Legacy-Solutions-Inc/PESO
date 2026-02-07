@@ -9,7 +9,6 @@ import {
   LayoutDashboard,
   LogOut,
   Search,
-  Settings,
   UserPlus,
   Users,
 } from "lucide-react";
@@ -36,11 +35,10 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 
 const SIDEBAR_NAV_ITEMS = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/jobseekers/register", label: "Jobseeker Registration", icon: UserPlus },
-  { href: "/jobseekers", label: "Jobseeker Records", icon: FolderOpen },
-  { href: "#", label: "User Management", icon: Users },
-  { href: "#", label: "System Configuration", icon: Settings },
+  { href: "/", label: "Dashboard", icon: LayoutDashboard, adminOnly: false },
+  { href: "/jobseekers/register", label: "Jobseeker Registration", icon: UserPlus, adminOnly: false },
+  { href: "/jobseekers", label: "Jobseeker Records", icon: FolderOpen, adminOnly: false },
+  { href: "/users", label: "User Management", icon: Users, adminOnly: true },
 ] as const;
 
 const INITIALS_MAX_LENGTH = 2;
@@ -55,10 +53,11 @@ function getInitialsFromEmail(email: string): string {
 
 export interface DashboardShellProps {
   userEmail: string;
+  userRole: "admin" | "encoder";
   children: React.ReactNode;
 }
 
-export function DashboardShell({ userEmail, children }: DashboardShellProps) {
+export function DashboardShell({ userEmail, userRole, children }: DashboardShellProps) {
   const pathname = usePathname();
 
   const sidebarWidth = "18rem"; // w-72: must match --sidebar-width so gap and fixed sidebar align (no overlap)
@@ -89,11 +88,21 @@ export function DashboardShell({ userEmail, children }: DashboardShellProps) {
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu className="gap-1">
-                {SIDEBAR_NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+                {SIDEBAR_NAV_ITEMS.filter(item => !item.adminOnly || userRole === "admin").map(({ href, label, icon: Icon }) => {
                   const isDashboardActive = href === "/" && pathname === "/";
-                  const isJobseekersActive = href === "/jobseekers" && pathname.startsWith("/jobseekers");
-                  const isActive = isDashboardActive || isJobseekersActive;
-                  
+                  const isRegistrationActive =
+                    href === "/jobseekers/register" &&
+                    (pathname === "/jobseekers/register" || pathname.startsWith("/jobseekers/register/"));
+                  const isRecordsActive =
+                    href === "/jobseekers" &&
+                    pathname.startsWith("/jobseekers") &&
+                    !pathname.startsWith("/jobseekers/register");
+                  const isUsersActive =
+                    href === "/users" &&
+                    pathname.startsWith("/users") &&
+                    !pathname.startsWith("/users/pending");
+                  const isActive = isDashboardActive || isRegistrationActive || isRecordsActive || isUsersActive;
+
                   return (
                     <SidebarMenuItem key={label}>
                       <SidebarMenuButton
@@ -181,10 +190,10 @@ export function DashboardShell({ userEmail, children }: DashboardShellProps) {
             <Separator orientation="vertical" className="hidden h-8 sm:block" />
             <div className="hidden text-right sm:block">
               <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                Regional Office
+                PESO Lambunao
               </p>
               <p className="text-[10px] font-medium uppercase text-slate-500 dark:text-slate-400">
-                Region III
+                Region VI
               </p>
             </div>
           </div>

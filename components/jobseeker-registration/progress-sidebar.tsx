@@ -67,7 +67,7 @@ export function ProgressSidebar({
   const progressPercentage = (completedSteps.size / FORM_STEPS.length) * 100;
 
   return (
-    <aside className="flex w-[280px] shrink-0 flex-col border-r border-slate-200/80 bg-white shadow-sm dark:border-slate-700/50 dark:bg-slate-900">
+    <aside className="flex w-70 shrink-0 flex-col border-r border-slate-200/80 bg-white shadow-sm dark:border-slate-700/50 dark:bg-slate-900">
       <div className="border-b border-slate-200/80 p-6 pb-4 dark:border-slate-700/50">
         <h1 className="mb-1 text-xl font-bold text-slate-800 dark:text-white">
           Registration Form
