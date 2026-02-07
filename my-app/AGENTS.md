@@ -62,4 +62,29 @@ When adding or changing features, check `docs/requirements.md` for the exact fie
 
 ---
 
-For full examples and good/bad patterns, see `.cursor/nextjsrules.mdc`, `.cursor/shadcnrules.mdc`, `.cursor/tailwindrules.mdc`, and `.cursor/supabaserules.mdc`.
+## Vercel (deploy & serverless)
+
+- **API routes:** Keep serverless logic in `app/api/` (App Router) or `api/`; avoid mixing heavy server-side logic outside route handlers.
+- **Runtime:** Prefer Edge Runtime (`export const runtime = 'edge'`) and Fluid Compute for latency-sensitive routes; use Node.js only when needed.
+- **Bundle size:** Keep serverless functions lean; use dynamic imports for heavy deps; avoid large libraries in API routes.
+- **Caching:** Set `Cache-Control` (e.g. `s-maxage`, `stale-while-revalidate`) on API responses for cacheable data; use `next/image` for images (Vercel CDN).
+- **Env:** Use Vercel dashboard for env vars (Development, Preview, Production); never commit secrets.
+- **Security:** Configure security headers in `next.config` (e.g. `X-Content-Type-Options`, `X-Frame-Options`, `Content-Security-Policy`).
+- **Deploy:** Use preview deployments for PRs; use `vercel --prod` for explicit production deploys (e.g. CI/CD). For purely static sites, consider `output: 'export'`.
+
+---
+
+## Clean Code (JavaScript/TypeScript)
+
+Follow [clean-code-javascript](https://github.com/ryanmcdermott/clean-code-javascript) (Robert C. Martin's _Clean Code_ adapted for JS/TS): aim for **readable, reusable, refactorable** code.
+
+- **Variables:** Meaningful, pronounceable names; same vocabulary for same concept; searchable (named constants, no magic numbers); explanatory variables; no mental mapping (avoid single-letter names); default parameters over `||`.
+- **Functions:** Few parameters (≤2 ideally; use object/destructuring); one thing per function; name describes behavior; one abstraction level; no duplication (DRY); no boolean flags as params; avoid side effects and mutating inputs; prefer functional style (map/reduce/filter); encapsulate conditionals; remove dead code.
+- **Objects/classes:** Getters/setters when access or validation is needed; private members where appropriate; prefer ES6 classes; avoid runtime type-checking (rely on TypeScript).
+- **General:** Polymorphism over big conditionals when it simplifies; don't over-optimize; SOLID; consistent formatting; comments for "why" not "what."
+
+Full guide with good/bad examples: **https://github.com/ryanmcdermott/clean-code-javascript**
+
+---
+
+For full examples and good/bad patterns, see `.cursor/nextjsrules.mdc`, `.cursor/shadcnrules.mdc`, `.cursor/tailwindrules.mdc`, `.cursor/supabaserules.mdc`, `.cursor/vercelrules.mdc`, and [clean-code-javascript](https://github.com/ryanmcdermott/clean-code-javascript).

@@ -1,5 +1,5 @@
 ---
-description: Project conventions summary — Next.js, shadcn, Tailwind, Supabase
+description: Project conventions summary — Next.js, shadcn, Tailwind, Supabase, Vercel
 alwaysApply: true
 ---
 
@@ -16,3 +16,7 @@ Follow **AGENTS.md** and the full rules in `.cursor/*.mdc` when editing this app
 **Tailwind:** Design tokens in config; avoid arbitrary values and broad `@apply`; class order Layout → Flex → Grid → Box → Type → BG → Border → Effects → States; mobile-first; `outline-hidden` + focus ring for a11y.
 
 **Supabase:** snake_case, RLS on all tables, index FKs, SECURITY INVOKER default; use `supabase test db` and `supabase db lint`.
+
+**Vercel:** API routes in `app/api/`; prefer Edge Runtime for latency-sensitive routes; lean serverless bundles; Cache-Control on API responses; env vars in dashboard; security headers in next.config; preview deployments for PRs, `vercel --prod` for production.
+
+**Clean Code:** Follow [clean-code-javascript](https://github.com/ryanmcdermott/clean-code-javascript): meaningful names, functions do one thing, few params, no duplication, avoid side effects, prefer functional style, remove dead code; see `.cursor/rules/clean-code.mdc`.

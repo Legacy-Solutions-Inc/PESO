@@ -1,0 +1,20 @@
+---
+description: Clean Code (JavaScript) principles — readable, reusable, refactorable code
+alwaysApply: true
+---
+
+# Clean Code
+
+Follow [clean-code-javascript](https://github.com/ryanmcdermott/clean-code-javascript) (Robert C. Martin's _Clean Code_ adapted for JavaScript/TypeScript). Use as a touchstone for code quality.
+
+**Variables:** Meaningful, pronounceable names; same vocabulary for same concepts (e.g. `getUser` not mix of getClientData/getCustomerRecord); searchable names (named constants, no magic numbers); explanatory variables; avoid mental mapping (no single-letter names); don't repeat object name in property names; prefer default parameters over `||` short-circuit.
+
+**Functions:** ≤2 parameters (use object/destructuring if more); do one thing; name says what it does; one level of abstraction (split if mixed); remove duplication (DRY); no boolean flags as parameters (split functions); avoid side effects and mutating arguments (return new data); prefer functional style (map/reduce/filter); encapsulate conditionals in named functions; avoid negative conditionals; remove dead code.
+
+**Objects/Data:** Use getters/setters where access logic or validation is needed; prefer private members (closures/classes).
+
+**Classes:** Prefer ES6 classes; method chaining where it improves clarity (return `this`).
+
+**General:** Prefer polymorphism over conditionals where it simplifies; avoid runtime type-checking (use TypeScript types); don't over-optimize; SOLID principles; write tests; consistent formatting; comments only for "why," not "what."
+
+Reference: https://github.com/ryanmcdermott/clean-code-javascript
