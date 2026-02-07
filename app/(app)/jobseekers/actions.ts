@@ -1,0 +1,827 @@
+"use server";
+
+import { createClient } from "@/lib/supabase/server";
+import type { JobseekerRegistrationData } from "@/lib/validations/jobseeker-registration";
+
+export interface JobseekerFilters {
+  // Quick search (indexed fields)
+  search?: string;
+  sex?: string;
+  employmentStatus?: string;
+  city?: string;
+  province?: string;
+  barangay?: string;
+  isOfw?: string;
+  is4PsBeneficiary?: string;
+  
+  // Advanced filters (JSONB queries)
+  civilStatus?: string;
+  ageMin?: string;
+  ageMax?: string;
+  
+  // Education
+  educationLevel?: string;
+  tertiaryCourse?: string;
+  
+  // Employment details
+  employedType?: string;
+  unemployedReason?: string;
+  
+  // Job preference
+  employmentType?: string;
+  occupation1?: string;
+  
+  // Skills
+  skills?: string;
+  
+  // Training
+  hasCertificates?: string;
+  
+  // Pagination & sorting
+  page: number;
+  pageSize: number;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+}
+
+interface JobseekerRecord {
+  id: number;
+  surname: string;
+  first_name: string;
+  sex: string;
+  employment_status: string;
+  city: string;
+  province: string;
+  is_ofw: boolean;
+  is_4ps_beneficiary: boolean;
+  created_at: string;
+  personal_info: JobseekerRegistrationData["personalInfo"];
+  employment: JobseekerRegistrationData["employment"];
+  job_preference: JobseekerRegistrationData["jobPreference"];
+  skills: JobseekerRegistrationData["skills"];
+}
+
+interface GetJobseekersResult {
+  jobseekers: JobseekerRecord[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export async function getJobseekers(
+  filters: JobseekerFilters
+): Promise<{ data?: GetJobseekersResult; error?: string }> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { error: "Unauthorized" };
+    }
+
+    // Build query with indexed columns for performance
+    let query = supabase
+      .from("jobseekers")
+      .select(
+        `
+        id,
+        surname,
+        first_name,
+        sex,
+        employment_status,
+        city,
+        province,
+        is_ofw,
+        is_4ps_beneficiary,
+        created_at,
+        personal_info,
+        employment,
+        job_preference,
+        skills
+      `,
+        { count: "exact" }
+      );
+
+    // Apply indexed filters (fast)
+    if (filters.search) {
+      query = query.or(
+        `surname.ilike.%${filters.search}%,first_name.ilike.%${filters.search}%`
+      );
+    }
+    if (filters.sex) query = query.eq("sex", filters.sex);
+    if (filters.employmentStatus)
+      query = query.eq("employment_status", filters.employmentStatus);
+    if (filters.city) query = query.ilike("city", `%${filters.city}%`);
+    if (filters.province) query = query.ilike("province", `%${filters.province}%`);
+    if (filters.isOfw !== undefined && filters.isOfw !== "")
+      query = query.eq("is_ofw", filters.isOfw === "true");
+    if (filters.is4PsBeneficiary !== undefined && filters.is4PsBeneficiary !== "")
+      query = query.eq("is_4ps_beneficiary", filters.is4PsBeneficiary === "true");
+
+    // Apply JSONB filters for advanced fields
+    if (filters.civilStatus) {
+      query = query.eq("personal_info->>civilStatus", filters.civilStatus);
+    }
+    if (filters.barangay) {
+      query = query.ilike("personal_info->address->>barangay", `%${filters.barangay}%`);
+    }
+    if (filters.employedType) {
+      query = query.eq("employment->>employedType", filters.employedType);
+    }
+    if (filters.unemployedReason) {
+      query = query.eq("employment->>unemployedReason", filters.unemployedReason);
+    }
+    if (filters.employmentType) {
+      query = query.eq("job_preference->>employmentType", filters.employmentType);
+    }
+    if (filters.occupation1) {
+      query = query.ilike("job_preference->>occupation1", `%${filters.occupation1}%`);
+    }
+    if (filters.tertiaryCourse) {
+      query = query.ilike("education->tertiary->>course", `%${filters.tertiaryCourse}%`);
+    }
+
+    // Sorting
+    const sortBy = filters.sortBy || "created_at";
+    const sortOrder = filters.sortOrder || "desc";
+    query = query.order(sortBy, { ascending: sortOrder === "asc" });
+
+    // Pagination
+    const start = (filters.page - 1) * filters.pageSize;
+    const end = start + filters.pageSize - 1;
+    query = query.range(start, end);
+
+    const { data, error, count } = await query;
+
+    if (error) {
+      console.error("Supabase query error:", error);
+      return { error: error.message };
+    }
+
+    return {
+      data: {
+        jobseekers: data as JobseekerRecord[],
+        total: count || 0,
+        page: filters.page,
+        pageSize: filters.pageSize,
+        totalPages: Math.ceil((count || 0) / filters.pageSize),
+      },
+    };
+  } catch (error) {
+    console.error("getJobseekers error:", error);
+    if (error instanceof Error) {
+      return { error: error.message };
+    }
+    return { error: "Failed to fetch jobseekers" };
+  }
+}
+
+export async function exportJobseekersCSV(
+  filters: Omit<JobseekerFilters, "page" | "pageSize">
+): Promise<{ csv?: string; filename?: string; error?: string }> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { error: "Unauthorized" };
+    }
+
+    // Build query without pagination (get all matching records)
+    let query = supabase.from("jobseekers").select("*");
+
+    // Apply same filters as getJobseekers
+    if (filters.search) {
+      query = query.or(
+        `surname.ilike.%${filters.search}%,first_name.ilike.%${filters.search}%`
+      );
+    }
+    if (filters.sex) query = query.eq("sex", filters.sex);
+    if (filters.employmentStatus)
+      query = query.eq("employment_status", filters.employmentStatus);
+    if (filters.city) query = query.ilike("city", `%${filters.city}%`);
+    if (filters.province) query = query.ilike("province", `%${filters.province}%`);
+    if (filters.isOfw !== undefined && filters.isOfw !== "")
+      query = query.eq("is_ofw", filters.isOfw === "true");
+    if (filters.is4PsBeneficiary !== undefined && filters.is4PsBeneficiary !== "")
+      query = query.eq("is_4ps_beneficiary", filters.is4PsBeneficiary === "true");
+
+    if (filters.civilStatus) {
+      query = query.eq("personal_info->>civilStatus", filters.civilStatus);
+    }
+    if (filters.barangay) {
+      query = query.ilike("personal_info->address->>barangay", `%${filters.barangay}%`);
+    }
+    if (filters.employedType) {
+      query = query.eq("employment->>employedType", filters.employedType);
+    }
+    if (filters.unemployedReason) {
+      query = query.eq("employment->>unemployedReason", filters.unemployedReason);
+    }
+    if (filters.employmentType) {
+      query = query.eq("job_preference->>employmentType", filters.employmentType);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error("Export query error:", error);
+      return { error: error.message };
+    }
+
+    if (!data || data.length === 0) {
+      return { error: "No data to export" };
+    }
+
+    // Type for database record structure
+    interface DBJobseekerRecord {
+      id: number;
+      created_at: string;
+      created_by: string;
+      status: string;
+      employment_status: string;
+      is_ofw: boolean;
+      is_4ps_beneficiary: boolean;
+      personal_info: Record<string, unknown>;
+      employment: Record<string, unknown>;
+      job_preference: Record<string, unknown>;
+      language: Record<string, unknown>;
+      education: Record<string, unknown>;
+      training: Record<string, unknown>;
+      eligibility: Record<string, unknown>;
+      work_experience: Record<string, unknown>;
+      skills: Record<string, unknown>;
+    }
+
+    // Convert to CSV format with ALL 200+ fields matching DOLE NSRP form
+    const headers = [
+      // Basic Info
+      "ID",
+      "Surname",
+      "First Name", 
+      "Middle Name",
+      "Suffix",
+      "Date of Birth",
+      "Place of Birth",
+      "Sex",
+      "Religion",
+      "Civil Status",
+      "House/Street",
+      "Barangay",
+      "City",
+      "Province",
+      "TIN",
+      "Disability - Visual",
+      "Disability - Hearing",
+      "Disability - Speech",
+      "Disability - Physical",
+      "Disability - Mental",
+      "Disability - Others",
+      "Height",
+      "Contact Number",
+      "Email",
+      
+      // Employment Status
+      "Employment Status",
+      "Employed Type",
+      "Self-Employed - Fisherman",
+      "Self-Employed - Vendor",
+      "Self-Employed - Home Based",
+      "Self-Employed - Transport",
+      "Self-Employed - Domestic",
+      "Self-Employed - Freelancer",
+      "Self-Employed - Artisan",
+      "Self-Employed - Others",
+      "Unemployed Reason",
+      "Terminated Country",
+      "Unemployed Reason Others",
+      "Job Search Duration",
+      "Is OFW",
+      "OFW Country",
+      "Is Former OFW",
+      "Former OFW Country",
+      "OFW Return Date",
+      "4Ps Beneficiary",
+      "Household ID Number",
+      
+      // Job Preference
+      "Preferred Employment Type",
+      "Preferred Occupation 1",
+      "Preferred Occupation 2",
+      "Preferred Occupation 3",
+      "Local Location 1",
+      "Local Location 2",
+      "Local Location 3",
+      "Overseas Location 1",
+      "Overseas Location 2",
+      "Overseas Location 3",
+      
+      // Language
+      "English - Read",
+      "English - Write",
+      "English - Speak",
+      "English - Understand",
+      "Filipino - Read",
+      "Filipino - Write",
+      "Filipino - Speak",
+      "Filipino - Understand",
+      "Mandarin - Read",
+      "Mandarin - Write",
+      "Mandarin - Speak",
+      "Mandarin - Understand",
+      "Other Language Name",
+      "Other Language - Read",
+      "Other Language - Write",
+      "Other Language - Speak",
+      "Other Language - Understand",
+      
+      // Education
+      "Currently in School",
+      "Elementary - Year Graduated",
+      "Elementary - Level Reached",
+      "Elementary - Year Last Attended",
+      "Secondary - Curriculum Type",
+      "Secondary - Year Graduated",
+      "Secondary - Level Reached",
+      "Secondary - Year Last Attended",
+      "Senior High - Strand",
+      "Senior High - Year Graduated",
+      "Senior High - Level Reached",
+      "Senior High - Year Last Attended",
+      "Tertiary - Course",
+      "Tertiary - Year Graduated",
+      "Tertiary - Level Reached",
+      "Tertiary - Year Last Attended",
+      "Graduate - Course",
+      "Graduate - Year Graduated",
+      "Graduate - Year Last Attended",
+      
+      // Training (multiple entries - showing first 3)
+      "Training 1 - Course",
+      "Training 1 - Hours",
+      "Training 1 - Institution",
+      "Training 1 - Skills Acquired",
+      "Training 1 - NC I",
+      "Training 1 - NC II",
+      "Training 1 - NC III",
+      "Training 1 - NC IV",
+      "Training 1 - COC",
+      "Training 2 - Course",
+      "Training 2 - Hours",
+      "Training 2 - Institution",
+      "Training 2 - Skills Acquired",
+      "Training 2 - NC I",
+      "Training 2 - NC II",
+      "Training 2 - NC III",
+      "Training 2 - NC IV",
+      "Training 2 - COC",
+      "Training 3 - Course",
+      "Training 3 - Hours",
+      "Training 3 - Institution",
+      "Training 3 - Skills Acquired",
+      "Training 3 - NC I",
+      "Training 3 - NC II",
+      "Training 3 - NC III",
+      "Training 3 - NC IV",
+      "Training 3 - COC",
+      
+      // Eligibility (multiple entries - showing first 3 of each)
+      "Civil Service 1 - Name",
+      "Civil Service 1 - Date Taken",
+      "Civil Service 2 - Name",
+      "Civil Service 2 - Date Taken",
+      "Civil Service 3 - Name",
+      "Civil Service 3 - Date Taken",
+      "Professional License 1 - Name",
+      "Professional License 1 - Valid Until",
+      "Professional License 2 - Name",
+      "Professional License 2 - Valid Until",
+      "Professional License 3 - Name",
+      "Professional License 3 - Valid Until",
+      
+      // Work Experience (multiple entries - showing first 5)
+      "Work 1 - Company",
+      "Work 1 - Address",
+      "Work 1 - Position",
+      "Work 1 - Months",
+      "Work 1 - Employment Status",
+      "Work 2 - Company",
+      "Work 2 - Address",
+      "Work 2 - Position",
+      "Work 2 - Months",
+      "Work 2 - Employment Status",
+      "Work 3 - Company",
+      "Work 3 - Address",
+      "Work 3 - Position",
+      "Work 3 - Months",
+      "Work 3 - Employment Status",
+      "Work 4 - Company",
+      "Work 4 - Address",
+      "Work 4 - Position",
+      "Work 4 - Months",
+      "Work 4 - Employment Status",
+      "Work 5 - Company",
+      "Work 5 - Address",
+      "Work 5 - Position",
+      "Work 5 - Months",
+      "Work 5 - Employment Status",
+      
+      // Skills
+      "Skill - Auto Mechanic",
+      "Skill - Beautician",
+      "Skill - Carpentry Work",
+      "Skill - Computer Literate",
+      "Skill - Domestic Chores",
+      "Skill - Driver",
+      "Skill - Electrician",
+      "Skill - Embroidery",
+      "Skill - Gardening",
+      "Skill - Masonry",
+      "Skill - Painter/Artist",
+      "Skill - Painting Jobs",
+      "Skill - Photography",
+      "Skill - Plumbing",
+      "Skill - Sewing Dresses",
+      "Skill - Stenography",
+      "Skill - Tailoring",
+      "Skill - Others",
+      
+      // Certification
+      "Certification Acknowledged",
+      "Signature",
+      "Date Signed",
+      
+      // PESO Use Only
+      "Referral - SPES",
+      "Referral - GIP",
+      "Referral - TUPAD",
+      "Referral - JobStart",
+      "Referral - DILEEP",
+      "Referral - TESDA Training",
+      "Referral - Others",
+      "Assessed By",
+      "Assessor Signature",
+      "Assessment Date",
+      
+      // System Fields
+      "Date Registered",
+      "Created By",
+      "Status",
+    ];
+
+    const csvRows = [headers.join(",")];
+
+    data.forEach((record: DBJobseekerRecord) => {
+      const personalInfo = (record.personal_info || {}) as Record<string, unknown>;
+      const address = (personalInfo.address || {}) as Record<string, unknown>;
+      const disability = (personalInfo.disability || {}) as Record<string, unknown>;
+      const employment = (record.employment || {}) as Record<string, unknown>;
+      const selfEmployed = (employment.selfEmployedTypes || {}) as Record<string, unknown>;
+      const jobPref = (record.job_preference || {}) as Record<string, unknown>;
+      const lang = (record.language || {}) as Record<string, unknown>;
+      const edu = (record.education || {}) as Record<string, unknown>;
+      const training = (record.training || {}) as Record<string, unknown>;
+      const trainingEntries = (training.entries || []) as Array<Record<string, unknown>>;
+      const eligibility = (record.eligibility || {}) as Record<string, unknown>;
+      const civilService = (eligibility.civilService || []) as Array<Record<string, unknown>>;
+      const profLicense = (eligibility.professionalLicense || []) as Array<Record<string, unknown>>;
+      const workExp = (record.work_experience || {}) as Record<string, unknown>;
+      const workEntries = (workExp.entries || []) as Array<Record<string, unknown>>;
+      const skills = (record.skills || {}) as Record<string, unknown>;
+      const otherSkills = (skills.otherSkills || {}) as Record<string, unknown>;
+      const cert = (skills.certification || {}) as Record<string, unknown>;
+      const pesoUse = (skills.pesoUseOnly || {}) as Record<string, unknown>;
+      const referralPrograms = (pesoUse.referralPrograms || {}) as Record<string, unknown>;
+
+      // Helper to escape CSV values
+      const escapeCSV = (val: unknown): string => {
+        if (val === null || val === undefined) return "";
+        const str = String(val);
+        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+          return `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+      };
+
+      // Helper to get nested array values
+      const getTraining = (index: number): string[] => {
+        const t = trainingEntries[index] || {};
+        const certs = (t.certificates || {}) as Record<string, unknown>;
+        return [
+          escapeCSV(t.course),
+          escapeCSV(t.hours),
+          escapeCSV(t.institution),
+          escapeCSV(t.skillsAcquired),
+          certs.NC_I ? "Yes" : "No",
+          certs.NC_II ? "Yes" : "No",
+          certs.NC_III ? "Yes" : "No",
+          certs.NC_IV ? "Yes" : "No",
+          certs.COC ? "Yes" : "No",
+        ];
+      };
+
+      const getCivilService = (index: number): string[] => {
+        const cs = civilService[index] || {};
+        return [escapeCSV(cs.name), escapeCSV(cs.dateTaken)];
+      };
+
+      const getProfLicense = (index: number): string[] => {
+        const pl = profLicense[index] || {};
+        return [escapeCSV(pl.name), escapeCSV(pl.validUntil)];
+      };
+
+      const getWorkExp = (index: number): string[] => {
+        const we = workEntries[index] || {};
+        return [
+          escapeCSV(we.companyName),
+          escapeCSV(we.address),
+          escapeCSV(we.position),
+          escapeCSV(we.numberOfMonths),
+          escapeCSV(we.employmentStatus),
+        ];
+      };
+
+      const row = [
+        // Basic Info
+        record.id,
+        escapeCSV(personalInfo.surname),
+        escapeCSV(personalInfo.firstName),
+        escapeCSV(personalInfo.middleName),
+        escapeCSV(personalInfo.suffix),
+        escapeCSV(personalInfo.dateOfBirth),
+        escapeCSV(personalInfo.placeOfBirth),
+        escapeCSV(personalInfo.sex),
+        escapeCSV(personalInfo.religion),
+        escapeCSV(personalInfo.civilStatus),
+        escapeCSV(address.houseStreet),
+        escapeCSV(address.barangay),
+        escapeCSV(address.city),
+        escapeCSV(address.province),
+        escapeCSV(personalInfo.tin),
+        disability.visual ? "Yes" : "No",
+        disability.hearing ? "Yes" : "No",
+        disability.speech ? "Yes" : "No",
+        disability.physical ? "Yes" : "No",
+        disability.mental ? "Yes" : "No",
+        escapeCSV(disability.others),
+        escapeCSV(personalInfo.height),
+        escapeCSV(personalInfo.contactNumber),
+        escapeCSV(personalInfo.email),
+        
+        // Employment
+        escapeCSV(employment.status),
+        escapeCSV(employment.employedType),
+        selfEmployed.fisherman ? "Yes" : "No",
+        selfEmployed.vendor ? "Yes" : "No",
+        selfEmployed.homeBased ? "Yes" : "No",
+        selfEmployed.transport ? "Yes" : "No",
+        selfEmployed.domestic ? "Yes" : "No",
+        selfEmployed.freelancer ? "Yes" : "No",
+        selfEmployed.artisan ? "Yes" : "No",
+        escapeCSV(selfEmployed.others),
+        escapeCSV(employment.unemployedReason),
+        escapeCSV(employment.terminatedCountry),
+        escapeCSV(employment.unemployedReasonOthers),
+        escapeCSV(employment.jobSearchDuration),
+        employment.isOfw ? "Yes" : "No",
+        escapeCSV(employment.ofwCountry),
+        employment.isFormerOfw ? "Yes" : "No",
+        escapeCSV(employment.formerOfwCountry),
+        escapeCSV(employment.ofwReturnDate),
+        employment.is4PsBeneficiary ? "Yes" : "No",
+        escapeCSV(employment.householdIdNumber),
+        
+        // Job Preference
+        escapeCSV(jobPref.employmentType),
+        escapeCSV(jobPref.occupation1),
+        escapeCSV(jobPref.occupation2),
+        escapeCSV(jobPref.occupation3),
+        escapeCSV(jobPref.localLocation1),
+        escapeCSV(jobPref.localLocation2),
+        escapeCSV(jobPref.localLocation3),
+        escapeCSV(jobPref.overseasLocation1),
+        escapeCSV(jobPref.overseasLocation2),
+        escapeCSV(jobPref.overseasLocation3),
+        
+        // Language
+        (lang.english as Record<string, unknown>)?.read ? "Yes" : "No",
+        (lang.english as Record<string, unknown>)?.write ? "Yes" : "No",
+        (lang.english as Record<string, unknown>)?.speak ? "Yes" : "No",
+        (lang.english as Record<string, unknown>)?.understand ? "Yes" : "No",
+        (lang.filipino as Record<string, unknown>)?.read ? "Yes" : "No",
+        (lang.filipino as Record<string, unknown>)?.write ? "Yes" : "No",
+        (lang.filipino as Record<string, unknown>)?.speak ? "Yes" : "No",
+        (lang.filipino as Record<string, unknown>)?.understand ? "Yes" : "No",
+        (lang.mandarin as Record<string, unknown>)?.read ? "Yes" : "No",
+        (lang.mandarin as Record<string, unknown>)?.write ? "Yes" : "No",
+        (lang.mandarin as Record<string, unknown>)?.speak ? "Yes" : "No",
+        (lang.mandarin as Record<string, unknown>)?.understand ? "Yes" : "No",
+        escapeCSV(lang.othersName),
+        (lang.others as Record<string, unknown>)?.read ? "Yes" : "No",
+        (lang.others as Record<string, unknown>)?.write ? "Yes" : "No",
+        (lang.others as Record<string, unknown>)?.speak ? "Yes" : "No",
+        (lang.others as Record<string, unknown>)?.understand ? "Yes" : "No",
+        
+        // Education
+        edu.currentlyInSchool ? "Yes" : "No",
+        escapeCSV((edu.elementary as Record<string, unknown>)?.yearGraduated),
+        escapeCSV((edu.elementary as Record<string, unknown>)?.levelReached),
+        escapeCSV((edu.elementary as Record<string, unknown>)?.yearLastAttended),
+        escapeCSV((edu.secondary as Record<string, unknown>)?.curriculumType),
+        escapeCSV((edu.secondary as Record<string, unknown>)?.yearGraduated),
+        escapeCSV((edu.secondary as Record<string, unknown>)?.levelReached),
+        escapeCSV((edu.secondary as Record<string, unknown>)?.yearLastAttended),
+        escapeCSV((edu.seniorHigh as Record<string, unknown>)?.strand),
+        escapeCSV((edu.seniorHigh as Record<string, unknown>)?.yearGraduated),
+        escapeCSV((edu.seniorHigh as Record<string, unknown>)?.levelReached),
+        escapeCSV((edu.seniorHigh as Record<string, unknown>)?.yearLastAttended),
+        escapeCSV((edu.tertiary as Record<string, unknown>)?.course),
+        escapeCSV((edu.tertiary as Record<string, unknown>)?.yearGraduated),
+        escapeCSV((edu.tertiary as Record<string, unknown>)?.levelReached),
+        escapeCSV((edu.tertiary as Record<string, unknown>)?.yearLastAttended),
+        escapeCSV((edu.graduate as Record<string, unknown>)?.course),
+        escapeCSV((edu.graduate as Record<string, unknown>)?.yearGraduated),
+        escapeCSV((edu.graduate as Record<string, unknown>)?.yearLastAttended),
+        
+        // Training (first 3 entries)
+        ...getTraining(0),
+        ...getTraining(1),
+        ...getTraining(2),
+        
+        // Eligibility
+        ...getCivilService(0),
+        ...getCivilService(1),
+        ...getCivilService(2),
+        ...getProfLicense(0),
+        ...getProfLicense(1),
+        ...getProfLicense(2),
+        
+        // Work Experience (first 5)
+        ...getWorkExp(0),
+        ...getWorkExp(1),
+        ...getWorkExp(2),
+        ...getWorkExp(3),
+        ...getWorkExp(4),
+        
+        // Skills
+        otherSkills.auto_mechanic ? "Yes" : "No",
+        otherSkills.beautician ? "Yes" : "No",
+        otherSkills.carpentry_work ? "Yes" : "No",
+        otherSkills.computer_literate ? "Yes" : "No",
+        otherSkills.domestic_chores ? "Yes" : "No",
+        otherSkills.driver ? "Yes" : "No",
+        otherSkills.electrician ? "Yes" : "No",
+        otherSkills.embroidery ? "Yes" : "No",
+        otherSkills.gardening ? "Yes" : "No",
+        otherSkills.masonry ? "Yes" : "No",
+        otherSkills.painter_artist ? "Yes" : "No",
+        otherSkills.painting_jobs ? "Yes" : "No",
+        otherSkills.photography ? "Yes" : "No",
+        otherSkills.plumbing ? "Yes" : "No",
+        otherSkills.sewing_dresses ? "Yes" : "No",
+        otherSkills.stenography ? "Yes" : "No",
+        otherSkills.tailoring ? "Yes" : "No",
+        escapeCSV(otherSkills.others),
+        
+        // Certification
+        cert.acknowledged ? "Yes" : "No",
+        escapeCSV(cert.signature),
+        escapeCSV(cert.dateSigned),
+        
+        // PESO Use Only
+        referralPrograms.spes ? "Yes" : "No",
+        referralPrograms.gip ? "Yes" : "No",
+        referralPrograms.tupad ? "Yes" : "No",
+        referralPrograms.jobstart ? "Yes" : "No",
+        referralPrograms.dileep ? "Yes" : "No",
+        referralPrograms.tesda_training ? "Yes" : "No",
+        escapeCSV(referralPrograms.others),
+        escapeCSV(pesoUse.assessedBy),
+        escapeCSV(pesoUse.assessorSignature),
+        escapeCSV(pesoUse.assessmentDate),
+        
+        // System Fields
+        new Date(record.created_at).toLocaleDateString(),
+        escapeCSV(record.created_by),
+        escapeCSV(record.status),
+      ];
+      
+      csvRows.push(row.join(","));
+    });
+
+    const csv = csvRows.join("\n");
+    const filename = `jobseekers_${new Date().toISOString().split("T")[0]}.csv`;
+
+    return { csv, filename };
+  } catch (error) {
+    console.error("exportJobseekersCSV error:", error);
+    if (error instanceof Error) {
+      return { error: error.message };
+    }
+    return { error: "Failed to export data" };
+  }
+}
+
+export async function deleteJobseeker(
+  id: number
+): Promise<{ success?: boolean; error?: string }> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { error: "Unauthorized" };
+    }
+
+    const { error } = await supabase
+      .from("jobseekers")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.error("Delete error:", error);
+      return { error: error.message };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("deleteJobseeker error:", error);
+    if (error instanceof Error) {
+      return { error: error.message };
+    }
+    return { error: "Failed to delete jobseeker" };
+  }
+}
+
+export async function bulkDeleteJobseekers(
+  ids: number[]
+): Promise<{ success?: boolean; error?: string }> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { error: "Unauthorized" };
+    }
+
+    const { error } = await supabase
+      .from("jobseekers")
+      .delete()
+      .in("id", ids);
+
+    if (error) {
+      console.error("Bulk delete error:", error);
+      return { error: error.message };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("bulkDeleteJobseekers error:", error);
+    if (error instanceof Error) {
+      return { error: error.message };
+    }
+    return { error: "Failed to delete jobseekers" };
+  }
+}
+
+export async function bulkArchiveJobseekers(
+  ids: number[]
+): Promise<{ success?: boolean; error?: string }> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { error: "Unauthorized" };
+    }
+
+    const { error } = await supabase
+      .from("jobseekers")
+      .update({ status: "archived" })
+      .in("id", ids);
+
+    if (error) {
+      console.error("Bulk archive error:", error);
+      return { error: error.message };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("bulkArchiveJobseekers error:", error);
+    if (error instanceof Error) {
+      return { error: error.message };
+    }
+    return { error: "Failed to archive jobseekers" };
+  }
+}
