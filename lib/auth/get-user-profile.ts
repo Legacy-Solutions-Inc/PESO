@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { cache } from "react";
 
 export interface UserProfile {
   id: number;
@@ -19,10 +20,10 @@ export interface UserWithProfile {
   profile: UserProfile;
 }
 
-export async function getUserProfile(): Promise<{
+export const getUserProfile = cache(async (): Promise<{
   data: UserWithProfile | null;
   error: string | null;
-}> {
+}> => {
   try {
     const supabase = await createClient();
     
@@ -61,4 +62,4 @@ export async function getUserProfile(): Promise<{
       error: error instanceof Error ? error.message : "Unknown error",
     };
   }
-}
+});
