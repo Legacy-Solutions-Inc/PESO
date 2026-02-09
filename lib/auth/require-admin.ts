@@ -1,6 +1,7 @@
+import { cache } from "react";
 import { getUserProfile } from "./get-user-profile";
 
-export async function requireAdmin() {
+export const requireAdmin = cache(async () => {
   const { data, error } = await getUserProfile();
 
   if (error || !data) {
@@ -16,4 +17,4 @@ export async function requireAdmin() {
   }
 
   return { data, error: null };
-}
+});
