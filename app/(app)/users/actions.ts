@@ -176,10 +176,13 @@ export async function deleteUser(userId: string) {
   }
 
   try {
-    const supabase = await createClient();
+    const adminClient = createAdminClient();
+    if (!adminClient) {
+      return { success: false, error: "Service role key not configured" };
+    }
 
     // Delete from auth.users (will cascade to profiles due to FK)
-    const { error } = await supabase.auth.admin.deleteUser(userId);
+    const { error } = await adminClient.auth.admin.deleteUser(userId);
 
     if (error) {
       return { success: false, error: error.message };
