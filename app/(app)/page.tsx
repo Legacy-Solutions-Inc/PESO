@@ -53,8 +53,10 @@ function formatNumber(num: number): string {
 }
 
 export default async function DashboardPage() {
-  const statsResult = await getDashboardStats();
-  const recentResult = await getRecentJobseekers(10);
+  const [statsResult, recentResult] = await Promise.all([
+    getDashboardStats(),
+    getRecentJobseekers(10),
+  ]);
 
   // Show error state if stats fail
   if (statsResult.error || !statsResult.data) {
