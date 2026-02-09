@@ -1,0 +1,10 @@
+  const personalInfo = record.personal_info ?? {};
+  const address = personalInfo.address ?? {};
+  const employment = record.employment ?? {};
+  const jobPref = record.job_preference ?? {};
+  const education = record.education ?? {};
+  const training = record.training ?? {};
+  const eligibility = record.eligibility ?? {};
+  const skills = record.skills ?? {};
+  const otherSkills = skills.otherSkills ?? {};
+  const certification = skills.certification ?? {};
