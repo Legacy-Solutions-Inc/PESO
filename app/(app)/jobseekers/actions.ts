@@ -1,6 +1,8 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth/require-admin";
+import { requireActiveUser } from "@/lib/auth/require-active-user";
 import type { JobseekerRegistrationData } from "@/lib/validations/jobseeker-registration";
 
 export interface JobseekerFilters {
@@ -91,15 +93,12 @@ export async function getJobseekerById(
   id: number
 ): Promise<{ data?: JobseekerFullRecord; error?: string }> {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return { error: "Unauthorized" };
+    const auth = await requireActiveUser();
+    if (auth.error) {
+      return { error: auth.error };
     }
 
+    const supabase = await createClient();
     const { data, error } = await supabase
       .from("jobseekers")
       .select("*")
@@ -132,15 +131,12 @@ export async function getJobseekers(
   filters: JobseekerFilters
 ): Promise<{ data?: GetJobseekersResult; error?: string }> {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return { error: "Unauthorized" };
+    const auth = await requireActiveUser();
+    if (auth.error) {
+      return { error: auth.error };
     }
 
+    const supabase = await createClient();
     // Build query with indexed columns for performance
     let query = supabase
       .from("jobseekers")
@@ -242,15 +238,12 @@ export async function exportJobseekersCSV(
   filters: Omit<JobseekerFilters, "page" | "pageSize">
 ): Promise<{ csv?: string; filename?: string; error?: string }> {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return { error: "Unauthorized" };
+    const auth = await requireActiveUser();
+    if (auth.error) {
+      return { error: auth.error };
     }
 
+    const supabase = await createClient();
     // Build query without pagination (get all matching records)
     let query = supabase.from("jobseekers").select("*");
 
@@ -790,15 +783,12 @@ export async function deleteJobseeker(
   id: number
 ): Promise<{ success?: boolean; error?: string }> {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return { error: "Unauthorized" };
+    const auth = await requireAdmin();
+    if (auth.error) {
+      return { error: auth.error };
     }
 
+    const supabase = await createClient();
     const { error } = await supabase
       .from("jobseekers")
       .delete()
@@ -823,15 +813,12 @@ export async function bulkDeleteJobseekers(
   ids: number[]
 ): Promise<{ success?: boolean; error?: string }> {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return { error: "Unauthorized" };
+    const auth = await requireAdmin();
+    if (auth.error) {
+      return { error: auth.error };
     }
 
+    const supabase = await createClient();
     const { error } = await supabase
       .from("jobseekers")
       .delete()
@@ -856,15 +843,12 @@ export async function bulkArchiveJobseekers(
   ids: number[]
 ): Promise<{ success?: boolean; error?: string }> {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return { error: "Unauthorized" };
+    const auth = await requireActiveUser();
+    if (auth.error) {
+      return { error: auth.error };
     }
 
+    const supabase = await createClient();
     const { error } = await supabase
       .from("jobseekers")
       .update({ status: "archived" })
@@ -904,6 +888,11 @@ export async function getDashboardStats(): Promise<{
   error: string | null;
 }> {
   try {
+    const auth = await requireActiveUser();
+    if (auth.error) {
+      return { data: null, error: auth.error };
+    }
+
     const supabase = await createClient();
 
     // Call database function for efficient stats computation
@@ -951,6 +940,11 @@ export async function getRecentJobseekers(
   limit = 10
 ): Promise<{ data: RecentJobseeker[] | null; error: string | null }> {
   try {
+    const auth = await requireActiveUser();
+    if (auth.error) {
+      return { data: null, error: auth.error };
+    }
+
     const supabase = await createClient();
 
     const { data: jobseekers, error } = await supabase
