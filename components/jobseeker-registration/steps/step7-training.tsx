@@ -15,14 +15,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Plus, Trash2 } from "lucide-react";
+import { CERTIFICATE_OPTIONS } from "@/lib/constants";
 
-const CERTIFICATE_TYPES = [
-  { id: "NC_I", label: "NC I" },
-  { id: "NC_II", label: "NC II" },
-  { id: "NC_III", label: "NC III" },
-  { id: "NC_IV", label: "NC IV" },
-  { id: "COC", label: "COC" },
-] as const;
 
 export function Step7Training() {
   const form = useFormContext();
@@ -168,11 +162,11 @@ export function Step7Training() {
                       Certificates Received
                     </Label>
                     <div className="grid gap-3 md:grid-cols-3">
-                      {CERTIFICATE_TYPES.map((cert) => (
+                      {CERTIFICATE_OPTIONS.map((cert) => (
                         <FormField
-                          key={cert.id}
+                          key={cert.value}
                           control={form.control}
-                          name={`training.entries.${index}.certificates.${cert.id}`}
+                          name={`training.entries.${index}.certificates.${cert.value}`}
                           render={({ field }) => (
                             <FormItem className="flex items-center gap-3 space-y-0">
                               <FormControl>

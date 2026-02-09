@@ -25,103 +25,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  SEX_OPTIONS,
+  CIVIL_STATUS_OPTIONS,
+  EMPLOYMENT_STATUS_OPTIONS,
+  EMPLOYED_TYPE_OPTIONS,
+  UNEMPLOYED_REASON_OPTIONS,
+  BOOLEAN_FILTER_OPTIONS,
+  EMPLOYMENT_TYPE_OPTIONS,
+  PROFICIENCY_OPTIONS,
+  CERTIFICATE_OPTIONS,
+  WORK_EMPLOYMENT_STATUS_OPTIONS,
+  SKILL_TYPE_OPTIONS,
+  REFERRAL_PROGRAM_OPTIONS
+} from "@/lib/constants";
+
 
 // Sentinel for "All" / "Any" options; Select.Item cannot use value=""
 const ALL_VALUE = "__all__";
-
-const SEX_OPTIONS = [
-  { label: "Male", value: "MALE" },
-  { label: "Female", value: "FEMALE" },
-];
-
-const CIVIL_STATUS_OPTIONS = [
-  { label: "Single", value: "SINGLE" },
-  { label: "Married", value: "MARRIED" },
-  { label: "Widowed", value: "WIDOWED" },
-  { label: "Separated", value: "SEPARATED" },
-];
-
-const EMPLOYMENT_STATUS_OPTIONS = [
-  { label: "Employed", value: "EMPLOYED" },
-  { label: "Unemployed", value: "UNEMPLOYED" },
-];
-
-const EMPLOYED_TYPE_OPTIONS = [
-  { label: "Wage Employed", value: "WAGE" },
-  { label: "Self-Employed", value: "SELF_EMPLOYED" },
-];
-
-const UNEMPLOYED_REASON_OPTIONS = [
-  { label: "New Entrant", value: "NEW_ENTRANT" },
-  { label: "Finished Contract", value: "FINISHED_CONTRACT" },
-  { label: "Resigned", value: "RESIGNED" },
-  { label: "Retired", value: "RETIRED" },
-  { label: "Terminated (Local)", value: "TERMINATED_LOCAL" },
-  { label: "Terminated (Abroad)", value: "TERMINATED_ABROAD" },
-  { label: "Terminated (Calamity)", value: "TERMINATED_CALAMITY" },
-  { label: "Others", value: "OTHERS" },
-];
-
-const YES_NO_OPTIONS = [
-  { label: "Yes", value: "true" },
-  { label: "No", value: "false" },
-];
-
-const EMPLOYMENT_TYPE_OPTIONS = [
-  { label: "Part Time", value: "PART_TIME" },
-  { label: "Full Time", value: "FULL_TIME" },
-];
-
-const PROFICIENCY_OPTIONS = [
-  { label: "Can Read", value: "read" },
-  { label: "Can Write", value: "write" },
-  { label: "Can Speak", value: "speak" },
-  { label: "Can Understand", value: "understand" },
-];
-
-const CERTIFICATE_OPTIONS = [
-  { label: "NC I", value: "NC_I" },
-  { label: "NC II", value: "NC_II" },
-  { label: "NC III", value: "NC_III" },
-  { label: "NC IV", value: "NC_IV" },
-  { label: "COC", value: "COC" },
-];
-
-const WORK_EMPLOYMENT_STATUS_OPTIONS = [
-  { label: "Permanent", value: "PERMANENT" },
-  { label: "Contractual", value: "CONTRACTUAL" },
-  { label: "Part Time", value: "PART_TIME" },
-  { label: "Probationary", value: "PROBATIONARY" },
-];
-
-const SKILL_TYPE_OPTIONS = [
-  { label: "Auto Mechanic", value: "auto_mechanic" },
-  { label: "Beautician", value: "beautician" },
-  { label: "Carpentry Work", value: "carpentry_work" },
-  { label: "Computer Literate", value: "computer_literate" },
-  { label: "Domestic Chores", value: "domestic_chores" },
-  { label: "Driver", value: "driver" },
-  { label: "Electrician", value: "electrician" },
-  { label: "Embroidery", value: "embroidery" },
-  { label: "Gardening", value: "gardening" },
-  { label: "Masonry", value: "masonry" },
-  { label: "Painter/Artist", value: "painter_artist" },
-  { label: "Painting Jobs", value: "painting_jobs" },
-  { label: "Photography", value: "photography" },
-  { label: "Plumbing", value: "plumbing" },
-  { label: "Sewing Dresses", value: "sewing_dresses" },
-  { label: "Stenography", value: "stenography" },
-  { label: "Tailoring", value: "tailoring" },
-];
-
-const REFERRAL_PROGRAM_OPTIONS = [
-  { label: "SPES", value: "spes" },
-  { label: "GIP", value: "gip" },
-  { label: "TUPAD", value: "tupad" },
-  { label: "JobStart", value: "jobstart" },
-  { label: "DILEEP", value: "dileep" },
-  { label: "TESDA Training", value: "tesda_training" },
-];
 
 const FILTER_SECTIONS = [
   { id: "basic", label: "Basic Info", icon: User },
@@ -141,7 +62,7 @@ interface FilterFieldProps {
   onChange: (value: string) => void;
   placeholder?: string;
   type?: "text" | "number" | "select";
-  options?: { label: string; value: string }[];
+  options?: readonly { label: string; value: string }[];
 }
 
 function FilterField({
@@ -344,14 +265,14 @@ export function AdvancedFilter({
                 <FilterField
                   label="OFW Status"
                   type="select"
-                  options={YES_NO_OPTIONS}
+                  options={BOOLEAN_FILTER_OPTIONS}
                   value={filters.isOfw}
                   onChange={(v) => updateFilter("isOfw", v)}
                 />
                 <FilterField
                   label="4Ps Beneficiary"
                   type="select"
-                  options={YES_NO_OPTIONS}
+                  options={BOOLEAN_FILTER_OPTIONS}
                   value={filters.is4PsBeneficiary}
                   onChange={(v) => updateFilter("is4PsBeneficiary", v)}
                 />
@@ -431,7 +352,7 @@ export function AdvancedFilter({
                 <FilterField
                   label="Currently in School"
                   type="select"
-                  options={YES_NO_OPTIONS}
+                  options={BOOLEAN_FILTER_OPTIONS}
                   value={filters.currentlyInSchool}
                   onChange={(v) => updateFilter("currentlyInSchool", v)}
                 />
