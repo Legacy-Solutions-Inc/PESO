@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useMemo } from "react";
+import { useState, useTransition, useMemo, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, Filter, Eye, Edit, ChevronLeft, ChevronRight } from "lucide-react";
@@ -68,6 +68,16 @@ export function JobseekersTable({
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [searchValue, setSearchValue] = useState(searchParams.get("search") || "");
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Calculate age from date of birth
   const calculateAge = (dob: string | undefined) => {
@@ -82,18 +92,21 @@ export function JobseekersTable({
     return age;
   };
 
-  const handleSearch = (search: string) => {
-    const params = new URLSearchParams(searchParams);
-    if (search) {
-      params.set("search", search);
-    } else {
-      params.delete("search");
-    }
-    params.set("page", "1");
-    startTransition(() => {
-      router.push(`/jobseekers?${params.toString()}`);
-    });
-  };
+  const handleSearch = useCallback(
+    (search: string) => {
+      const params = new URLSearchParams(searchParams);
+      if (search) {
+        params.set("search", search);
+      } else {
+        params.delete("search");
+      }
+      params.set("page", "1");
+      startTransition(() => {
+        router.push(`/jobseekers?${params.toString()}`);
+      });
+    },
+    [router, searchParams]
+  );
 
   const handleFilterApply = (filters: Record<string, string>) => {
     const params = new URLSearchParams();
@@ -160,11 +173,16 @@ export function JobseekersTable({
             placeholder="Search by name, ID, or email..."
             value={searchValue}
             onChange={(e) => {
-              setSearchValue(e.target.value);
-              const timeoutId = setTimeout(() => {
-                handleSearch(e.target.value);
+              const value = e.target.value;
+              setSearchValue(value);
+
+              if (searchTimeoutRef.current) {
+                clearTimeout(searchTimeoutRef.current);
+              }
+
+              searchTimeoutRef.current = setTimeout(() => {
+                handleSearch(value);
               }, 500);
-              return () => clearTimeout(timeoutId);
             }}
             className="pl-10"
           />
