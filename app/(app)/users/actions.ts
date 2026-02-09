@@ -117,42 +117,10 @@ export async function getUsersList(filters: UsersListFilters = {}) {
   }
 }
 
-export async function updateUserRole(userId: string, newRole: "admin" | "encoder") {
-  const adminCheck = await requireAdmin();
-  if (adminCheck.error || !adminCheck.data) {
-    return { success: false, error: adminCheck.error ?? "Unauthorized" };
-  }
-
-  try {
-    const supabase = await createClient();
-    const adminUserId = adminCheck.data.user.id;
-
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        role: newRole,
-        updated_by: adminUserId,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("user_id", userId);
-
-    if (error) {
-      return { success: false, error: error.message };
-    }
-
-    revalidatePath("/users");
-    return { success: true, error: null };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Failed to update role",
-    };
-  }
-}
-
-export async function updateUserStatus(
+async function updateUserProfile(
   userId: string,
-  newStatus: "active" | "pending" | "inactive"
+  updates: Record<string, any>,
+  errorMessage: string
 ) {
   const adminCheck = await requireAdmin();
   if (adminCheck.error || !adminCheck.data) {
@@ -166,7 +134,7 @@ export async function updateUserStatus(
     const { error } = await supabase
       .from("profiles")
       .update({
-        status: newStatus,
+        ...updates,
         updated_by: adminUserId,
         updated_at: new Date().toISOString(),
       })
@@ -181,9 +149,24 @@ export async function updateUserStatus(
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to update status",
+      error: error instanceof Error ? error.message : errorMessage,
     };
   }
+}
+
+export async function updateUserRole(userId: string, newRole: "admin" | "encoder") {
+  return updateUserProfile(userId, { role: newRole }, "Failed to update role");
+}
+
+export async function updateUserStatus(
+  userId: string,
+  newStatus: "active" | "pending" | "inactive"
+) {
+  return updateUserProfile(
+    userId,
+    { status: newStatus },
+    "Failed to update status"
+  );
 }
 
 export async function deleteUser(userId: string) {
