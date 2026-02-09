@@ -89,6 +89,35 @@ export interface JobseekerFullRecord {
   skills: JobseekerRegistrationData["skills"];
 }
 
+// Database representation where JSONB fields are generic Json
+type Json = unknown;
+
+interface JobseekerDBRecord {
+  id: number;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+  status: string;
+  personal_info: Json;
+  employment: Json;
+  job_preference: Json;
+  language: Json;
+  education: Json;
+  training: Json;
+  eligibility: Json;
+  work_experience: Json;
+  skills: Json;
+  // Extra columns from select("*") that we don't include in JobseekerFullRecord
+  surname?: string;
+  first_name?: string;
+  sex?: string;
+  employment_status?: string;
+  city?: string;
+  province?: string;
+  is_ofw?: boolean;
+  is_4ps_beneficiary?: boolean;
+}
+
 export async function getJobseekerById(
   id: number
 ): Promise<{ data?: JobseekerFullRecord; error?: string }> {
@@ -103,7 +132,7 @@ export async function getJobseekerById(
       .from("jobseekers")
       .select("*")
       .eq("id", id)
-      .single();
+      .single<JobseekerDBRecord>();
 
     if (error) {
       if (error.code === "PGRST116") {
@@ -117,7 +146,25 @@ export async function getJobseekerById(
       return { error: "Not found" };
     }
 
-    return { data: data as unknown as JobseekerFullRecord };
+    // Explicitly map DB record to full record with type assertions for JSON fields
+    const record: JobseekerFullRecord = {
+      id: data.id,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+      created_by: data.created_by,
+      status: data.status,
+      personal_info: data.personal_info as JobseekerRegistrationData["personalInfo"],
+      employment: data.employment as JobseekerRegistrationData["employment"],
+      job_preference: data.job_preference as JobseekerRegistrationData["jobPreference"],
+      language: data.language as JobseekerRegistrationData["language"],
+      education: data.education as JobseekerRegistrationData["education"],
+      training: data.training as JobseekerRegistrationData["training"],
+      eligibility: data.eligibility as JobseekerRegistrationData["eligibility"],
+      work_experience: data.work_experience as JobseekerRegistrationData["workExperience"],
+      skills: data.skills as JobseekerRegistrationData["skills"],
+    };
+
+    return { data: record };
   } catch (err) {
     console.error("getJobseekerById error:", err);
     if (err instanceof Error) {
