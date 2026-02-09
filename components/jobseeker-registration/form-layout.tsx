@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { ProgressSidebar } from "./progress-sidebar";
 import { NavigationBar } from "./navigation-bar";
@@ -301,15 +301,21 @@ export function JobseekerRegistrationFormLayout({
   }, [formData, getValues, currentStep, completedSteps, encoderEmail, toast]);
 
   // Auto-save every 30 seconds if form is dirty
+  const saveDraftRef = useRef(saveDraft);
+
+  useEffect(() => {
+    saveDraftRef.current = saveDraft;
+  }, [saveDraft]);
+
   useEffect(() => {
     if (!formState.isDirty) return;
 
     const interval = setInterval(() => {
-      saveDraft();
+      saveDraftRef.current();
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [formState.isDirty, saveDraft]);
+  }, [formState.isDirty]);
 
   // Load draft from server first, then localStorage fallback
   useEffect(() => {
