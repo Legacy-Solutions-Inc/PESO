@@ -566,15 +566,20 @@ export async function exportJobseekersCSV(
           const referralPrograms = (pesoUse.referralPrograms || {}) as Record<string, unknown>;
 
           // Helper to escape CSV values
-          const escapeCSV = (val: unknown): string => {
-            if (val === null || val === undefined) return "";
-            const str = String(val);
-            if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-              return `"${str.replace(/"/g, '""')}"`;
-            }
-            return str;
-          };
+      const escapeCSV = (val: unknown): string => {
+        if (val === null || val === undefined) return "";
+        let str = String(val);
 
+        // Prevent CSV injection
+        if (/^[=+\-@]/.test(str)) {
+          str = `'${str}`;
+        }
+
+        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+          return `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+      };
           // Helper to get nested array values
           const getTraining = (index: number): string[] => {
             const t = trainingEntries[index] || {};
