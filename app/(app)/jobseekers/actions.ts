@@ -238,7 +238,7 @@ export async function exportJobseekersCSV(
   filters: Omit<JobseekerFilters, "page" | "pageSize">
 ): Promise<{ csv?: string; filename?: string; error?: string }> {
   try {
-    const auth = await requireActiveUser();
+    const auth = await requireAdmin();
     if (auth.error) {
       return { error: auth.error };
     }
