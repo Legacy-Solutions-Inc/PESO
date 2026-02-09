@@ -134,7 +134,7 @@ export function AdvancedFilter({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] p-0">
+      <DialogContent className="sm:max-w-6xl max-h-[90vh] p-0">
         <DialogHeader className="border-b px-6 pb-4 pt-6">
           <DialogTitle className="text-xl font-bold">Advanced Filters</DialogTitle>
           <p className="text-sm text-slate-500">
