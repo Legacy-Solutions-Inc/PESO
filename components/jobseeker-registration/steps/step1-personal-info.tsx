@@ -20,14 +20,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { SUFFIX_OPTIONS, CIVIL_STATUS_OPTIONS, SEX_OPTIONS } from "@/lib/constants";
 
-const SUFFIX_OPTIONS = ["JR", "SR", "III", "IV", "V"] as const;
-const CIVIL_STATUS_OPTIONS = [
-  "Single",
-  "Married",
-  "Widowed",
-  "Separated",
-] as const;
+
 
 export function Step1PersonalInfo() {
   const form = useFormContext();
@@ -108,11 +103,7 @@ export function Step1PersonalInfo() {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {SUFFIX_OPTIONS.map((suffix) => (
-                      <SelectItem key={suffix} value={suffix}>
-                        {suffix}
-                      </SelectItem>
-                    ))}
+                    {SUFFIX_OPTIONS.map((suffix) => ( <SelectItem key={suffix.value} value={suffix.value}> {suffix.label} </SelectItem> ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -166,14 +157,12 @@ export function Step1PersonalInfo() {
                     defaultValue={field.value}
                     className="flex gap-4"
                   >
-                    <div className="flex items-center gap-2">
-                      <RadioGroupItem value="MALE" id="male" />
-                      <Label htmlFor="male">Male</Label>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <RadioGroupItem value="FEMALE" id="female" />
-                      <Label htmlFor="female">Female</Label>
-                    </div>
+                    {SEX_OPTIONS.map((sex) => (
+                      <div key={sex.value} className="flex items-center gap-2">
+                        <RadioGroupItem value={sex.value} id={sex.value} />
+                        <Label htmlFor={sex.value}>{sex.label}</Label>
+                      </div>
+                    ))}
                   </RadioGroup>
                 </FormControl>
                 <FormMessage />
@@ -212,8 +201,8 @@ export function Step1PersonalInfo() {
                   </FormControl>
                   <SelectContent>
                     {CIVIL_STATUS_OPTIONS.map((status) => (
-                      <SelectItem key={status} value={status.toUpperCase()}>
-                        {status}
+                      <SelectItem key={status.value} value={status.value}>
+                        {status.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
