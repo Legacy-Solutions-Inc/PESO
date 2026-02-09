@@ -29,6 +29,100 @@ import {
 // Sentinel for "All" / "Any" options; Select.Item cannot use value=""
 const ALL_VALUE = "__all__";
 
+const SEX_OPTIONS = [
+  { label: "Male", value: "MALE" },
+  { label: "Female", value: "FEMALE" },
+];
+
+const CIVIL_STATUS_OPTIONS = [
+  { label: "Single", value: "SINGLE" },
+  { label: "Married", value: "MARRIED" },
+  { label: "Widowed", value: "WIDOWED" },
+  { label: "Separated", value: "SEPARATED" },
+];
+
+const EMPLOYMENT_STATUS_OPTIONS = [
+  { label: "Employed", value: "EMPLOYED" },
+  { label: "Unemployed", value: "UNEMPLOYED" },
+];
+
+const EMPLOYED_TYPE_OPTIONS = [
+  { label: "Wage Employed", value: "WAGE" },
+  { label: "Self-Employed", value: "SELF_EMPLOYED" },
+];
+
+const UNEMPLOYED_REASON_OPTIONS = [
+  { label: "New Entrant", value: "NEW_ENTRANT" },
+  { label: "Finished Contract", value: "FINISHED_CONTRACT" },
+  { label: "Resigned", value: "RESIGNED" },
+  { label: "Retired", value: "RETIRED" },
+  { label: "Terminated (Local)", value: "TERMINATED_LOCAL" },
+  { label: "Terminated (Abroad)", value: "TERMINATED_ABROAD" },
+  { label: "Terminated (Calamity)", value: "TERMINATED_CALAMITY" },
+  { label: "Others", value: "OTHERS" },
+];
+
+const YES_NO_OPTIONS = [
+  { label: "Yes", value: "true" },
+  { label: "No", value: "false" },
+];
+
+const EMPLOYMENT_TYPE_OPTIONS = [
+  { label: "Part Time", value: "PART_TIME" },
+  { label: "Full Time", value: "FULL_TIME" },
+];
+
+const PROFICIENCY_OPTIONS = [
+  { label: "Can Read", value: "read" },
+  { label: "Can Write", value: "write" },
+  { label: "Can Speak", value: "speak" },
+  { label: "Can Understand", value: "understand" },
+];
+
+const CERTIFICATE_OPTIONS = [
+  { label: "NC I", value: "NC_I" },
+  { label: "NC II", value: "NC_II" },
+  { label: "NC III", value: "NC_III" },
+  { label: "NC IV", value: "NC_IV" },
+  { label: "COC", value: "COC" },
+];
+
+const WORK_EMPLOYMENT_STATUS_OPTIONS = [
+  { label: "Permanent", value: "PERMANENT" },
+  { label: "Contractual", value: "CONTRACTUAL" },
+  { label: "Part Time", value: "PART_TIME" },
+  { label: "Probationary", value: "PROBATIONARY" },
+];
+
+const SKILL_TYPE_OPTIONS = [
+  { label: "Auto Mechanic", value: "auto_mechanic" },
+  { label: "Beautician", value: "beautician" },
+  { label: "Carpentry Work", value: "carpentry_work" },
+  { label: "Computer Literate", value: "computer_literate" },
+  { label: "Domestic Chores", value: "domestic_chores" },
+  { label: "Driver", value: "driver" },
+  { label: "Electrician", value: "electrician" },
+  { label: "Embroidery", value: "embroidery" },
+  { label: "Gardening", value: "gardening" },
+  { label: "Masonry", value: "masonry" },
+  { label: "Painter/Artist", value: "painter_artist" },
+  { label: "Painting Jobs", value: "painting_jobs" },
+  { label: "Photography", value: "photography" },
+  { label: "Plumbing", value: "plumbing" },
+  { label: "Sewing Dresses", value: "sewing_dresses" },
+  { label: "Stenography", value: "stenography" },
+  { label: "Tailoring", value: "tailoring" },
+];
+
+const REFERRAL_PROGRAM_OPTIONS = [
+  { label: "SPES", value: "spes" },
+  { label: "GIP", value: "gip" },
+  { label: "TUPAD", value: "tupad" },
+  { label: "JobStart", value: "jobstart" },
+  { label: "DILEEP", value: "dileep" },
+  { label: "TESDA Training", value: "tesda_training" },
+];
+
 const FILTER_SECTIONS = [
   { id: "basic", label: "Basic Info", icon: User },
   { id: "employment", label: "Employment", icon: Briefcase },
@@ -40,6 +134,55 @@ const FILTER_SECTIONS = [
   { id: "work_experience", label: "Work Experience", icon: Building2 },
   { id: "skills", label: "Skills", icon: Wrench },
 ];
+
+interface FilterFieldProps {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  type?: "text" | "number" | "select";
+  options?: { label: string; value: string }[];
+}
+
+function FilterField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+  options,
+}: FilterFieldProps) {
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      {type === "select" ? (
+        <Select
+          value={value || ALL_VALUE}
+          onValueChange={(v) => onChange(v === ALL_VALUE ? "" : v)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder={placeholder || "All"} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL_VALUE}>{placeholder || "All"}</SelectItem>
+            {options?.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      ) : (
+        <Input
+          type={type}
+          value={value || ""}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+        />
+      )}
+    </div>
+  );
+}
 
 interface AdvancedFilterProps {
   open: boolean;
@@ -58,6 +201,10 @@ export function AdvancedFilter({
 
   const handleReset = () => {
     setFilters({});
+  };
+
+  const updateFilter = (name: string, value: string) => {
+    setFilters((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleApply = () => {
@@ -97,335 +244,154 @@ export function AdvancedFilter({
             {/* Basic Info Tab */}
             <TabsContent value="basic" className="mt-0 space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <Label>Surname</Label>
-                  <Input
-                    value={filters.surname || ""}
-                    onChange={(e) =>
-                      setFilters({ ...filters, surname: e.target.value })
-                    }
-                    placeholder="Search by surname"
-                  />
-                </div>
-                <div>
-                  <Label>First Name</Label>
-                  <Input
-                    value={filters.firstName || ""}
-                    onChange={(e) =>
-                      setFilters({ ...filters, firstName: e.target.value })
-                    }
-                    placeholder="Search by first name"
-                  />
-                </div>
-
-                <div>
-                  <Label>Age Min</Label>
-                  <Input
-                    type="number"
-                    value={filters.ageMin || ""}
-                    onChange={(e) =>
-                      setFilters({ ...filters, ageMin: e.target.value })
-                    }
-                    placeholder="e.g., 18"
-                  />
-                </div>
-                <div>
-                  <Label>Age Max</Label>
-                  <Input
-                    type="number"
-                    value={filters.ageMax || ""}
-                    onChange={(e) =>
-                      setFilters({ ...filters, ageMax: e.target.value })
-                    }
-                    placeholder="e.g., 65"
-                  />
-                </div>
-
-                <div>
-                  <Label>Sex</Label>
-                  <Select
-                    value={filters.sex || ALL_VALUE}
-                    onValueChange={(value) =>
-                      setFilters({ ...filters, sex: value === ALL_VALUE ? "" : value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="All" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={ALL_VALUE}>All</SelectItem>
-                      <SelectItem value="MALE">Male</SelectItem>
-                      <SelectItem value="FEMALE">Female</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label>Civil Status</Label>
-                  <Select
-                    value={filters.civilStatus || ALL_VALUE}
-                    onValueChange={(value) =>
-                      setFilters({
-                        ...filters,
-                        civilStatus: value === ALL_VALUE ? "" : value,
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="All" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={ALL_VALUE}>All</SelectItem>
-                      <SelectItem value="SINGLE">Single</SelectItem>
-                      <SelectItem value="MARRIED">Married</SelectItem>
-                      <SelectItem value="WIDOWED">Widowed</SelectItem>
-                      <SelectItem value="SEPARATED">Separated</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label>Barangay</Label>
-                  <Input
-                    value={filters.barangay || ""}
-                    onChange={(e) =>
-                      setFilters({ ...filters, barangay: e.target.value })
-                    }
-                    placeholder="Search by barangay"
-                  />
-                </div>
-                <div>
-                  <Label>City</Label>
-                  <Input
-                    value={filters.city || ""}
-                    onChange={(e) =>
-                      setFilters({ ...filters, city: e.target.value })
-                    }
-                    placeholder="Search by city"
-                  />
-                </div>
-                <div>
-                  <Label>Province</Label>
-                  <Input
-                    value={filters.province || ""}
-                    onChange={(e) =>
-                      setFilters({ ...filters, province: e.target.value })
-                    }
-                    placeholder="Search by province"
-                  />
-                </div>
-                <div>
-                  <Label>Contact Number</Label>
-                  <Input
-                    value={filters.contactNumber || ""}
-                    onChange={(e) =>
-                      setFilters({ ...filters, contactNumber: e.target.value })
-                    }
-                    placeholder="Search by contact"
-                  />
-                </div>
-                <div>
-                  <Label>Email</Label>
-                  <Input
-                    value={filters.email || ""}
-                    onChange={(e) =>
-                      setFilters({ ...filters, email: e.target.value })
-                    }
-                    placeholder="Search by email"
-                  />
-                </div>
+                <FilterField
+                  label="Surname"
+                  value={filters.surname}
+                  onChange={(v) => updateFilter("surname", v)}
+                  placeholder="Search by surname"
+                />
+                <FilterField
+                  label="First Name"
+                  value={filters.firstName}
+                  onChange={(v) => updateFilter("firstName", v)}
+                  placeholder="Search by first name"
+                />
+                <FilterField
+                  label="Age Min"
+                  type="number"
+                  value={filters.ageMin}
+                  onChange={(v) => updateFilter("ageMin", v)}
+                  placeholder="e.g., 18"
+                />
+                <FilterField
+                  label="Age Max"
+                  type="number"
+                  value={filters.ageMax}
+                  onChange={(v) => updateFilter("ageMax", v)}
+                  placeholder="e.g., 65"
+                />
+                <FilterField
+                  label="Sex"
+                  type="select"
+                  options={SEX_OPTIONS}
+                  value={filters.sex}
+                  onChange={(v) => updateFilter("sex", v)}
+                />
+                <FilterField
+                  label="Civil Status"
+                  type="select"
+                  options={CIVIL_STATUS_OPTIONS}
+                  value={filters.civilStatus}
+                  onChange={(v) => updateFilter("civilStatus", v)}
+                />
+                <FilterField
+                  label="Barangay"
+                  value={filters.barangay}
+                  onChange={(v) => updateFilter("barangay", v)}
+                  placeholder="Search by barangay"
+                />
+                <FilterField
+                  label="City"
+                  value={filters.city}
+                  onChange={(v) => updateFilter("city", v)}
+                  placeholder="Search by city"
+                />
+                <FilterField
+                  label="Province"
+                  value={filters.province}
+                  onChange={(v) => updateFilter("province", v)}
+                  placeholder="Search by province"
+                />
+                <FilterField
+                  label="Contact Number"
+                  value={filters.contactNumber}
+                  onChange={(v) => updateFilter("contactNumber", v)}
+                  placeholder="Search by contact"
+                />
+                <FilterField
+                  label="Email"
+                  value={filters.email}
+                  onChange={(v) => updateFilter("email", v)}
+                  placeholder="Search by email"
+                />
               </div>
             </TabsContent>
 
             {/* Employment Tab */}
             <TabsContent value="employment" className="mt-0 space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <Label>Employment Status</Label>
-                  <Select
-                    value={filters.employmentStatus || ALL_VALUE}
-                    onValueChange={(value) =>
-                      setFilters({
-                        ...filters,
-                        employmentStatus: value === ALL_VALUE ? "" : value,
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="All" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={ALL_VALUE}>All</SelectItem>
-                      <SelectItem value="EMPLOYED">Employed</SelectItem>
-                      <SelectItem value="UNEMPLOYED">Unemployed</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label>Employed Type</Label>
-                  <Select
-                    value={filters.employedType || ALL_VALUE}
-                    onValueChange={(value) =>
-                      setFilters({
-                        ...filters,
-                        employedType: value === ALL_VALUE ? "" : value,
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="All" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={ALL_VALUE}>All</SelectItem>
-                      <SelectItem value="WAGE">Wage Employed</SelectItem>
-                      <SelectItem value="SELF_EMPLOYED">Self-Employed</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label>Unemployed Reason</Label>
-                  <Select
-                    value={filters.unemployedReason || ALL_VALUE}
-                    onValueChange={(value) =>
-                      setFilters({
-                        ...filters,
-                        unemployedReason: value === ALL_VALUE ? "" : value,
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="All" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={ALL_VALUE}>All</SelectItem>
-                      <SelectItem value="NEW_ENTRANT">New Entrant</SelectItem>
-                      <SelectItem value="FINISHED_CONTRACT">Finished Contract</SelectItem>
-                      <SelectItem value="RESIGNED">Resigned</SelectItem>
-                      <SelectItem value="RETIRED">Retired</SelectItem>
-                      <SelectItem value="TERMINATED_LOCAL">Terminated (Local)</SelectItem>
-                      <SelectItem value="TERMINATED_ABROAD">Terminated (Abroad)</SelectItem>
-                      <SelectItem value="TERMINATED_CALAMITY">Terminated (Calamity)</SelectItem>
-                      <SelectItem value="OTHERS">Others</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label>OFW Status</Label>
-                  <Select
-                    value={filters.isOfw || ALL_VALUE}
-                    onValueChange={(value) =>
-                      setFilters({
-                        ...filters,
-                        isOfw: value === ALL_VALUE ? "" : value,
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="All" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={ALL_VALUE}>All</SelectItem>
-                      <SelectItem value="true">Yes</SelectItem>
-                      <SelectItem value="false">No</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label>4Ps Beneficiary</Label>
-                  <Select
-                    value={filters.is4PsBeneficiary || ALL_VALUE}
-                    onValueChange={(value) =>
-                      setFilters({
-                        ...filters,
-                        is4PsBeneficiary: value === ALL_VALUE ? "" : value,
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="All" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={ALL_VALUE}>All</SelectItem>
-                      <SelectItem value="true">Yes</SelectItem>
-                      <SelectItem value="false">No</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label>OFW Country</Label>
-                  <Input
-                    value={filters.ofwCountry || ""}
-                    onChange={(e) =>
-                      setFilters({ ...filters, ofwCountry: e.target.value })
-                    }
-                    placeholder="Search by country"
-                  />
-                </div>
+                <FilterField
+                  label="Employment Status"
+                  type="select"
+                  options={EMPLOYMENT_STATUS_OPTIONS}
+                  value={filters.employmentStatus}
+                  onChange={(v) => updateFilter("employmentStatus", v)}
+                />
+                <FilterField
+                  label="Employed Type"
+                  type="select"
+                  options={EMPLOYED_TYPE_OPTIONS}
+                  value={filters.employedType}
+                  onChange={(v) => updateFilter("employedType", v)}
+                />
+                <FilterField
+                  label="Unemployed Reason"
+                  type="select"
+                  options={UNEMPLOYED_REASON_OPTIONS}
+                  value={filters.unemployedReason}
+                  onChange={(v) => updateFilter("unemployedReason", v)}
+                />
+                <FilterField
+                  label="OFW Status"
+                  type="select"
+                  options={YES_NO_OPTIONS}
+                  value={filters.isOfw}
+                  onChange={(v) => updateFilter("isOfw", v)}
+                />
+                <FilterField
+                  label="4Ps Beneficiary"
+                  type="select"
+                  options={YES_NO_OPTIONS}
+                  value={filters.is4PsBeneficiary}
+                  onChange={(v) => updateFilter("is4PsBeneficiary", v)}
+                />
+                <FilterField
+                  label="OFW Country"
+                  value={filters.ofwCountry}
+                  onChange={(v) => updateFilter("ofwCountry", v)}
+                  placeholder="Search by country"
+                />
               </div>
             </TabsContent>
 
             {/* Job Preference Tab */}
             <TabsContent value="job_preference" className="mt-0 space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <Label>Employment Type</Label>
-                  <Select
-                    value={filters.employmentType || ALL_VALUE}
-                    onValueChange={(value) =>
-                      setFilters({
-                        ...filters,
-                        employmentType: value === ALL_VALUE ? "" : value,
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="All" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={ALL_VALUE}>All</SelectItem>
-                      <SelectItem value="PART_TIME">Part Time</SelectItem>
-                      <SelectItem value="FULL_TIME">Full Time</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label>Preferred Occupation</Label>
-                  <Input
-                    value={filters.occupation1 || ""}
-                    onChange={(e) =>
-                      setFilters({ ...filters, occupation1: e.target.value })
-                    }
-                    placeholder="Search by occupation"
-                  />
-                </div>
-
-                <div>
-                  <Label>Local Location</Label>
-                  <Input
-                    value={filters.localLocation || ""}
-                    onChange={(e) =>
-                      setFilters({ ...filters, localLocation: e.target.value })
-                    }
-                    placeholder="Search by location"
-                  />
-                </div>
-
-                <div>
-                  <Label>Overseas Location</Label>
-                  <Input
-                    value={filters.overseasLocation || ""}
-                    onChange={(e) =>
-                      setFilters({ ...filters, overseasLocation: e.target.value })
-                    }
-                    placeholder="Search by location"
-                  />
-                </div>
+                <FilterField
+                  label="Employment Type"
+                  type="select"
+                  options={EMPLOYMENT_TYPE_OPTIONS}
+                  value={filters.employmentType}
+                  onChange={(v) => updateFilter("employmentType", v)}
+                />
+                <FilterField
+                  label="Preferred Occupation"
+                  value={filters.occupation1}
+                  onChange={(v) => updateFilter("occupation1", v)}
+                  placeholder="Search by occupation"
+                />
+                <FilterField
+                  label="Local Location"
+                  value={filters.localLocation}
+                  onChange={(v) => updateFilter("localLocation", v)}
+                  placeholder="Search by location"
+                />
+                <FilterField
+                  label="Overseas Location"
+                  value={filters.overseasLocation}
+                  onChange={(v) => updateFilter("overseasLocation", v)}
+                  placeholder="Search by location"
+                />
               </div>
             </TabsContent>
 
@@ -439,53 +405,22 @@ export function AdvancedFilter({
                   </p>
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <Label>English</Label>
-                    <Select
-                      value={filters.englishProficiency || ALL_VALUE}
-                      onValueChange={(value) =>
-                        setFilters({
-                          ...filters,
-                          englishProficiency: value === ALL_VALUE ? "" : value,
-                        })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Any level" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={ALL_VALUE}>Any level</SelectItem>
-                        <SelectItem value="read">Can Read</SelectItem>
-                        <SelectItem value="write">Can Write</SelectItem>
-                        <SelectItem value="speak">Can Speak</SelectItem>
-                        <SelectItem value="understand">Can Understand</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label>Filipino</Label>
-                    <Select
-                      value={filters.filipinoProficiency || ALL_VALUE}
-                      onValueChange={(value) =>
-                        setFilters({
-                          ...filters,
-                          filipinoProficiency: value === ALL_VALUE ? "" : value,
-                        })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Any level" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={ALL_VALUE}>Any level</SelectItem>
-                        <SelectItem value="read">Can Read</SelectItem>
-                        <SelectItem value="write">Can Write</SelectItem>
-                        <SelectItem value="speak">Can Speak</SelectItem>
-                        <SelectItem value="understand">Can Understand</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <FilterField
+                    label="English"
+                    type="select"
+                    options={PROFICIENCY_OPTIONS}
+                    value={filters.englishProficiency}
+                    onChange={(v) => updateFilter("englishProficiency", v)}
+                    placeholder="Any level"
+                  />
+                  <FilterField
+                    label="Filipino"
+                    type="select"
+                    options={PROFICIENCY_OPTIONS}
+                    value={filters.filipinoProficiency}
+                    onChange={(v) => updateFilter("filipinoProficiency", v)}
+                    placeholder="Any level"
+                  />
                 </div>
               </div>
             </TabsContent>
@@ -493,258 +428,121 @@ export function AdvancedFilter({
             {/* Education Tab */}
             <TabsContent value="education" className="mt-0 space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <Label>Currently in School</Label>
-                  <Select
-                    value={filters.currentlyInSchool || ALL_VALUE}
-                    onValueChange={(value) =>
-                      setFilters({
-                        ...filters,
-                        currentlyInSchool: value === ALL_VALUE ? "" : value,
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="All" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={ALL_VALUE}>All</SelectItem>
-                      <SelectItem value="true">Yes</SelectItem>
-                      <SelectItem value="false">No</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label>Tertiary Course</Label>
-                  <Input
-                    value={filters.tertiaryCourse || ""}
-                    onChange={(e) =>
-                      setFilters({ ...filters, tertiaryCourse: e.target.value })
-                    }
-                    placeholder="Search by course"
-                  />
-                </div>
-
-                <div>
-                  <Label>Senior High Strand</Label>
-                  <Input
-                    value={filters.seniorHighStrand || ""}
-                    onChange={(e) =>
-                      setFilters({ ...filters, seniorHighStrand: e.target.value })
-                    }
-                    placeholder="Search by strand"
-                  />
-                </div>
-
-                <div>
-                  <Label>Graduate Course</Label>
-                  <Input
-                    value={filters.graduateCourse || ""}
-                    onChange={(e) =>
-                      setFilters({ ...filters, graduateCourse: e.target.value })
-                    }
-                    placeholder="Search by course"
-                  />
-                </div>
+                <FilterField
+                  label="Currently in School"
+                  type="select"
+                  options={YES_NO_OPTIONS}
+                  value={filters.currentlyInSchool}
+                  onChange={(v) => updateFilter("currentlyInSchool", v)}
+                />
+                <FilterField
+                  label="Tertiary Course"
+                  value={filters.tertiaryCourse}
+                  onChange={(v) => updateFilter("tertiaryCourse", v)}
+                  placeholder="Search by course"
+                />
+                <FilterField
+                  label="Senior High Strand"
+                  value={filters.seniorHighStrand}
+                  onChange={(v) => updateFilter("seniorHighStrand", v)}
+                  placeholder="Search by strand"
+                />
+                <FilterField
+                  label="Graduate Course"
+                  value={filters.graduateCourse}
+                  onChange={(v) => updateFilter("graduateCourse", v)}
+                  placeholder="Search by course"
+                />
               </div>
             </TabsContent>
 
             {/* Training Tab */}
             <TabsContent value="training" className="mt-0 space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <Label>Training Course</Label>
-                  <Input
-                    value={filters.trainingCourse || ""}
-                    onChange={(e) =>
-                      setFilters({ ...filters, trainingCourse: e.target.value })
-                    }
-                    placeholder="Search by training course"
-                  />
-                </div>
-
-                <div>
-                  <Label>Training Institution</Label>
-                  <Input
-                    value={filters.trainingInstitution || ""}
-                    onChange={(e) =>
-                      setFilters({ ...filters, trainingInstitution: e.target.value })
-                    }
-                    placeholder="Search by institution"
-                  />
-                </div>
-
-                <div>
-                  <Label>Has Certificates</Label>
-                  <Select
-                    value={filters.hasCertificates || ALL_VALUE}
-                    onValueChange={(value) =>
-                      setFilters({
-                        ...filters,
-                        hasCertificates: value === ALL_VALUE ? "" : value,
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="All" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={ALL_VALUE}>All</SelectItem>
-                      <SelectItem value="NC_I">NC I</SelectItem>
-                      <SelectItem value="NC_II">NC II</SelectItem>
-                      <SelectItem value="NC_III">NC III</SelectItem>
-                      <SelectItem value="NC_IV">NC IV</SelectItem>
-                      <SelectItem value="COC">COC</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <FilterField
+                  label="Training Course"
+                  value={filters.trainingCourse}
+                  onChange={(v) => updateFilter("trainingCourse", v)}
+                  placeholder="Search by training course"
+                />
+                <FilterField
+                  label="Training Institution"
+                  value={filters.trainingInstitution}
+                  onChange={(v) => updateFilter("trainingInstitution", v)}
+                  placeholder="Search by institution"
+                />
+                <FilterField
+                  label="Has Certificates"
+                  type="select"
+                  options={CERTIFICATE_OPTIONS}
+                  value={filters.hasCertificates}
+                  onChange={(v) => updateFilter("hasCertificates", v)}
+                />
               </div>
             </TabsContent>
 
             {/* Eligibility Tab */}
             <TabsContent value="eligibility" className="mt-0 space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <Label>Civil Service Exam</Label>
-                  <Input
-                    value={filters.civilServiceExam || ""}
-                    onChange={(e) =>
-                      setFilters({ ...filters, civilServiceExam: e.target.value })
-                    }
-                    placeholder="Search by exam name"
-                  />
-                </div>
-
-                <div>
-                  <Label>Professional License</Label>
-                  <Input
-                    value={filters.professionalLicense || ""}
-                    onChange={(e) =>
-                      setFilters({ ...filters, professionalLicense: e.target.value })
-                    }
-                    placeholder="Search by license"
-                  />
-                </div>
+                <FilterField
+                  label="Civil Service Exam"
+                  value={filters.civilServiceExam}
+                  onChange={(v) => updateFilter("civilServiceExam", v)}
+                  placeholder="Search by exam name"
+                />
+                <FilterField
+                  label="Professional License"
+                  value={filters.professionalLicense}
+                  onChange={(v) => updateFilter("professionalLicense", v)}
+                  placeholder="Search by license"
+                />
               </div>
             </TabsContent>
 
             {/* Work Experience Tab */}
             <TabsContent value="work_experience" className="mt-0 space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <Label>Company Name</Label>
-                  <Input
-                    value={filters.companyName || ""}
-                    onChange={(e) =>
-                      setFilters({ ...filters, companyName: e.target.value })
-                    }
-                    placeholder="Search by company"
-                  />
-                </div>
-
-                <div>
-                  <Label>Position</Label>
-                  <Input
-                    value={filters.position || ""}
-                    onChange={(e) =>
-                      setFilters({ ...filters, position: e.target.value })
-                    }
-                    placeholder="Search by position"
-                  />
-                </div>
-
-                <div>
-                  <Label>Work Employment Status</Label>
-                  <Select
-                    value={filters.workEmploymentStatus || ALL_VALUE}
-                    onValueChange={(value) =>
-                      setFilters({
-                        ...filters,
-                        workEmploymentStatus: value === ALL_VALUE ? "" : value,
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="All" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={ALL_VALUE}>All</SelectItem>
-                      <SelectItem value="PERMANENT">Permanent</SelectItem>
-                      <SelectItem value="CONTRACTUAL">Contractual</SelectItem>
-                      <SelectItem value="PART_TIME">Part Time</SelectItem>
-                      <SelectItem value="PROBATIONARY">Probationary</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <FilterField
+                  label="Company Name"
+                  value={filters.companyName}
+                  onChange={(v) => updateFilter("companyName", v)}
+                  placeholder="Search by company"
+                />
+                <FilterField
+                  label="Position"
+                  value={filters.position}
+                  onChange={(v) => updateFilter("position", v)}
+                  placeholder="Search by position"
+                />
+                <FilterField
+                  label="Work Employment Status"
+                  type="select"
+                  options={WORK_EMPLOYMENT_STATUS_OPTIONS}
+                  value={filters.workEmploymentStatus}
+                  onChange={(v) => updateFilter("workEmploymentStatus", v)}
+                />
               </div>
             </TabsContent>
 
             {/* Skills Tab */}
             <TabsContent value="skills" className="mt-0 space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <Label>Skill Type</Label>
-                  <Select
-                    value={filters.skillType || ALL_VALUE}
-                    onValueChange={(value) =>
-                      setFilters({
-                        ...filters,
-                        skillType: value === ALL_VALUE ? "" : value,
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="All skills" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={ALL_VALUE}>All skills</SelectItem>
-                      <SelectItem value="auto_mechanic">Auto Mechanic</SelectItem>
-                      <SelectItem value="beautician">Beautician</SelectItem>
-                      <SelectItem value="carpentry_work">Carpentry Work</SelectItem>
-                      <SelectItem value="computer_literate">Computer Literate</SelectItem>
-                      <SelectItem value="domestic_chores">Domestic Chores</SelectItem>
-                      <SelectItem value="driver">Driver</SelectItem>
-                      <SelectItem value="electrician">Electrician</SelectItem>
-                      <SelectItem value="embroidery">Embroidery</SelectItem>
-                      <SelectItem value="gardening">Gardening</SelectItem>
-                      <SelectItem value="masonry">Masonry</SelectItem>
-                      <SelectItem value="painter_artist">Painter/Artist</SelectItem>
-                      <SelectItem value="painting_jobs">Painting Jobs</SelectItem>
-                      <SelectItem value="photography">Photography</SelectItem>
-                      <SelectItem value="plumbing">Plumbing</SelectItem>
-                      <SelectItem value="sewing_dresses">Sewing Dresses</SelectItem>
-                      <SelectItem value="stenography">Stenography</SelectItem>
-                      <SelectItem value="tailoring">Tailoring</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label>PESO Referral Program</Label>
-                  <Select
-                    value={filters.referralProgram || ALL_VALUE}
-                    onValueChange={(value) =>
-                      setFilters({
-                        ...filters,
-                        referralProgram: value === ALL_VALUE ? "" : value,
-                      })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="All programs" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={ALL_VALUE}>All programs</SelectItem>
-                      <SelectItem value="spes">SPES</SelectItem>
-                      <SelectItem value="gip">GIP</SelectItem>
-                      <SelectItem value="tupad">TUPAD</SelectItem>
-                      <SelectItem value="jobstart">JobStart</SelectItem>
-                      <SelectItem value="dileep">DILEEP</SelectItem>
-                      <SelectItem value="tesda_training">TESDA Training</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <FilterField
+                  label="Skill Type"
+                  type="select"
+                  options={SKILL_TYPE_OPTIONS}
+                  value={filters.skillType}
+                  onChange={(v) => updateFilter("skillType", v)}
+                  placeholder="All skills"
+                />
+                <FilterField
+                  label="PESO Referral Program"
+                  type="select"
+                  options={REFERRAL_PROGRAM_OPTIONS}
+                  value={filters.referralProgram}
+                  onChange={(v) => updateFilter("referralProgram", v)}
+                  placeholder="All programs"
+                />
               </div>
             </TabsContent>
             </ScrollArea>
