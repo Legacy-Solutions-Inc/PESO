@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/accordion";
 import type { JobseekerFullRecord } from "../../actions";
 
+import type { JobseekerRegistrationData } from "@/lib/validations/jobseeker-registration";
 function formatDate(value: string | undefined): string {
   if (!value) return "—";
   try {
@@ -78,7 +79,7 @@ function formatEmploymentStatus(s: string | undefined): string {
   return s === "EMPLOYED" ? "Employed" : s === "UNEMPLOYED" ? "Unemployed" : s;
 }
 
-function disabilitySummary(disability: Record<string, unknown> | undefined): string {
+function disabilitySummary(disability: JobseekerRegistrationData["personalInfo"]["disability"] | undefined): string {
   if (!disability) return "None";
   const parts: string[] = [];
   if (disability.visual) parts.push("Visual");
@@ -86,7 +87,7 @@ function disabilitySummary(disability: Record<string, unknown> | undefined): str
   if (disability.speech) parts.push("Speech");
   if (disability.physical) parts.push("Physical");
   if (disability.mental) parts.push("Mental");
-  const others = disability.others as string | undefined;
+  const others = disability.others;
   if (others) parts.push(others);
   return parts.length ? parts.join(", ") : "None";
 }
@@ -119,15 +120,15 @@ interface JobseekerProfileViewProps {
 
 export function JobseekerProfileView({ record }: JobseekerProfileViewProps) {
   const personalInfo = record.personal_info ?? {};
-  const address = (personalInfo.address as Record<string, string> | undefined) ?? {};
+  const address = personalInfo.address ?? {};
   const employment = record.employment ?? {};
   const jobPref = record.job_preference ?? {};
   const education = record.education ?? {};
   const training = record.training ?? {};
   const eligibility = record.eligibility ?? {};
   const skills = record.skills ?? {};
-  const otherSkills = (skills.otherSkills as Record<string, boolean | string> | undefined) ?? {};
-  const certification = (skills.certification as Record<string, unknown> | undefined) ?? {};
+  const otherSkills = skills.otherSkills ?? {};
+  const certification = skills.certification ?? {};
   const fullName = [
     personalInfo.surname,
     personalInfo.firstName,
@@ -135,7 +136,7 @@ export function JobseekerProfileView({ record }: JobseekerProfileViewProps) {
   ]
     .filter(Boolean)
     .join(" ");
-  const age = computeAge(personalInfo.dateOfBirth as string | undefined);
+  const age = computeAge(personalInfo.dateOfBirth);
   const addressLine = [address.houseStreet, address.barangay, address.city, address.province]
     .filter(Boolean)
     .join(", ") || "—";
@@ -184,8 +185,8 @@ export function JobseekerProfileView({ record }: JobseekerProfileViewProps) {
             <div className="flex flex-wrap gap-2">
               {[
                 { icon: Cake, label: age != null ? `${age} years old` : "—" },
-                { icon: UserIcon, label: formatSex(personalInfo.sex as string | undefined) },
-                { icon: Heart, label: formatCivilStatus(personalInfo.civilStatus as string | undefined) },
+                { icon: UserIcon, label: formatSex(personalInfo.sex) },
+                { icon: Heart, label: formatCivilStatus(personalInfo.civilStatus) },
                 { icon: MapPin, label: shortAddress },
               ].map(({ icon: Icon, label }) => (
                 <span
@@ -251,7 +252,7 @@ export function JobseekerProfileView({ record }: JobseekerProfileViewProps) {
                   Date of Birth
                 </p>
                 <p className="text-sm font-medium text-slate-900 dark:text-slate-200">
-                  {formatDate(personalInfo.dateOfBirth as string | undefined)}
+                  {formatDate(personalInfo.dateOfBirth)}
                 </p>
               </div>
               <div>
@@ -259,7 +260,7 @@ export function JobseekerProfileView({ record }: JobseekerProfileViewProps) {
                   Place of Birth
                 </p>
                 <p className="text-sm font-medium text-slate-900 dark:text-slate-200">
-                  {(personalInfo.placeOfBirth as string) || "—"}
+                  {(personalInfo.placeOfBirth) || "—"}
                 </p>
               </div>
               <div>
@@ -267,7 +268,7 @@ export function JobseekerProfileView({ record }: JobseekerProfileViewProps) {
                   Religion
                 </p>
                 <p className="text-sm font-medium text-slate-900 dark:text-slate-200">
-                  {(personalInfo.religion as string) || "—"}
+                  {(personalInfo.religion) || "—"}
                 </p>
               </div>
               <div>
@@ -275,7 +276,7 @@ export function JobseekerProfileView({ record }: JobseekerProfileViewProps) {
                   Civil Status
                 </p>
                 <p className="text-sm font-medium text-slate-900 dark:text-slate-200">
-                  {formatCivilStatus(personalInfo.civilStatus as string | undefined)}
+                  {formatCivilStatus(personalInfo.civilStatus)}
                 </p>
               </div>
               <div>
@@ -283,7 +284,7 @@ export function JobseekerProfileView({ record }: JobseekerProfileViewProps) {
                   TIN Number
                 </p>
                 <p className="font-mono text-sm font-medium text-slate-900 dark:text-slate-200">
-                  {(personalInfo.tin as string) || "—"}
+                  {(personalInfo.tin) || "—"}
                 </p>
               </div>
               <div>
@@ -291,7 +292,7 @@ export function JobseekerProfileView({ record }: JobseekerProfileViewProps) {
                   Height
                 </p>
                 <p className="text-sm font-medium text-slate-900 dark:text-slate-200">
-                  {(personalInfo.height as string) || "—"}
+                  {(personalInfo.height) || "—"}
                 </p>
               </div>
               <div className="col-span-1 md:col-span-2">
@@ -299,7 +300,7 @@ export function JobseekerProfileView({ record }: JobseekerProfileViewProps) {
                   Disability
                 </p>
                 <p className="text-sm font-medium text-slate-900 dark:text-slate-200">
-                  {disabilitySummary(personalInfo.disability as Record<string, unknown> | undefined)}
+                  {disabilitySummary(personalInfo.disability)}
                 </p>
               </div>
             </div>
@@ -327,7 +328,7 @@ export function JobseekerProfileView({ record }: JobseekerProfileViewProps) {
                   Mobile Number
                 </p>
                 <p className="font-mono text-sm font-medium text-slate-900 dark:text-slate-200">
-                  {(personalInfo.contactNumber as string) || "—"}
+                  {(personalInfo.contactNumber) || "—"}
                 </p>
               </div>
               <div>
@@ -335,7 +336,7 @@ export function JobseekerProfileView({ record }: JobseekerProfileViewProps) {
                   Email Address
                 </p>
                 <p className="text-sm font-medium text-dashboard-primary underline underline-offset-2">
-                  {(personalInfo.email as string) || "—"}
+                  {(personalInfo.email) || "—"}
                 </p>
               </div>
               <div className="col-span-full">
@@ -377,7 +378,7 @@ export function JobseekerProfileView({ record }: JobseekerProfileViewProps) {
                       : "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400"
                   }`}
                 >
-                  {formatEmploymentStatus(employment.status as string | undefined)}
+                  {formatEmploymentStatus(employment.status)}
                 </span>
               </div>
               <div>
@@ -413,7 +414,7 @@ export function JobseekerProfileView({ record }: JobseekerProfileViewProps) {
                   Unemployed Reason
                 </p>
                 <p className="text-sm font-medium text-slate-900 dark:text-slate-200">
-                  {(employment.unemployedReason as string) || "—"}
+                  {(employment.unemployedReason) || "—"}
                 </p>
               </div>
               <div>
@@ -421,7 +422,7 @@ export function JobseekerProfileView({ record }: JobseekerProfileViewProps) {
                   Job Search Duration
                 </p>
                 <p className="text-sm font-medium text-slate-900 dark:text-slate-200">
-                  {(employment.jobSearchDuration as string) || "—"}
+                  {(employment.jobSearchDuration) || "—"}
                 </p>
               </div>
             </div>
@@ -470,7 +471,7 @@ export function JobseekerProfileView({ record }: JobseekerProfileViewProps) {
                     Preferred employment type
                   </p>
                   <p className="text-sm font-medium text-slate-900 dark:text-slate-200">
-                    {formatEmploymentType(jobPref.employmentType as string | undefined)}
+                    {formatEmploymentType(jobPref.employmentType)}
                   </p>
                 </div>
                 <div>
@@ -521,33 +522,33 @@ export function JobseekerProfileView({ record }: JobseekerProfileViewProps) {
               {[
                 {
                   level: "Tertiary",
-                  course: (education.tertiary as Record<string, string> | undefined)?.course,
-                  yearGraduated: (education.tertiary as Record<string, string> | undefined)?.yearGraduated,
-                  yearLastAttended: (education.tertiary as Record<string, string> | undefined)?.yearLastAttended,
+                  course: education.tertiary?.course,
+                  yearGraduated: education.tertiary?.yearGraduated,
+                  yearLastAttended: education.tertiary?.yearLastAttended,
                 },
                 {
                   level: "Senior High",
-                  course: (education.seniorHigh as Record<string, string> | undefined)?.strand,
-                  yearGraduated: (education.seniorHigh as Record<string, string> | undefined)?.yearGraduated,
-                  yearLastAttended: (education.seniorHigh as Record<string, string> | undefined)?.yearLastAttended,
+                  course: education.seniorHigh?.strand,
+                  yearGraduated: education.seniorHigh?.yearGraduated,
+                  yearLastAttended: education.seniorHigh?.yearLastAttended,
                 },
                 {
                   level: "Secondary",
                   course: undefined,
-                  yearGraduated: (education.secondary as Record<string, string> | undefined)?.yearGraduated,
-                  yearLastAttended: (education.secondary as Record<string, string> | undefined)?.yearLastAttended,
+                  yearGraduated: education.secondary?.yearGraduated,
+                  yearLastAttended: education.secondary?.yearLastAttended,
                 },
                 {
                   level: "Elementary",
                   course: undefined,
-                  yearGraduated: (education.elementary as Record<string, string> | undefined)?.yearGraduated,
-                  yearLastAttended: (education.elementary as Record<string, string> | undefined)?.yearLastAttended,
+                  yearGraduated: education.elementary?.yearGraduated,
+                  yearLastAttended: education.elementary?.yearLastAttended,
                 },
                 {
                   level: "Graduate",
-                  course: (education.graduate as Record<string, string> | undefined)?.course,
-                  yearGraduated: (education.graduate as Record<string, string> | undefined)?.yearGraduated,
-                  yearLastAttended: (education.graduate as Record<string, string> | undefined)?.yearLastAttended,
+                  course: education.graduate?.course,
+                  yearGraduated: education.graduate?.yearGraduated,
+                  yearLastAttended: education.graduate?.yearLastAttended,
                 },
               ].map(
                 (item, i) =>
@@ -568,11 +569,11 @@ export function JobseekerProfileView({ record }: JobseekerProfileViewProps) {
                     </div>
                   )
               )}
-              {!(education as Record<string, unknown>).tertiary &&
-                !(education as Record<string, unknown>).seniorHigh &&
-                !(education as Record<string, unknown>).secondary &&
-                !(education as Record<string, unknown>).elementary &&
-                !(education as Record<string, unknown>).graduate && (
+              {!education.tertiary &&
+                !education.seniorHigh &&
+                !education.secondary &&
+                !education.elementary &&
+                !education.graduate && (
                   <p className="text-sm text-slate-500">No education recorded.</p>
                 )}
             </div>
@@ -601,7 +602,7 @@ export function JobseekerProfileView({ record }: JobseekerProfileViewProps) {
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {Object.entries(otherSkillsLabels()).map(([key, label]) =>
-                    otherSkills[key] ? (
+                    otherSkills[key as keyof typeof otherSkills] ? (
                       <span
                         key={key}
                         className="rounded-full border border-slate-200 bg-white px-3 py-1 text-sm shadow-sm text-slate-700 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200"
@@ -615,7 +616,7 @@ export function JobseekerProfileView({ record }: JobseekerProfileViewProps) {
                       {String(otherSkills.others)}
                     </span>
                   )}
-                  {!Object.keys(otherSkills).some((k) => otherSkills[k] && k !== "others") &&
+                  {!Object.keys(otherSkills).some((k) => otherSkills[k as keyof typeof otherSkills] && k !== "others") &&
                     !otherSkills.others && (
                       <span className="text-sm text-slate-500">None listed.</span>
                     )}
@@ -625,23 +626,23 @@ export function JobseekerProfileView({ record }: JobseekerProfileViewProps) {
                 <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
                   Training
                 </p>
-                {(training.entries as Array<Record<string, unknown>> | undefined)?.length ? (
+                {training.entries?.length ? (
                   <ul className="space-y-2">
-                    {(training.entries as Array<Record<string, unknown>>).map((entry, i) => (
+                    {training.entries.map((entry, i) => (
                       <li
                         key={i}
                         className="rounded-lg border border-slate-100 bg-white/40 p-3 dark:border-slate-700 dark:bg-slate-800/40"
                       >
                         <p className="font-medium text-slate-900 dark:text-white">
-                          {(entry.course as string) || "—"}
+                          {entry.course || "—"}
                         </p>
                         <p className="text-sm text-slate-600 dark:text-slate-400">
-                          {(entry.institution as string) && `${entry.institution}`}
-                          {(entry.hours as string) && ` • ${entry.hours} hrs`}
+                          {entry.institution && `${entry.institution}`}
+                          {entry.hours && ` • ${entry.hours} hrs`}
                         </p>
-                        {(entry.skillsAcquired as string) && (
+                        {entry.skillsAcquired && (
                           <p className="mt-1 text-sm text-slate-500">
-                            {entry.skillsAcquired as string}
+                            {entry.skillsAcquired}
                           </p>
                         )}
                       </li>
@@ -655,16 +656,16 @@ export function JobseekerProfileView({ record }: JobseekerProfileViewProps) {
                 <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
                   Eligibility / Licenses
                 </p>
-                {((eligibility.civilService as unknown[])?.length ||
-                  (eligibility.professionalLicense as unknown[])?.length) ? (
+                {(eligibility.civilService?.length ||
+                  eligibility.professionalLicense?.length) ? (
                   <div className="grid gap-2 md:grid-cols-2">
-                    {(eligibility.civilService as Array<Record<string, string>>)?.map((cs, i) => (
+                    {eligibility.civilService?.map((cs, i) => (
                       <div key={i} className="rounded border border-slate-100 p-2 dark:border-slate-700">
                         <p className="font-medium">{cs.name || "—"}</p>
                         <p className="text-xs text-slate-500">{cs.dateTaken || ""}</p>
                       </div>
                     ))}
-                    {(eligibility.professionalLicense as Array<Record<string, string>>)?.map((pl, i) => (
+                    {eligibility.professionalLicense?.map((pl, i) => (
                       <div key={i} className="rounded border border-slate-100 p-2 dark:border-slate-700">
                         <p className="font-medium">{pl.name || "—"}</p>
                         <p className="text-xs text-slate-500">Valid until: {pl.validUntil || "—"}</p>
@@ -675,13 +676,13 @@ export function JobseekerProfileView({ record }: JobseekerProfileViewProps) {
                   <p className="text-sm text-slate-500">None recorded.</p>
                 )}
               </div>
-              {(certification.signature as string) && (
+              {certification.signature && (
                 <div>
                   <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">
                     Certification
                   </p>
                   <p className="text-sm text-slate-700 dark:text-slate-300">
-                    Signed {formatDate(certification.dateSigned as string)}
+                    Signed {formatDate(certification.dateSigned)}
                   </p>
                 </div>
               )}
