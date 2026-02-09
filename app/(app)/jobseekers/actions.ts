@@ -244,51 +244,6 @@ export async function exportJobseekersCSV(
     }
 
     const supabase = await createClient();
-    // Build query without pagination (get all matching records)
-    let query = supabase.from("jobseekers").select("*");
-
-    // Apply same filters as getJobseekers
-    if (filters.search) {
-      query = query.or(
-        `surname.ilike.%${filters.search}%,first_name.ilike.%${filters.search}%`
-      );
-    }
-    if (filters.sex) query = query.eq("sex", filters.sex);
-    if (filters.employmentStatus)
-      query = query.eq("employment_status", filters.employmentStatus);
-    if (filters.city) query = query.ilike("city", `%${filters.city}%`);
-    if (filters.province) query = query.ilike("province", `%${filters.province}%`);
-    if (filters.isOfw !== undefined && filters.isOfw !== "")
-      query = query.eq("is_ofw", filters.isOfw === "true");
-    if (filters.is4PsBeneficiary !== undefined && filters.is4PsBeneficiary !== "")
-      query = query.eq("is_4ps_beneficiary", filters.is4PsBeneficiary === "true");
-
-    if (filters.civilStatus) {
-      query = query.eq("personal_info->>civilStatus", filters.civilStatus);
-    }
-    if (filters.barangay) {
-      query = query.ilike("personal_info->address->>barangay", `%${filters.barangay}%`);
-    }
-    if (filters.employedType) {
-      query = query.eq("employment->>employedType", filters.employedType);
-    }
-    if (filters.unemployedReason) {
-      query = query.eq("employment->>unemployedReason", filters.unemployedReason);
-    }
-    if (filters.employmentType) {
-      query = query.eq("job_preference->>employmentType", filters.employmentType);
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-      console.error("Export query error:", error);
-      return { error: error.message };
-    }
-
-    if (!data || data.length === 0) {
-      return { error: "No data to export" };
-    }
 
     // Type for database record structure
     interface DBJobseekerRecord {
@@ -528,243 +483,314 @@ export async function exportJobseekersCSV(
 
     const csvRows = [headers.join(",")];
 
-    data.forEach((record: DBJobseekerRecord) => {
-      const personalInfo = (record.personal_info || {}) as Record<string, unknown>;
-      const address = (personalInfo.address || {}) as Record<string, unknown>;
-      const disability = (personalInfo.disability || {}) as Record<string, unknown>;
-      const employment = (record.employment || {}) as Record<string, unknown>;
-      const selfEmployed = (employment.selfEmployedTypes || {}) as Record<string, unknown>;
-      const jobPref = (record.job_preference || {}) as Record<string, unknown>;
-      const lang = (record.language || {}) as Record<string, unknown>;
-      const edu = (record.education || {}) as Record<string, unknown>;
-      const training = (record.training || {}) as Record<string, unknown>;
-      const trainingEntries = (training.entries || []) as Array<Record<string, unknown>>;
-      const eligibility = (record.eligibility || {}) as Record<string, unknown>;
-      const civilService = (eligibility.civilService || []) as Array<Record<string, unknown>>;
-      const profLicense = (eligibility.professionalLicense || []) as Array<Record<string, unknown>>;
-      const workExp = (record.work_experience || {}) as Record<string, unknown>;
-      const workEntries = (workExp.entries || []) as Array<Record<string, unknown>>;
-      const skills = (record.skills || {}) as Record<string, unknown>;
-      const otherSkills = (skills.otherSkills || {}) as Record<string, unknown>;
-      const cert = (skills.certification || {}) as Record<string, unknown>;
-      const pesoUse = (skills.pesoUseOnly || {}) as Record<string, unknown>;
-      const referralPrograms = (pesoUse.referralPrograms || {}) as Record<string, unknown>;
+    // Pagination config
+    const PAGE_SIZE = 1000;
+    let page = 0;
+    let hasMore = true;
 
-      // Helper to escape CSV values
-      const escapeCSV = (val: unknown): string => {
-        if (val === null || val === undefined) return "";
-        const str = String(val);
-        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-          return `"${str.replace(/"/g, '""')}"`;
+    while (hasMore) {
+        // Build query fresh for each iteration
+        let query = supabase.from("jobseekers").select("*");
+
+        // Apply filters
+        if (filters.search) {
+          query = query.or(
+            `surname.ilike.%${filters.search}%,first_name.ilike.%${filters.search}%`
+          );
         }
-        return str;
-      };
+        if (filters.sex) query = query.eq("sex", filters.sex);
+        if (filters.employmentStatus)
+          query = query.eq("employment_status", filters.employmentStatus);
+        if (filters.city) query = query.ilike("city", `%${filters.city}%`);
+        if (filters.province) query = query.ilike("province", `%${filters.province}%`);
+        if (filters.isOfw !== undefined && filters.isOfw !== "")
+          query = query.eq("is_ofw", filters.isOfw === "true");
+        if (filters.is4PsBeneficiary !== undefined && filters.is4PsBeneficiary !== "")
+          query = query.eq("is_4ps_beneficiary", filters.is4PsBeneficiary === "true");
 
-      // Helper to get nested array values
-      const getTraining = (index: number): string[] => {
-        const t = trainingEntries[index] || {};
-        const certs = (t.certificates || {}) as Record<string, unknown>;
-        return [
-          escapeCSV(t.course),
-          escapeCSV(t.hours),
-          escapeCSV(t.institution),
-          escapeCSV(t.skillsAcquired),
-          certs.NC_I ? "Yes" : "No",
-          certs.NC_II ? "Yes" : "No",
-          certs.NC_III ? "Yes" : "No",
-          certs.NC_IV ? "Yes" : "No",
-          certs.COC ? "Yes" : "No",
-        ];
-      };
+        if (filters.civilStatus) {
+          query = query.eq("personal_info->>civilStatus", filters.civilStatus);
+        }
+        if (filters.barangay) {
+          query = query.ilike("personal_info->address->>barangay", `%${filters.barangay}%`);
+        }
+        if (filters.employedType) {
+          query = query.eq("employment->>employedType", filters.employedType);
+        }
+        if (filters.unemployedReason) {
+          query = query.eq("employment->>unemployedReason", filters.unemployedReason);
+        }
+        if (filters.employmentType) {
+          query = query.eq("job_preference->>employmentType", filters.employmentType);
+        }
 
-      const getCivilService = (index: number): string[] => {
-        const cs = civilService[index] || {};
-        return [escapeCSV(cs.name), escapeCSV(cs.dateTaken)];
-      };
+        // Add deterministic sort and pagination
+        query = query.order("id", { ascending: true });
+        const start = page * PAGE_SIZE;
+        const end = start + PAGE_SIZE - 1;
+        query = query.range(start, end);
 
-      const getProfLicense = (index: number): string[] => {
-        const pl = profLicense[index] || {};
-        return [escapeCSV(pl.name), escapeCSV(pl.validUntil)];
-      };
+        const { data, error } = await query;
 
-      const getWorkExp = (index: number): string[] => {
-        const we = workEntries[index] || {};
-        return [
-          escapeCSV(we.companyName),
-          escapeCSV(we.address),
-          escapeCSV(we.position),
-          escapeCSV(we.numberOfMonths),
-          escapeCSV(we.employmentStatus),
-        ];
-      };
+        if (error) {
+          console.error("Export query error:", error);
+          return { error: error.message };
+        }
 
-      const row = [
-        // Basic Info
-        record.id,
-        escapeCSV(personalInfo.surname),
-        escapeCSV(personalInfo.firstName),
-        escapeCSV(personalInfo.middleName),
-        escapeCSV(personalInfo.suffix),
-        escapeCSV(personalInfo.dateOfBirth),
-        escapeCSV(personalInfo.placeOfBirth),
-        escapeCSV(personalInfo.sex),
-        escapeCSV(personalInfo.religion),
-        escapeCSV(personalInfo.civilStatus),
-        escapeCSV(address.houseStreet),
-        escapeCSV(address.barangay),
-        escapeCSV(address.city),
-        escapeCSV(address.province),
-        escapeCSV(personalInfo.tin),
-        disability.visual ? "Yes" : "No",
-        disability.hearing ? "Yes" : "No",
-        disability.speech ? "Yes" : "No",
-        disability.physical ? "Yes" : "No",
-        disability.mental ? "Yes" : "No",
-        escapeCSV(disability.others),
-        escapeCSV(personalInfo.height),
-        escapeCSV(personalInfo.contactNumber),
-        escapeCSV(personalInfo.email),
-        
-        // Employment
-        escapeCSV(employment.status),
-        escapeCSV(employment.employedType),
-        selfEmployed.fisherman ? "Yes" : "No",
-        selfEmployed.vendor ? "Yes" : "No",
-        selfEmployed.homeBased ? "Yes" : "No",
-        selfEmployed.transport ? "Yes" : "No",
-        selfEmployed.domestic ? "Yes" : "No",
-        selfEmployed.freelancer ? "Yes" : "No",
-        selfEmployed.artisan ? "Yes" : "No",
-        escapeCSV(selfEmployed.others),
-        escapeCSV(employment.unemployedReason),
-        escapeCSV(employment.terminatedCountry),
-        escapeCSV(employment.unemployedReasonOthers),
-        escapeCSV(employment.jobSearchDuration),
-        employment.isOfw ? "Yes" : "No",
-        escapeCSV(employment.ofwCountry),
-        employment.isFormerOfw ? "Yes" : "No",
-        escapeCSV(employment.formerOfwCountry),
-        escapeCSV(employment.ofwReturnDate),
-        employment.is4PsBeneficiary ? "Yes" : "No",
-        escapeCSV(employment.householdIdNumber),
-        
-        // Job Preference
-        escapeCSV(jobPref.employmentType),
-        escapeCSV(jobPref.occupation1),
-        escapeCSV(jobPref.occupation2),
-        escapeCSV(jobPref.occupation3),
-        escapeCSV(jobPref.localLocation1),
-        escapeCSV(jobPref.localLocation2),
-        escapeCSV(jobPref.localLocation3),
-        escapeCSV(jobPref.overseasLocation1),
-        escapeCSV(jobPref.overseasLocation2),
-        escapeCSV(jobPref.overseasLocation3),
-        
-        // Language
-        (lang.english as Record<string, unknown>)?.read ? "Yes" : "No",
-        (lang.english as Record<string, unknown>)?.write ? "Yes" : "No",
-        (lang.english as Record<string, unknown>)?.speak ? "Yes" : "No",
-        (lang.english as Record<string, unknown>)?.understand ? "Yes" : "No",
-        (lang.filipino as Record<string, unknown>)?.read ? "Yes" : "No",
-        (lang.filipino as Record<string, unknown>)?.write ? "Yes" : "No",
-        (lang.filipino as Record<string, unknown>)?.speak ? "Yes" : "No",
-        (lang.filipino as Record<string, unknown>)?.understand ? "Yes" : "No",
-        (lang.mandarin as Record<string, unknown>)?.read ? "Yes" : "No",
-        (lang.mandarin as Record<string, unknown>)?.write ? "Yes" : "No",
-        (lang.mandarin as Record<string, unknown>)?.speak ? "Yes" : "No",
-        (lang.mandarin as Record<string, unknown>)?.understand ? "Yes" : "No",
-        escapeCSV(lang.othersName),
-        (lang.others as Record<string, unknown>)?.read ? "Yes" : "No",
-        (lang.others as Record<string, unknown>)?.write ? "Yes" : "No",
-        (lang.others as Record<string, unknown>)?.speak ? "Yes" : "No",
-        (lang.others as Record<string, unknown>)?.understand ? "Yes" : "No",
-        
-        // Education
-        edu.currentlyInSchool ? "Yes" : "No",
-        escapeCSV((edu.elementary as Record<string, unknown>)?.yearGraduated),
-        escapeCSV((edu.elementary as Record<string, unknown>)?.levelReached),
-        escapeCSV((edu.elementary as Record<string, unknown>)?.yearLastAttended),
-        escapeCSV((edu.secondary as Record<string, unknown>)?.curriculumType),
-        escapeCSV((edu.secondary as Record<string, unknown>)?.yearGraduated),
-        escapeCSV((edu.secondary as Record<string, unknown>)?.levelReached),
-        escapeCSV((edu.secondary as Record<string, unknown>)?.yearLastAttended),
-        escapeCSV((edu.seniorHigh as Record<string, unknown>)?.strand),
-        escapeCSV((edu.seniorHigh as Record<string, unknown>)?.yearGraduated),
-        escapeCSV((edu.seniorHigh as Record<string, unknown>)?.levelReached),
-        escapeCSV((edu.seniorHigh as Record<string, unknown>)?.yearLastAttended),
-        escapeCSV((edu.tertiary as Record<string, unknown>)?.course),
-        escapeCSV((edu.tertiary as Record<string, unknown>)?.yearGraduated),
-        escapeCSV((edu.tertiary as Record<string, unknown>)?.levelReached),
-        escapeCSV((edu.tertiary as Record<string, unknown>)?.yearLastAttended),
-        escapeCSV((edu.graduate as Record<string, unknown>)?.course),
-        escapeCSV((edu.graduate as Record<string, unknown>)?.yearGraduated),
-        escapeCSV((edu.graduate as Record<string, unknown>)?.yearLastAttended),
-        
-        // Training (first 3 entries)
-        ...getTraining(0),
-        ...getTraining(1),
-        ...getTraining(2),
-        
-        // Eligibility
-        ...getCivilService(0),
-        ...getCivilService(1),
-        ...getCivilService(2),
-        ...getProfLicense(0),
-        ...getProfLicense(1),
-        ...getProfLicense(2),
-        
-        // Work Experience (first 5)
-        ...getWorkExp(0),
-        ...getWorkExp(1),
-        ...getWorkExp(2),
-        ...getWorkExp(3),
-        ...getWorkExp(4),
-        
-        // Skills
-        otherSkills.auto_mechanic ? "Yes" : "No",
-        otherSkills.beautician ? "Yes" : "No",
-        otherSkills.carpentry_work ? "Yes" : "No",
-        otherSkills.computer_literate ? "Yes" : "No",
-        otherSkills.domestic_chores ? "Yes" : "No",
-        otherSkills.driver ? "Yes" : "No",
-        otherSkills.electrician ? "Yes" : "No",
-        otherSkills.embroidery ? "Yes" : "No",
-        otherSkills.gardening ? "Yes" : "No",
-        otherSkills.masonry ? "Yes" : "No",
-        otherSkills.painter_artist ? "Yes" : "No",
-        otherSkills.painting_jobs ? "Yes" : "No",
-        otherSkills.photography ? "Yes" : "No",
-        otherSkills.plumbing ? "Yes" : "No",
-        otherSkills.sewing_dresses ? "Yes" : "No",
-        otherSkills.stenography ? "Yes" : "No",
-        otherSkills.tailoring ? "Yes" : "No",
-        escapeCSV(otherSkills.others),
-        
-        // Certification
-        cert.acknowledged ? "Yes" : "No",
-        escapeCSV(cert.signature),
-        escapeCSV(cert.dateSigned),
-        
-        // PESO Use Only
-        referralPrograms.spes ? "Yes" : "No",
-        referralPrograms.gip ? "Yes" : "No",
-        referralPrograms.tupad ? "Yes" : "No",
-        referralPrograms.jobstart ? "Yes" : "No",
-        referralPrograms.dileep ? "Yes" : "No",
-        referralPrograms.tesda_training ? "Yes" : "No",
-        escapeCSV(referralPrograms.others),
-        escapeCSV(pesoUse.assessedBy),
-        escapeCSV(pesoUse.assessorSignature),
-        escapeCSV(pesoUse.assessmentDate),
-        
-        // System Fields
-        new Date(record.created_at).toLocaleDateString(),
-        escapeCSV(record.created_by),
-        escapeCSV(record.status),
-      ];
-      
-      csvRows.push(row.join(","));
-    });
+        if (!data || data.length === 0) {
+            hasMore = false;
+            break;
+        }
+
+        // Process this chunk
+        data.forEach((record: DBJobseekerRecord) => {
+          const personalInfo = (record.personal_info || {}) as Record<string, unknown>;
+          const address = (personalInfo.address || {}) as Record<string, unknown>;
+          const disability = (personalInfo.disability || {}) as Record<string, unknown>;
+          const employment = (record.employment || {}) as Record<string, unknown>;
+          const selfEmployed = (employment.selfEmployedTypes || {}) as Record<string, unknown>;
+          const jobPref = (record.job_preference || {}) as Record<string, unknown>;
+          const lang = (record.language || {}) as Record<string, unknown>;
+          const edu = (record.education || {}) as Record<string, unknown>;
+          const training = (record.training || {}) as Record<string, unknown>;
+          const trainingEntries = (training.entries || []) as Array<Record<string, unknown>>;
+          const eligibility = (record.eligibility || {}) as Record<string, unknown>;
+          const civilService = (eligibility.civilService || []) as Array<Record<string, unknown>>;
+          const profLicense = (eligibility.professionalLicense || []) as Array<Record<string, unknown>>;
+          const workExp = (record.work_experience || {}) as Record<string, unknown>;
+          const workEntries = (workExp.entries || []) as Array<Record<string, unknown>>;
+          const skills = (record.skills || {}) as Record<string, unknown>;
+          const otherSkills = (skills.otherSkills || {}) as Record<string, unknown>;
+          const cert = (skills.certification || {}) as Record<string, unknown>;
+          const pesoUse = (skills.pesoUseOnly || {}) as Record<string, unknown>;
+          const referralPrograms = (pesoUse.referralPrograms || {}) as Record<string, unknown>;
+
+          // Helper to escape CSV values
+          const escapeCSV = (val: unknown): string => {
+            if (val === null || val === undefined) return "";
+            const str = String(val);
+            if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+              return `"${str.replace(/"/g, '""')}"`;
+            }
+            return str;
+          };
+
+          // Helper to get nested array values
+          const getTraining = (index: number): string[] => {
+            const t = trainingEntries[index] || {};
+            const certs = (t.certificates || {}) as Record<string, unknown>;
+            return [
+              escapeCSV(t.course),
+              escapeCSV(t.hours),
+              escapeCSV(t.institution),
+              escapeCSV(t.skillsAcquired),
+              certs.NC_I ? "Yes" : "No",
+              certs.NC_II ? "Yes" : "No",
+              certs.NC_III ? "Yes" : "No",
+              certs.NC_IV ? "Yes" : "No",
+              certs.COC ? "Yes" : "No",
+            ];
+          };
+
+          const getCivilService = (index: number): string[] => {
+            const cs = civilService[index] || {};
+            return [escapeCSV(cs.name), escapeCSV(cs.dateTaken)];
+          };
+
+          const getProfLicense = (index: number): string[] => {
+            const pl = profLicense[index] || {};
+            return [escapeCSV(pl.name), escapeCSV(pl.validUntil)];
+          };
+
+          const getWorkExp = (index: number): string[] => {
+            const we = workEntries[index] || {};
+            return [
+              escapeCSV(we.companyName),
+              escapeCSV(we.address),
+              escapeCSV(we.position),
+              escapeCSV(we.numberOfMonths),
+              escapeCSV(we.employmentStatus),
+            ];
+          };
+
+          const row = [
+            // Basic Info
+            record.id,
+            escapeCSV(personalInfo.surname),
+            escapeCSV(personalInfo.firstName),
+            escapeCSV(personalInfo.middleName),
+            escapeCSV(personalInfo.suffix),
+            escapeCSV(personalInfo.dateOfBirth),
+            escapeCSV(personalInfo.placeOfBirth),
+            escapeCSV(personalInfo.sex),
+            escapeCSV(personalInfo.religion),
+            escapeCSV(personalInfo.civilStatus),
+            escapeCSV(address.houseStreet),
+            escapeCSV(address.barangay),
+            escapeCSV(address.city),
+            escapeCSV(address.province),
+            escapeCSV(personalInfo.tin),
+            disability.visual ? "Yes" : "No",
+            disability.hearing ? "Yes" : "No",
+            disability.speech ? "Yes" : "No",
+            disability.physical ? "Yes" : "No",
+            disability.mental ? "Yes" : "No",
+            escapeCSV(disability.others),
+            escapeCSV(personalInfo.height),
+            escapeCSV(personalInfo.contactNumber),
+            escapeCSV(personalInfo.email),
+
+            // Employment
+            escapeCSV(employment.status),
+            escapeCSV(employment.employedType),
+            selfEmployed.fisherman ? "Yes" : "No",
+            selfEmployed.vendor ? "Yes" : "No",
+            selfEmployed.homeBased ? "Yes" : "No",
+            selfEmployed.transport ? "Yes" : "No",
+            selfEmployed.domestic ? "Yes" : "No",
+            selfEmployed.freelancer ? "Yes" : "No",
+            selfEmployed.artisan ? "Yes" : "No",
+            escapeCSV(selfEmployed.others),
+            escapeCSV(employment.unemployedReason),
+            escapeCSV(employment.terminatedCountry),
+            escapeCSV(employment.unemployedReasonOthers),
+            escapeCSV(employment.jobSearchDuration),
+            employment.isOfw ? "Yes" : "No",
+            escapeCSV(employment.ofwCountry),
+            employment.isFormerOfw ? "Yes" : "No",
+            escapeCSV(employment.formerOfwCountry),
+            escapeCSV(employment.ofwReturnDate),
+            employment.is4PsBeneficiary ? "Yes" : "No",
+            escapeCSV(employment.householdIdNumber),
+
+            // Job Preference
+            escapeCSV(jobPref.employmentType),
+            escapeCSV(jobPref.occupation1),
+            escapeCSV(jobPref.occupation2),
+            escapeCSV(jobPref.occupation3),
+            escapeCSV(jobPref.localLocation1),
+            escapeCSV(jobPref.localLocation2),
+            escapeCSV(jobPref.localLocation3),
+            escapeCSV(jobPref.overseasLocation1),
+            escapeCSV(jobPref.overseasLocation2),
+            escapeCSV(jobPref.overseasLocation3),
+
+            // Language
+            (lang.english as Record<string, unknown>)?.read ? "Yes" : "No",
+            (lang.english as Record<string, unknown>)?.write ? "Yes" : "No",
+            (lang.english as Record<string, unknown>)?.speak ? "Yes" : "No",
+            (lang.english as Record<string, unknown>)?.understand ? "Yes" : "No",
+            (lang.filipino as Record<string, unknown>)?.read ? "Yes" : "No",
+            (lang.filipino as Record<string, unknown>)?.write ? "Yes" : "No",
+            (lang.filipino as Record<string, unknown>)?.speak ? "Yes" : "No",
+            (lang.filipino as Record<string, unknown>)?.understand ? "Yes" : "No",
+            (lang.mandarin as Record<string, unknown>)?.read ? "Yes" : "No",
+            (lang.mandarin as Record<string, unknown>)?.write ? "Yes" : "No",
+            (lang.mandarin as Record<string, unknown>)?.speak ? "Yes" : "No",
+            (lang.mandarin as Record<string, unknown>)?.understand ? "Yes" : "No",
+            escapeCSV(lang.othersName),
+            (lang.others as Record<string, unknown>)?.read ? "Yes" : "No",
+            (lang.others as Record<string, unknown>)?.write ? "Yes" : "No",
+            (lang.others as Record<string, unknown>)?.speak ? "Yes" : "No",
+            (lang.others as Record<string, unknown>)?.understand ? "Yes" : "No",
+
+            // Education
+            edu.currentlyInSchool ? "Yes" : "No",
+            escapeCSV((edu.elementary as Record<string, unknown>)?.yearGraduated),
+            escapeCSV((edu.elementary as Record<string, unknown>)?.levelReached),
+            escapeCSV((edu.elementary as Record<string, unknown>)?.yearLastAttended),
+            escapeCSV((edu.secondary as Record<string, unknown>)?.curriculumType),
+            escapeCSV((edu.secondary as Record<string, unknown>)?.yearGraduated),
+            escapeCSV((edu.secondary as Record<string, unknown>)?.levelReached),
+            escapeCSV((edu.secondary as Record<string, unknown>)?.yearLastAttended),
+            escapeCSV((edu.seniorHigh as Record<string, unknown>)?.strand),
+            escapeCSV((edu.seniorHigh as Record<string, unknown>)?.yearGraduated),
+            escapeCSV((edu.seniorHigh as Record<string, unknown>)?.levelReached),
+            escapeCSV((edu.seniorHigh as Record<string, unknown>)?.yearLastAttended),
+            escapeCSV((edu.tertiary as Record<string, unknown>)?.course),
+            escapeCSV((edu.tertiary as Record<string, unknown>)?.yearGraduated),
+            escapeCSV((edu.tertiary as Record<string, unknown>)?.levelReached),
+            escapeCSV((edu.tertiary as Record<string, unknown>)?.yearLastAttended),
+            escapeCSV((edu.graduate as Record<string, unknown>)?.course),
+            escapeCSV((edu.graduate as Record<string, unknown>)?.yearGraduated),
+            escapeCSV((edu.graduate as Record<string, unknown>)?.yearLastAttended),
+
+            // Training (first 3 entries)
+            ...getTraining(0),
+            ...getTraining(1),
+            ...getTraining(2),
+
+            // Eligibility
+            ...getCivilService(0),
+            ...getCivilService(1),
+            ...getCivilService(2),
+            ...getProfLicense(0),
+            ...getProfLicense(1),
+            ...getProfLicense(2),
+
+            // Work Experience (first 5)
+            ...getWorkExp(0),
+            ...getWorkExp(1),
+            ...getWorkExp(2),
+            ...getWorkExp(3),
+            ...getWorkExp(4),
+
+            // Skills
+            otherSkills.auto_mechanic ? "Yes" : "No",
+            otherSkills.beautician ? "Yes" : "No",
+            otherSkills.carpentry_work ? "Yes" : "No",
+            otherSkills.computer_literate ? "Yes" : "No",
+            otherSkills.domestic_chores ? "Yes" : "No",
+            otherSkills.driver ? "Yes" : "No",
+            otherSkills.electrician ? "Yes" : "No",
+            otherSkills.embroidery ? "Yes" : "No",
+            otherSkills.gardening ? "Yes" : "No",
+            otherSkills.masonry ? "Yes" : "No",
+            otherSkills.painter_artist ? "Yes" : "No",
+            otherSkills.painting_jobs ? "Yes" : "No",
+            otherSkills.photography ? "Yes" : "No",
+            otherSkills.plumbing ? "Yes" : "No",
+            otherSkills.sewing_dresses ? "Yes" : "No",
+            otherSkills.stenography ? "Yes" : "No",
+            otherSkills.tailoring ? "Yes" : "No",
+            escapeCSV(otherSkills.others),
+
+            // Certification
+            cert.acknowledged ? "Yes" : "No",
+            escapeCSV(cert.signature),
+            escapeCSV(cert.dateSigned),
+
+            // PESO Use Only
+            referralPrograms.spes ? "Yes" : "No",
+            referralPrograms.gip ? "Yes" : "No",
+            referralPrograms.tupad ? "Yes" : "No",
+            referralPrograms.jobstart ? "Yes" : "No",
+            referralPrograms.dileep ? "Yes" : "No",
+            referralPrograms.tesda_training ? "Yes" : "No",
+            escapeCSV(referralPrograms.others),
+            escapeCSV(pesoUse.assessedBy),
+            escapeCSV(pesoUse.assessorSignature),
+            escapeCSV(pesoUse.assessmentDate),
+
+            // System Fields
+            new Date(record.created_at).toLocaleDateString(),
+            escapeCSV(record.created_by),
+            escapeCSV(record.status),
+          ];
+
+          csvRows.push(row.join(","));
+        });
+
+        // Check for termination
+        if (data.length < PAGE_SIZE) {
+            hasMore = false;
+        }
+        page++;
+    }
+
+    if (csvRows.length === 1) { // Only headers
+        return { error: "No data to export" };
+    }
 
     const csv = csvRows.join("\n");
     const filename = `jobseekers_${new Date().toISOString().split("T")[0]}.csv`;
