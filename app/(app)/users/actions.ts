@@ -77,11 +77,24 @@ export async function getUsersList(filters: UsersListFilters = {}) {
     // Fetch emails via service role (auth.admin only works with service role key)
     const emailByUserId: Record<string, string> = {};
     const adminClient = createAdminClient();
-    if (adminClient) {
-      const { data: authData } = await adminClient.auth.admin.listUsers();
-      authData?.users?.forEach((u) => {
-        if (u.email) emailByUserId[u.id] = u.email;
-      });
+
+    // Optimization: Fetch emails only for the displayed users in parallel
+    if (adminClient && profiles && profiles.length > 0) {
+      const userIds = profiles.map((p) => p.user_id);
+
+      await Promise.all(
+        userIds.map(async (userId) => {
+          try {
+            const { data, error } = await adminClient.auth.admin.getUserById(userId);
+            if (!error && data?.user?.email) {
+              emailByUserId[userId] = data.user.email;
+            }
+          } catch (error) {
+            // Log error but continue (email will be empty)
+            console.error(`Failed to fetch email for user ${userId}:`, error);
+          }
+        })
+      );
     }
 
     // Map profiles with user data (email from auth when available, else empty)
