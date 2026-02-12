@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { requireActiveUser } from "@/lib/auth/require-active-user";
 import type { JobseekerRegistrationData } from "@/lib/validations/jobseeker-registration";
+import { sanitizeSearchQuery } from "./search-utils";
 import {
   escapeCSV,
   getTraining,
@@ -216,9 +217,12 @@ export async function getJobseekers(
 
     // Apply indexed filters (fast)
     if (filters.search) {
-      query = query.or(
-        `surname.ilike.%${filters.search}%,first_name.ilike.%${filters.search}%`
-      );
+      const sanitizedSearch = sanitizeSearchQuery(filters.search);
+      if (sanitizedSearch) {
+        query = query.or(
+          `surname.ilike.%${sanitizedSearch}%,first_name.ilike.%${sanitizedSearch}%`
+        );
+      }
     }
     if (filters.sex) query = query.eq("sex", filters.sex);
     if (filters.employmentStatus)
@@ -548,9 +552,12 @@ export async function exportJobseekersCSV(
 
         // Apply filters
         if (filters.search) {
-          query = query.or(
-            `surname.ilike.%${filters.search}%,first_name.ilike.%${filters.search}%`
-          );
+          const sanitizedSearch = sanitizeSearchQuery(filters.search);
+          if (sanitizedSearch) {
+            query = query.or(
+              `surname.ilike.%${sanitizedSearch}%,first_name.ilike.%${sanitizedSearch}%`
+            );
+          }
         }
         if (filters.sex) query = query.eq("sex", filters.sex);
         if (filters.employmentStatus)
