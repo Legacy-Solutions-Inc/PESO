@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
+import { Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
 import { signIn, type SignInState } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +13,8 @@ export function LoginForm({
 }: {
   message?: string | null;
 }) {
-  const [state, formAction] = useActionState(signIn, null as SignInState | null);
+  const [state, formAction, isPending] = useActionState(signIn, null as SignInState | null);
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <form action={formAction} className="space-y-6">
@@ -32,20 +34,7 @@ export function LoginForm({
         </Label>
         <div className="relative rounded-md shadow-sm">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-            <svg
-              className="size-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 01-7 7h14a7 7 0 01-7-7z"
-              />
-            </svg>
+            <Mail className="size-5" aria-hidden="true" />
           </div>
           <Input
             id="email"
@@ -63,29 +52,28 @@ export function LoginForm({
         </Label>
         <div className="relative rounded-md shadow-sm">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-            <svg
-              className="size-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-              />
-            </svg>
+            <Lock className="size-5" aria-hidden="true" />
           </div>
           <Input
             id="password"
             name="password"
-            type="password"
+            type={showPassword ? "text" : "password"}
             required
             placeholder="••••••••"
-            className="pl-10 rounded-lg border-gray-300 bg-white/50"
+            className="pl-10 pr-10 rounded-lg border-gray-300 bg-white/50"
           />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600"
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? (
+              <EyeOff className="size-5" aria-hidden="true" />
+            ) : (
+              <Eye className="size-5" aria-hidden="true" />
+            )}
+          </button>
         </div>
       </div>
       <div className="flex items-center justify-between">
@@ -110,9 +98,11 @@ export function LoginForm({
       <div>
         <Button
           type="submit"
+          disabled={isPending}
           className="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/30"
         >
-          Sign in
+          {isPending && <Loader2 className="mr-2 size-4 animate-spin" />}
+          {isPending ? "Signing in..." : "Sign in"}
         </Button>
       </div>
       <p className="text-center text-sm text-gray-600">
