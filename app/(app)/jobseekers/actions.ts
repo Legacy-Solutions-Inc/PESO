@@ -5,6 +5,13 @@ import { requireAdmin } from "@/lib/auth/require-admin";
 import { requireActiveUser } from "@/lib/auth/require-active-user";
 import type { JobseekerRegistrationData } from "@/lib/validations/jobseeker-registration";
 import { sanitizeSearchQuery } from "./search-utils";
+import {
+  escapeCSV,
+  getTraining,
+  getCivilService,
+  getProfLicense,
+  getWorkExp,
+} from "./csv-helpers";
 
 export interface JobseekerFilters {
   // Quick search (indexed fields)
@@ -619,59 +626,6 @@ export async function exportJobseekersCSV(
           const pesoUse = (skills.pesoUseOnly || {}) as Record<string, unknown>;
           const referralPrograms = (pesoUse.referralPrograms || {}) as Record<string, unknown>;
 
-          // Helper to escape CSV values
-      const escapeCSV = (val: unknown): string => {
-        if (val === null || val === undefined) return "";
-        let str = String(val);
-
-        // Prevent CSV injection
-        if (/^[=+\-@]/.test(str)) {
-          str = `'${str}`;
-        }
-
-        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-          return `"${str.replace(/"/g, '""')}"`;
-        }
-        return str;
-      };
-          // Helper to get nested array values
-          const getTraining = (index: number): string[] => {
-            const t = trainingEntries[index] || {};
-            const certs = (t.certificates || {}) as Record<string, unknown>;
-            return [
-              escapeCSV(t.course),
-              escapeCSV(t.hours),
-              escapeCSV(t.institution),
-              escapeCSV(t.skillsAcquired),
-              certs.NC_I ? "Yes" : "No",
-              certs.NC_II ? "Yes" : "No",
-              certs.NC_III ? "Yes" : "No",
-              certs.NC_IV ? "Yes" : "No",
-              certs.COC ? "Yes" : "No",
-            ];
-          };
-
-          const getCivilService = (index: number): string[] => {
-            const cs = civilService[index] || {};
-            return [escapeCSV(cs.name), escapeCSV(cs.dateTaken)];
-          };
-
-          const getProfLicense = (index: number): string[] => {
-            const pl = profLicense[index] || {};
-            return [escapeCSV(pl.name), escapeCSV(pl.validUntil)];
-          };
-
-          const getWorkExp = (index: number): string[] => {
-            const we = workEntries[index] || {};
-            return [
-              escapeCSV(we.companyName),
-              escapeCSV(we.address),
-              escapeCSV(we.position),
-              escapeCSV(we.numberOfMonths),
-              escapeCSV(we.employmentStatus),
-            ];
-          };
-
           const row = [
             // Basic Info
             record.id,
@@ -775,24 +729,24 @@ export async function exportJobseekersCSV(
             escapeCSV((edu.graduate as Record<string, unknown>)?.yearLastAttended),
 
             // Training (first 3 entries)
-            ...getTraining(0),
-            ...getTraining(1),
-            ...getTraining(2),
+            ...getTraining(trainingEntries, 0),
+            ...getTraining(trainingEntries, 1),
+            ...getTraining(trainingEntries, 2),
 
             // Eligibility
-            ...getCivilService(0),
-            ...getCivilService(1),
-            ...getCivilService(2),
-            ...getProfLicense(0),
-            ...getProfLicense(1),
-            ...getProfLicense(2),
+            ...getCivilService(civilService, 0),
+            ...getCivilService(civilService, 1),
+            ...getCivilService(civilService, 2),
+            ...getProfLicense(profLicense, 0),
+            ...getProfLicense(profLicense, 1),
+            ...getProfLicense(profLicense, 2),
 
             // Work Experience (first 5)
-            ...getWorkExp(0),
-            ...getWorkExp(1),
-            ...getWorkExp(2),
-            ...getWorkExp(3),
-            ...getWorkExp(4),
+            ...getWorkExp(workEntries, 0),
+            ...getWorkExp(workEntries, 1),
+            ...getWorkExp(workEntries, 2),
+            ...getWorkExp(workEntries, 3),
+            ...getWorkExp(workEntries, 4),
 
             // Skills
             otherSkills.auto_mechanic ? "Yes" : "No",
