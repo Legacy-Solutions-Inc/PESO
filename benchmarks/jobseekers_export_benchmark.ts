@@ -1,12 +1,13 @@
 import { performance } from 'perf_hooks';
+import { convertRecordToCSVRow, JOBSEEKER_CSV_HEADERS, escapeCSV } from '../app/(app)/jobseekers/csv-helpers.ts';
 
 // ============================================================================
 // MOCKS
 // ============================================================================
 
-const MOCK_TOTAL_RECORDS = 50000; // Large enough to stress memory
-const PAGE_SIZE = 1000;
+const MOCK_TOTAL_RECORDS = 50000;
 
+// A record with enough complexity to exercise all paths
 const mockRecord = {
   id: 1,
   created_at: new Date().toISOString(),
@@ -103,192 +104,292 @@ const mockRecord = {
   },
 };
 
-// Generate data on demand to avoid initial memory spike
-const getDataSlice = (start: number, end: number) => {
-    const slice = [];
-    for (let i = start; i <= end && i < MOCK_TOTAL_RECORDS; i++) {
-        slice.push({ ...mockRecord, id: i });
-    }
-    return slice;
-};
-
-// Mock Supabase
-const createMockSupabase = () => {
-  return {
-    from: (table: string) => {
-      const queryBuilder: any = {
-        select: (columns: string) => queryBuilder,
-        or: (filter: string) => queryBuilder,
-        eq: (col: string, val: any) => queryBuilder,
-        ilike: (col: string, val: any) => queryBuilder,
-        range: (start: number, end: number) => {
-          return Promise.resolve({ data: getDataSlice(start, end), error: null });
-        },
-        then: (resolve: any) => {
-             // Simulate "fetch all"
-             // Be careful: this will create the massive array in memory immediately
-             resolve({ data: getDataSlice(0, MOCK_TOTAL_RECORDS - 1), error: null });
-        }
-      };
-      return queryBuilder;
-    }
-  };
-};
-
-// CSV Header
-const headers = [
-      "ID", "Surname", "First Name", "Middle Name", "Suffix", "Date of Birth", "Place of Birth", "Sex", "Religion", "Civil Status",
-      "House/Street", "Barangay", "City", "Province", "TIN", "Disability - Visual", "Disability - Hearing", "Disability - Speech",
-      "Disability - Physical", "Disability - Mental", "Disability - Others", "Height", "Contact Number", "Email", "Employment Status",
-      "Employed Type", "Self-Employed - Fisherman", "Self-Employed - Vendor", "Self-Employed - Home Based", "Self-Employed - Transport",
-      "Self-Employed - Domestic", "Self-Employed - Freelancer", "Self-Employed - Artisan", "Self-Employed - Others", "Unemployed Reason",
-      "Terminated Country", "Unemployed Reason Others", "Job Search Duration", "Is OFW", "OFW Country", "Is Former OFW", "Former OFW Country",
-      "OFW Return Date", "4Ps Beneficiary", "Household ID Number", "Preferred Employment Type", "Preferred Occupation 1", "Preferred Occupation 2",
-      "Preferred Occupation 3", "Local Location 1", "Local Location 2", "Local Location 3", "Overseas Location 1", "Overseas Location 2",
-      "Overseas Location 3", "English - Read", "English - Write", "English - Speak", "English - Understand", "Filipino - Read",
-      "Filipino - Write", "Filipino - Speak", "Filipino - Understand", "Mandarin - Read", "Mandarin - Write", "Mandarin - Speak",
-      "Mandarin - Understand", "Other Language Name", "Other Language - Read", "Other Language - Write", "Other Language - Speak",
-      "Other Language - Understand", "Currently in School", "Elementary - Year Graduated", "Elementary - Level Reached",
-      "Elementary - Year Last Attended", "Secondary - Curriculum Type", "Secondary - Year Graduated", "Secondary - Level Reached",
-      "Secondary - Year Last Attended", "Senior High - Strand", "Senior High - Year Graduated", "Senior High - Level Reached",
-      "Senior High - Year Last Attended", "Tertiary - Course", "Tertiary - Year Graduated", "Tertiary - Level Reached",
-      "Tertiary - Year Last Attended", "Graduate - Course", "Graduate - Year Graduated", "Graduate - Year Last Attended",
-      "Training 1 - Course", "Training 1 - Hours", "Training 1 - Institution", "Training 1 - Skills Acquired", "Training 1 - NC I",
-      "Training 1 - NC II", "Training 1 - NC III", "Training 1 - NC IV", "Training 1 - COC", "Training 2 - Course", "Training 2 - Hours",
-      "Training 2 - Institution", "Training 2 - Skills Acquired", "Training 2 - NC I", "Training 2 - NC II", "Training 2 - NC III",
-      "Training 2 - NC IV", "Training 2 - COC", "Training 3 - Course", "Training 3 - Hours", "Training 3 - Institution",
-      "Training 3 - Skills Acquired", "Training 3 - NC I", "Training 3 - NC II", "Training 3 - NC III", "Training 3 - NC IV",
-      "Training 3 - COC", "Civil Service 1 - Name", "Civil Service 1 - Date Taken", "Civil Service 2 - Name", "Civil Service 2 - Date Taken",
-      "Civil Service 3 - Name", "Civil Service 3 - Date Taken", "Professional License 1 - Name", "Professional License 1 - Valid Until",
-      "Professional License 2 - Name", "Professional License 2 - Valid Until", "Professional License 3 - Name", "Professional License 3 - Valid Until",
-      "Work 1 - Company", "Work 1 - Address", "Work 1 - Position", "Work 1 - Months", "Work 1 - Employment Status", "Work 2 - Company",
-      "Work 2 - Address", "Work 2 - Position", "Work 2 - Months", "Work 2 - Employment Status", "Work 3 - Company", "Work 3 - Address",
-      "Work 3 - Position", "Work 3 - Months", "Work 3 - Employment Status", "Work 4 - Company", "Work 4 - Address", "Work 4 - Position",
-      "Work 4 - Months", "Work 4 - Employment Status", "Work 5 - Company", "Work 5 - Address", "Work 5 - Position", "Work 5 - Months",
-      "Work 5 - Employment Status", "Skill - Auto Mechanic", "Skill - Beautician", "Skill - Carpentry Work", "Skill - Computer Literate",
-      "Skill - Domestic Chores", "Skill - Driver", "Skill - Electrician", "Skill - Embroidery", "Skill - Gardening", "Skill - Masonry",
-      "Skill - Painter/Artist", "Skill - Painting Jobs", "Skill - Photography", "Skill - Plumbing", "Skill - Sewing Dresses",
-      "Skill - Stenography", "Skill - Tailoring", "Skill - Others", "Certification Acknowledged", "Signature", "Date Signed",
-      "Referral - SPES", "Referral - GIP", "Referral - TUPAD", "Referral - JobStart", "Referral - DILEEP", "Referral - TESDA Training",
-      "Referral - Others", "Assessed By", "Assessor Signature", "Assessment Date", "Date Registered", "Created By", "Status"
-];
-
-// Reusable row converter (simplified logic for benchmark)
-const convertRecordToCsvRow = (record: any) => {
-    // This is a simplified version of the logic inside exportJobseekersCSV
-    // Just enough to simulate the CPU load of string processing
-    const values = headers.map(() => "Test Value");
-    return values.join(",");
-};
-
+const records = Array(MOCK_TOTAL_RECORDS).fill(mockRecord).map((r, i) => ({ ...r, id: i }));
 
 // ============================================================================
-// BASELINE
+// OLD IMPLEMENTATION (Simulated to match complexity)
 // ============================================================================
 
-async function baselineExport() {
-  global.gc?.(); // Try to clear GC before start
-  const startMem = process.memoryUsage().heapUsed;
-  const startTime = performance.now();
+const getTrainingArray = (
+  trainingEntries: Array<Record<string, unknown>>,
+  index: number
+): string[] => {
+  const t = trainingEntries[index] || {};
+  const certs = (t.certificates || {}) as Record<string, unknown>;
+  return [
+    escapeCSV(t.course),
+    escapeCSV(t.hours),
+    escapeCSV(t.institution),
+    escapeCSV(t.skillsAcquired),
+    certs.NC_I ? "Yes" : "No",
+    certs.NC_II ? "Yes" : "No",
+    certs.NC_III ? "Yes" : "No",
+    certs.NC_IV ? "Yes" : "No",
+    certs.COC ? "Yes" : "No",
+  ];
+};
 
-  const supabase = createMockSupabase();
+const getCivilServiceArray = (
+  civilService: Array<Record<string, unknown>>,
+  index: number
+): string[] => {
+  const cs = civilService[index] || {};
+  return [escapeCSV(cs.name), escapeCSV(cs.dateTaken)];
+};
 
-  // 1. Fetch ALL
-  const { data } = await supabase.from("jobseekers").select("*");
+const getProfLicenseArray = (
+  profLicense: Array<Record<string, unknown>>,
+  index: number
+): string[] => {
+  const pl = profLicense[index] || {};
+  return [escapeCSV(pl.name), escapeCSV(pl.validUntil)];
+};
 
-  // 2. Process ALL
-  const csvRows = [headers.join(",")];
-  data.forEach((record: any) => {
-    csvRows.push(convertRecordToCsvRow(record));
-  });
+const getWorkExpArray = (
+  workEntries: Array<Record<string, unknown>>,
+  index: number
+): string[] => {
+  const we = workEntries[index] || {};
+  return [
+    escapeCSV(we.companyName),
+    escapeCSV(we.address),
+    escapeCSV(we.position),
+    escapeCSV(we.numberOfMonths),
+    escapeCSV(we.employmentStatus),
+  ];
+};
 
-  const csv = csvRows.join("\n");
 
-  const endTime = performance.now();
-  const endMem = process.memoryUsage().heapUsed;
+function oldImplementation(record: any) {
+    const personalInfo = (record.personal_info || {}) as Record<string, unknown>;
+    const address = (personalInfo.address || {}) as Record<string, unknown>;
+    const disability = (personalInfo.disability || {}) as Record<string, unknown>;
+    const employment = (record.employment || {}) as Record<string, unknown>;
+    const selfEmployed = (employment.selfEmployedTypes || {}) as Record<string, unknown>;
+    const jobPref = (record.job_preference || {}) as Record<string, unknown>;
+    const lang = (record.language || {}) as Record<string, unknown>;
+    const edu = (record.education || {}) as Record<string, unknown>;
+    const training = (record.training || {}) as Record<string, unknown>;
+    const trainingEntries = (training.entries || []) as Array<Record<string, unknown>>;
+    const eligibility = (record.eligibility || {}) as Record<string, unknown>;
+    const civilService = (eligibility.civilService || []) as Array<Record<string, unknown>>;
+    const profLicense = (eligibility.professionalLicense || []) as Array<Record<string, unknown>>;
+    const workExp = (record.work_experience || {}) as Record<string, unknown>;
+    const workEntries = (workExp.entries || []) as Array<Record<string, unknown>>;
+    const skills = (record.skills || {}) as Record<string, unknown>;
+    const otherSkills = (skills.otherSkills || {}) as Record<string, unknown>;
+    const cert = (skills.certification || {}) as Record<string, unknown>;
+    const pesoUse = (skills.pesoUseOnly || {}) as Record<string, unknown>;
+    const referralPrograms = (pesoUse.referralPrograms || {}) as Record<string, unknown>;
 
-  return {
-      name: "Baseline (Load All)",
-      timeMs: endTime - startTime,
-      memoryDiffMB: (endMem - startMem) / 1024 / 1024,
-      resultLength: csv.length
-  };
+    const row = [
+      // Basic Info
+      record.id,
+      escapeCSV(personalInfo.surname),
+      escapeCSV(personalInfo.firstName),
+      escapeCSV(personalInfo.middleName),
+      escapeCSV(personalInfo.suffix),
+      escapeCSV(personalInfo.dateOfBirth),
+      escapeCSV(personalInfo.placeOfBirth),
+      escapeCSV(personalInfo.sex),
+      escapeCSV(personalInfo.religion),
+      escapeCSV(personalInfo.civilStatus),
+      escapeCSV(address.houseStreet),
+      escapeCSV(address.barangay),
+      escapeCSV(address.city),
+      escapeCSV(address.province),
+      escapeCSV(personalInfo.tin),
+      disability.visual ? "Yes" : "No",
+      disability.hearing ? "Yes" : "No",
+      disability.speech ? "Yes" : "No",
+      disability.physical ? "Yes" : "No",
+      disability.mental ? "Yes" : "No",
+      escapeCSV(disability.others),
+      escapeCSV(personalInfo.height),
+      escapeCSV(personalInfo.contactNumber),
+      escapeCSV(personalInfo.email),
+
+      // Employment
+      escapeCSV(employment.status),
+      escapeCSV(employment.employedType),
+      selfEmployed.fisherman ? "Yes" : "No",
+      selfEmployed.vendor ? "Yes" : "No",
+      selfEmployed.homeBased ? "Yes" : "No",
+      selfEmployed.transport ? "Yes" : "No",
+      selfEmployed.domestic ? "Yes" : "No",
+      selfEmployed.freelancer ? "Yes" : "No",
+      selfEmployed.artisan ? "Yes" : "No",
+      escapeCSV(selfEmployed.others),
+      escapeCSV(employment.unemployedReason),
+      escapeCSV(employment.terminatedCountry),
+      escapeCSV(employment.unemployedReasonOthers),
+      escapeCSV(employment.jobSearchDuration),
+      employment.isOfw ? "Yes" : "No",
+      escapeCSV(employment.ofwCountry),
+      employment.isFormerOfw ? "Yes" : "No",
+      escapeCSV(employment.formerOfwCountry),
+      escapeCSV(employment.ofwReturnDate),
+      employment.is4PsBeneficiary ? "Yes" : "No",
+      escapeCSV(employment.householdIdNumber),
+
+      // Job Preference
+      escapeCSV(jobPref.employmentType),
+      escapeCSV(jobPref.occupation1),
+      escapeCSV(jobPref.occupation2),
+      escapeCSV(jobPref.occupation3),
+      escapeCSV(jobPref.localLocation1),
+      escapeCSV(jobPref.localLocation2),
+      escapeCSV(jobPref.localLocation3),
+      escapeCSV(jobPref.overseasLocation1),
+      escapeCSV(jobPref.overseasLocation2),
+      escapeCSV(jobPref.overseasLocation3),
+
+      // Language
+      (lang.english as Record<string, unknown>)?.read ? "Yes" : "No",
+      (lang.english as Record<string, unknown>)?.write ? "Yes" : "No",
+      (lang.english as Record<string, unknown>)?.speak ? "Yes" : "No",
+      (lang.english as Record<string, unknown>)?.understand ? "Yes" : "No",
+      (lang.filipino as Record<string, unknown>)?.read ? "Yes" : "No",
+      (lang.filipino as Record<string, unknown>)?.write ? "Yes" : "No",
+      (lang.filipino as Record<string, unknown>)?.speak ? "Yes" : "No",
+      (lang.filipino as Record<string, unknown>)?.understand ? "Yes" : "No",
+      (lang.mandarin as Record<string, unknown>)?.read ? "Yes" : "No",
+      (lang.mandarin as Record<string, unknown>)?.write ? "Yes" : "No",
+      (lang.mandarin as Record<string, unknown>)?.speak ? "Yes" : "No",
+      (lang.mandarin as Record<string, unknown>)?.understand ? "Yes" : "No",
+      escapeCSV(lang.othersName),
+      (lang.others as Record<string, unknown>)?.read ? "Yes" : "No",
+      (lang.others as Record<string, unknown>)?.write ? "Yes" : "No",
+      (lang.others as Record<string, unknown>)?.speak ? "Yes" : "No",
+      (lang.others as Record<string, unknown>)?.understand ? "Yes" : "No",
+
+      // Education
+      edu.currentlyInSchool ? "Yes" : "No",
+      escapeCSV((edu.elementary as Record<string, unknown>)?.yearGraduated),
+      escapeCSV((edu.elementary as Record<string, unknown>)?.levelReached),
+      escapeCSV((edu.elementary as Record<string, unknown>)?.yearLastAttended),
+      escapeCSV((edu.secondary as Record<string, unknown>)?.curriculumType),
+      escapeCSV((edu.secondary as Record<string, unknown>)?.yearGraduated),
+      escapeCSV((edu.secondary as Record<string, unknown>)?.levelReached),
+      escapeCSV((edu.secondary as Record<string, unknown>)?.yearLastAttended),
+      escapeCSV((edu.seniorHigh as Record<string, unknown>)?.strand),
+      escapeCSV((edu.seniorHigh as Record<string, unknown>)?.yearGraduated),
+      escapeCSV((edu.seniorHigh as Record<string, unknown>)?.levelReached),
+      escapeCSV((edu.seniorHigh as Record<string, unknown>)?.yearLastAttended),
+      escapeCSV((edu.tertiary as Record<string, unknown>)?.course),
+      escapeCSV((edu.tertiary as Record<string, unknown>)?.yearGraduated),
+      escapeCSV((edu.tertiary as Record<string, unknown>)?.levelReached),
+      escapeCSV((edu.tertiary as Record<string, unknown>)?.yearLastAttended),
+      escapeCSV((edu.graduate as Record<string, unknown>)?.course),
+      escapeCSV((edu.graduate as Record<string, unknown>)?.yearGraduated),
+      escapeCSV((edu.graduate as Record<string, unknown>)?.yearLastAttended),
+
+      // Training (first 3 entries)
+      ...getTrainingArray(trainingEntries, 0),
+      ...getTrainingArray(trainingEntries, 1),
+      ...getTrainingArray(trainingEntries, 2),
+
+      // Eligibility
+      ...getCivilServiceArray(civilService, 0),
+      ...getCivilServiceArray(civilService, 1),
+      ...getCivilServiceArray(civilService, 2),
+      ...getProfLicenseArray(profLicense, 0),
+      ...getProfLicenseArray(profLicense, 1),
+      ...getProfLicenseArray(profLicense, 2),
+
+      // Work Experience (first 5)
+      ...getWorkExpArray(workEntries, 0),
+      ...getWorkExpArray(workEntries, 1),
+      ...getWorkExpArray(workEntries, 2),
+      ...getWorkExpArray(workEntries, 3),
+      ...getWorkExpArray(workEntries, 4),
+
+      // Skills
+      otherSkills.auto_mechanic ? "Yes" : "No",
+      otherSkills.beautician ? "Yes" : "No",
+      otherSkills.carpentry_work ? "Yes" : "No",
+      otherSkills.computer_literate ? "Yes" : "No",
+      otherSkills.domestic_chores ? "Yes" : "No",
+      otherSkills.driver ? "Yes" : "No",
+      otherSkills.electrician ? "Yes" : "No",
+      otherSkills.embroidery ? "Yes" : "No",
+      otherSkills.gardening ? "Yes" : "No",
+      otherSkills.masonry ? "Yes" : "No",
+      otherSkills.painter_artist ? "Yes" : "No",
+      otherSkills.painting_jobs ? "Yes" : "No",
+      otherSkills.photography ? "Yes" : "No",
+      otherSkills.plumbing ? "Yes" : "No",
+      otherSkills.sewing_dresses ? "Yes" : "No",
+      otherSkills.stenography ? "Yes" : "No",
+      otherSkills.tailoring ? "Yes" : "No",
+      escapeCSV(otherSkills.others),
+
+      // Certification
+      cert.acknowledged ? "Yes" : "No",
+      escapeCSV(cert.signature),
+      escapeCSV(cert.dateSigned),
+
+      // PESO Use Only
+      referralPrograms.spes ? "Yes" : "No",
+      referralPrograms.gip ? "Yes" : "No",
+      referralPrograms.tupad ? "Yes" : "No",
+      referralPrograms.jobstart ? "Yes" : "No",
+      referralPrograms.dileep ? "Yes" : "No",
+      referralPrograms.tesda_training ? "Yes" : "No",
+      escapeCSV(referralPrograms.others),
+      escapeCSV(pesoUse.assessedBy),
+      escapeCSV(pesoUse.assessorSignature),
+      escapeCSV(pesoUse.assessmentDate),
+
+      // System Fields
+      new Date(record.created_at).toLocaleDateString(),
+      escapeCSV(record.created_by),
+      escapeCSV(record.status),
+    ];
+
+    return row.join(",");
 }
 
 // ============================================================================
-// OPTIMIZED
-// ============================================================================
-
-async function optimizedExport() {
-  global.gc?.();
-  const startMem = process.memoryUsage().heapUsed;
-  const startTime = performance.now();
-
-  const supabase = createMockSupabase();
-
-  // 1. Init CSV with headers
-  // Using an array of strings is better than one huge string concatenation loop
-  const csvParts = [headers.join(",")];
-
-  // 2. Paginate
-  let page = 0;
-  const pageSize = 1000;
-  let hasMore = true;
-
-  while (hasMore) {
-    const start = page * pageSize;
-    const end = start + pageSize - 1;
-
-    // Fetch chunk
-    const { data } = await supabase.from("jobseekers").select("*").range(start, end);
-
-    if (!data || data.length === 0) {
-      hasMore = false;
-      break;
-    }
-
-    // Process chunk
-    data.forEach((record: any) => {
-      csvParts.push(convertRecordToCsvRow(record));
-    });
-
-    // Check if we reached the end
-    if (data.length < pageSize) {
-      hasMore = false;
-    }
-    page++;
-  }
-
-  const csv = csvParts.join("\n");
-
-  const endTime = performance.now();
-  const endMem = process.memoryUsage().heapUsed;
-
-  return {
-      name: "Optimized (Paginated)",
-      timeMs: endTime - startTime,
-      memoryDiffMB: (endMem - startMem) / 1024 / 1024,
-      resultLength: csv.length
-  };
-}
-
-// ============================================================================
-// RUNNER
+// BENCHMARK
 // ============================================================================
 
 async function run() {
   console.log(`Running benchmark with ${MOCK_TOTAL_RECORDS} records...`);
 
-  try {
-    const baseline = await baselineExport();
-    console.log(baseline);
+  // 1. Baseline (Array + Spread + Join)
+  global.gc?.();
+  const startBase = performance.now();
+  const startMemBase = process.memoryUsage().heapUsed;
 
-    const optimized = await optimizedExport();
-    console.log(optimized);
-
-  } catch (e) {
-    console.error(e);
+  for (const record of records) {
+      oldImplementation(record);
   }
+
+  const endBase = performance.now();
+  const endMemBase = process.memoryUsage().heapUsed;
+
+  console.log(`Baseline (Array + Join): ${(endBase - startBase).toFixed(2)} ms`);
+  console.log(`Baseline Memory Delta: ${((endMemBase - startMemBase) / 1024 / 1024).toFixed(2)} MB`);
+
+
+  // 2. Optimized (String Concatenation)
+  global.gc?.();
+  const startOpt = performance.now();
+  const startMemOpt = process.memoryUsage().heapUsed;
+
+  for (const record of records) {
+      convertRecordToCSVRow(record);
+  }
+
+  const endOpt = performance.now();
+  const endMemOpt = process.memoryUsage().heapUsed;
+
+  console.log(`Optimized (String Concat): ${(endOpt - startOpt).toFixed(2)} ms`);
+  console.log(`Optimized Memory Delta: ${((endMemOpt - startMemOpt) / 1024 / 1024).toFixed(2)} MB`);
+
+  const speedup = (endBase - startBase) / (endOpt - startOpt);
+  console.log(`Speedup: ${speedup.toFixed(2)}x`);
 }
 
 run();
