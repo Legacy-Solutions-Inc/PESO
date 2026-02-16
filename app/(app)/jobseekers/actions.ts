@@ -539,7 +539,9 @@ export async function exportJobseekersCSV(
       "Status",
     ];
 
-    const csvRows = [headers.join(",")];
+    const headerRow = headers.join(",");
+    // Use string concatenation for memory efficiency (avoids large array allocation)
+    let csv = headerRow;
 
     // Pagination config
     const PAGE_SIZE = 1000;
@@ -791,7 +793,7 @@ export async function exportJobseekersCSV(
             escapeCSV(record.status),
           ];
 
-          csvRows.push(row.join(","));
+          csv += "\n" + row.join(",");
         });
 
         // Check for termination
@@ -801,11 +803,9 @@ export async function exportJobseekersCSV(
         page++;
     }
 
-    if (csvRows.length === 1) { // Only headers
+    if (csv === headerRow) { // Only headers
         return { error: "No data to export" };
     }
-
-    const csv = csvRows.join("\n");
     const filename = `jobseekers_${new Date().toISOString().split("T")[0]}.csv`;
 
     return { csv, filename };
