@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { requireActiveUser } from "@/lib/auth/require-active-user";
 import type { JobseekerRegistrationData } from "@/lib/validations/jobseeker-registration";
-import { sanitizeSearchQuery } from "./search-utils";
+import { sanitizeSearchQuery, escapeLikeWildcards } from "./search-utils";
 import {
   escapeCSV,
   getTraining,
@@ -219,16 +219,19 @@ export async function getJobseekers(
     if (filters.search) {
       const sanitizedSearch = sanitizeSearchQuery(filters.search);
       if (sanitizedSearch) {
+        const escapedSearch = escapeLikeWildcards(sanitizedSearch);
         query = query.or(
-          `surname.ilike.%${sanitizedSearch}%,first_name.ilike.%${sanitizedSearch}%`
+          `surname.ilike.%${escapedSearch}%,first_name.ilike.%${escapedSearch}%`
         );
       }
     }
     if (filters.sex) query = query.eq("sex", filters.sex);
     if (filters.employmentStatus)
       query = query.eq("employment_status", filters.employmentStatus);
-    if (filters.city) query = query.ilike("city", `%${filters.city}%`);
-    if (filters.province) query = query.ilike("province", `%${filters.province}%`);
+    if (filters.city)
+      query = query.ilike("city", `%${escapeLikeWildcards(filters.city)}%`);
+    if (filters.province)
+      query = query.ilike("province", `%${escapeLikeWildcards(filters.province)}%`);
     if (filters.isOfw !== undefined && filters.isOfw !== "")
       query = query.eq("is_ofw", filters.isOfw === "true");
     if (filters.is4PsBeneficiary !== undefined && filters.is4PsBeneficiary !== "")
@@ -239,7 +242,10 @@ export async function getJobseekers(
       query = query.eq("personal_info->>civilStatus", filters.civilStatus);
     }
     if (filters.barangay) {
-      query = query.ilike("personal_info->address->>barangay", `%${filters.barangay}%`);
+      query = query.ilike(
+        "personal_info->address->>barangay",
+        `%${escapeLikeWildcards(filters.barangay)}%`
+      );
     }
     if (filters.employedType) {
       query = query.eq("employment->>employedType", filters.employedType);
@@ -251,10 +257,16 @@ export async function getJobseekers(
       query = query.eq("job_preference->>employmentType", filters.employmentType);
     }
     if (filters.occupation1) {
-      query = query.ilike("job_preference->>occupation1", `%${filters.occupation1}%`);
+      query = query.ilike(
+        "job_preference->>occupation1",
+        `%${escapeLikeWildcards(filters.occupation1)}%`
+      );
     }
     if (filters.tertiaryCourse) {
-      query = query.ilike("education->tertiary->>course", `%${filters.tertiaryCourse}%`);
+      query = query.ilike(
+        "education->tertiary->>course",
+        `%${escapeLikeWildcards(filters.tertiaryCourse)}%`
+      );
     }
 
     // Sorting
@@ -554,16 +566,22 @@ export async function exportJobseekersCSV(
         if (filters.search) {
           const sanitizedSearch = sanitizeSearchQuery(filters.search);
           if (sanitizedSearch) {
+            const escapedSearch = escapeLikeWildcards(sanitizedSearch);
             query = query.or(
-              `surname.ilike.%${sanitizedSearch}%,first_name.ilike.%${sanitizedSearch}%`
+              `surname.ilike.%${escapedSearch}%,first_name.ilike.%${escapedSearch}%`
             );
           }
         }
         if (filters.sex) query = query.eq("sex", filters.sex);
         if (filters.employmentStatus)
           query = query.eq("employment_status", filters.employmentStatus);
-        if (filters.city) query = query.ilike("city", `%${filters.city}%`);
-        if (filters.province) query = query.ilike("province", `%${filters.province}%`);
+        if (filters.city)
+          query = query.ilike("city", `%${escapeLikeWildcards(filters.city)}%`);
+        if (filters.province)
+          query = query.ilike(
+            "province",
+            `%${escapeLikeWildcards(filters.province)}%`
+          );
         if (filters.isOfw !== undefined && filters.isOfw !== "")
           query = query.eq("is_ofw", filters.isOfw === "true");
         if (filters.is4PsBeneficiary !== undefined && filters.is4PsBeneficiary !== "")
@@ -573,7 +591,10 @@ export async function exportJobseekersCSV(
           query = query.eq("personal_info->>civilStatus", filters.civilStatus);
         }
         if (filters.barangay) {
-          query = query.ilike("personal_info->address->>barangay", `%${filters.barangay}%`);
+          query = query.ilike(
+            "personal_info->address->>barangay",
+            `%${escapeLikeWildcards(filters.barangay)}%`
+          );
         }
         if (filters.employedType) {
           query = query.eq("employment->>employedType", filters.employedType);
