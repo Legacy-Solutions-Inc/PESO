@@ -170,6 +170,7 @@ export function JobseekersTable({
         <div className="group relative w-full md:max-w-md">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
           <Input
+            aria-label="Search jobseekers"
             placeholder="Search by name, ID, or email..."
             value={searchValue}
             onChange={(e) => {
@@ -318,6 +319,7 @@ export function JobseekersTable({
                             variant="ghost"
                             size="icon"
                             title="View details"
+                            aria-label={`View details for ${jobseeker.first_name} ${jobseeker.surname}`}
                             asChild
                           >
                             <Link href={`/jobseekers/${jobseeker.id}`}>
@@ -328,6 +330,7 @@ export function JobseekersTable({
                             variant="ghost"
                             size="icon"
                             title="Edit record"
+                            aria-label={`Edit record for ${jobseeker.first_name} ${jobseeker.surname}`}
                             asChild
                           >
                             <Link href={`/jobseekers/${jobseeker.id}/edit`}>
@@ -356,6 +359,7 @@ export function JobseekersTable({
                 size="sm"
                 onClick={() => handlePageChange(initialPage - 1)}
                 disabled={initialPage <= 1 || isPending}
+                aria-label="Go to previous page"
               >
                 <ChevronLeft className="size-4" />
                 Previous
@@ -381,6 +385,8 @@ export function JobseekersTable({
                       onClick={() => handlePageChange(pageNum)}
                       disabled={isPending}
                       className="min-w-10"
+                      aria-label={`Go to page ${pageNum}`}
+                      aria-current={initialPage === pageNum ? "page" : undefined}
                     >
                       {pageNum}
                     </Button>
@@ -392,6 +398,7 @@ export function JobseekersTable({
                 size="sm"
                 onClick={() => handlePageChange(initialPage + 1)}
                 disabled={initialPage >= totalPages || isPending}
+                aria-label="Go to next page"
               >
                 Next
                 <ChevronRight className="size-4" />
