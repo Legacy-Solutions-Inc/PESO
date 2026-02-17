@@ -1,16 +1,28 @@
 export const escapeCSV = (val: unknown): string => {
   if (val === null || val === undefined) return "";
-  let str = String(val);
+  const str = String(val);
+
+  const firstChar = str.charCodeAt(0);
+  const isRiskyStart =
+    firstChar === 61 || // =
+    firstChar === 43 || // +
+    firstChar === 45 || // -
+    firstChar === 64; // @
+
+  const needsQuotes =
+    str.includes(",") || str.includes('"') || str.includes("\n");
+
+  let finalStr = str;
 
   // Prevent CSV injection
-  if (/^[=+\-@]/.test(str)) {
-    str = `'${str}`;
+  if (isRiskyStart) {
+    finalStr = `'${finalStr}`;
   }
 
-  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-    return `"${str.replace(/"/g, '""')}"`;
+  if (needsQuotes) {
+    return `"${finalStr.replace(/"/g, '""')}"`;
   }
-  return str;
+  return finalStr;
 };
 
 export const getTraining = (
