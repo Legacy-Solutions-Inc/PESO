@@ -1,11 +1,16 @@
 /**
- * Escapes PostgREST/SQL wildcard characters (% and _) to ensure they are treated as literals.
- * This prevents users from performing wildcard searches (e.g. searching for '%') which could
- * lead to performance issues (DoS) or unexpected results.
+ * Escapes characters that are treated as wildcards in SQL LIKE/ILIKE queries.
+ * Prevents Wildcard Injection DoS attacks where a user inputs '%' or '_'
+ * to cause expensive full-table scans or regex matching.
+ *
+ * Escapes:
+ * - % (percent) -> \%
+ * - _ (underscore) -> \_
+ * - \ (backslash) -> \\
  */
-export function escapeLikeWildcards(text: string): string {
-  if (!text) return "";
-  return text.replace(/[%_]/g, "\\$&");
+export function escapeLikeWildcards(query: string): string {
+  if (!query) return "";
+  return query.replace(/[\\%_]/g, "\\$&");
 }
 
 /**
@@ -16,12 +21,13 @@ export function escapeLikeWildcards(text: string): string {
  * an 'or' string (e.g. `or(col1.ilike.%${input}%,col2.ilike.%${input}%)`), it can
  * break the query syntax or allow filter injection.
  *
- * This function also escapes wildcard characters (% and _) to prevent wildcard injection.
+ * This function replaces these characters with spaces to prevent such issues.
+ * It also escapes SQL wildcards to prevent DoS attacks.
  */
 export function sanitizeSearchQuery(query: string): string {
   if (!query) return "";
 
-  // First escape wildcards so they are treated as literals
+  // First escape SQL wildcards
   const escaped = escapeLikeWildcards(query);
 
   // Then replace dangerous PostgREST control characters with space and collapse multiple spaces
