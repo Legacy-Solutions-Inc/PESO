@@ -37,3 +37,28 @@ export function sanitizeSearchQuery(query: string): string {
   // 2. Escape SQL wildcards
   return escapeLikeWildcards(clean);
 }
+
+// Columns that are safe to sort by (must be top-level table columns)
+export const ALLOWED_SORT_COLUMNS = [
+  "created_at",
+  "updated_at",
+  "surname",
+  "first_name",
+  "sex",
+  "employment_status",
+  "city",
+  "province",
+  "is_ofw",
+  "is_4ps_beneficiary",
+];
+
+/**
+ * Validates the sort column against a whitelist of allowed columns.
+ * Defaults to "created_at" if the column is not allowed.
+ */
+export function validateSortColumn(column: string): string {
+  if (!column || !ALLOWED_SORT_COLUMNS.includes(column)) {
+    return "created_at";
+  }
+  return column;
+}
