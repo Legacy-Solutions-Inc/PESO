@@ -227,7 +227,8 @@ export async function getJobseekers(
     if (filters.sex) query = query.eq("sex", filters.sex);
     if (filters.employmentStatus)
       query = query.eq("employment_status", filters.employmentStatus);
-    if (filters.city) query = query.ilike("city", `%${escapeLikeWildcards(filters.city)}%`);
+    if (filters.city)
+      query = query.ilike("city", `%${escapeLikeWildcards(filters.city)}%`);
     if (filters.province)
       query = query.ilike("province", `%${escapeLikeWildcards(filters.province)}%`);
     if (filters.isOfw !== undefined && filters.isOfw !== "")
@@ -573,9 +574,13 @@ export async function exportJobseekersCSV(
         if (filters.sex) query = query.eq("sex", filters.sex);
         if (filters.employmentStatus)
           query = query.eq("employment_status", filters.employmentStatus);
-        if (filters.city) query = query.ilike("city", `%${escapeLikeWildcards(filters.city)}%`);
+        if (filters.city)
+          query = query.ilike("city", `%${escapeLikeWildcards(filters.city)}%`);
         if (filters.province)
-          query = query.ilike("province", `%${escapeLikeWildcards(filters.province)}%`);
+          query = query.ilike(
+            "province",
+            `%${escapeLikeWildcards(filters.province)}%`
+          );
         if (filters.isOfw !== undefined && filters.isOfw !== "")
           query = query.eq("is_ofw", filters.isOfw === "true");
         if (filters.is4PsBeneficiary !== undefined && filters.is4PsBeneficiary !== "")

@@ -1,16 +1,20 @@
 /**
- * Escapes characters that are treated as wildcards in SQL LIKE/ILIKE queries.
- * Prevents Wildcard Injection DoS attacks where a user inputs '%' or '_'
- * to cause expensive full-table scans or regex matching.
+ * Escapes characters that have special meaning in SQL LIKE/ILIKE clauses.
  *
- * Escapes:
+ * This prevents users from using wildcards (%) or single-character matchers (_)
+ * to trigger expensive queries (DoS) or bypass intended filters.
+ *
+ * It escapes:
  * - % (percent) -> \%
  * - _ (underscore) -> \_
  * - \ (backslash) -> \\
  */
 export function escapeLikeWildcards(query: string): string {
   if (!query) return "";
-  return query.replace(/[\\%_]/g, "\\$&");
+  return query
+    .replace(/\\/g, "\\\\") // Must escape backslashes first!
+    .replace(/%/g, "\\%")
+    .replace(/_/g, "\\_");
 }
 
 /**
@@ -21,15 +25,15 @@ export function escapeLikeWildcards(query: string): string {
  * an 'or' string (e.g. `or(col1.ilike.%${input}%,col2.ilike.%${input}%)`), it can
  * break the query syntax or allow filter injection.
  *
- * This function replaces these characters with spaces to prevent such issues.
- * It also escapes SQL wildcards to prevent DoS attacks.
+ * This function:
+ * 1. Replaces dangerous control characters (params, commas) with spaces.
+ * 2. Escapes SQL wildcards (%, _, \) using escapeLikeWildcards.
  */
 export function sanitizeSearchQuery(query: string): string {
   if (!query) return "";
+  // 1. Replace dangerous characters with space and collapse multiple spaces
+  const clean = query.replace(/[(),]/g, " ").replace(/\s+/g, " ").trim();
 
-  // First escape SQL wildcards
-  const escaped = escapeLikeWildcards(query);
-
-  // Then replace dangerous PostgREST control characters with space and collapse multiple spaces
-  return escaped.replace(/[(),]/g, " ").replace(/\s+/g, " ").trim();
+  // 2. Escape SQL wildcards
+  return escapeLikeWildcards(clean);
 }

@@ -3,27 +3,22 @@ import assert from "node:assert";
 import { sanitizeSearchQuery, escapeLikeWildcards } from "./search-utils.ts";
 
 describe("escapeLikeWildcards", () => {
+  test("should escape SQL wildcards", () => {
+    assert.strictEqual(escapeLikeWildcards("100%"), "100\\%");
+    assert.strictEqual(escapeLikeWildcards("_"), "\\_");
+    assert.strictEqual(escapeLikeWildcards("\\"), "\\\\");
+  });
+
   test("should handle empty strings", () => {
     assert.strictEqual(escapeLikeWildcards(""), "");
   });
 
-  test("should escape percent sign", () => {
-    assert.strictEqual(escapeLikeWildcards("%"), "\\%");
-    assert.strictEqual(escapeLikeWildcards("100%"), "100\\%");
+  test("should preserve safe characters", () => {
+    assert.strictEqual(escapeLikeWildcards("abc 123"), "abc 123");
   });
 
-  test("should escape underscore", () => {
-    assert.strictEqual(escapeLikeWildcards("_"), "\\_");
-    assert.strictEqual(escapeLikeWildcards("user_name"), "user\\_name");
-  });
-
-  test("should escape backslash", () => {
-    assert.strictEqual(escapeLikeWildcards("\\"), "\\\\");
-    assert.strictEqual(escapeLikeWildcards("C:\\Windows"), "C:\\\\Windows");
-  });
-
-  test("should handle mixed special characters", () => {
-    assert.strictEqual(escapeLikeWildcards("100%_Match\\"), "100\\%\\_Match\\\\");
+  test("should escape mixed content", () => {
+    assert.strictEqual(escapeLikeWildcards("a_b%c\\d"), "a\\_b\\%c\\\\d");
   });
 });
 
@@ -95,5 +90,12 @@ describe('Jobseeker Search Utils', () => {
     // Escaped: "(User\_Name)"
     // Sanitized: " User\_Name " -> "User\_Name"
     assert.strictEqual(sanitizeSearchQuery("(User_Name)"), "User\\_Name");
+  });
+
+  test("should escape SQL wildcards after sanitization", () => {
+    assert.strictEqual(sanitizeSearchQuery("100%"), "100\\%");
+    assert.strictEqual(sanitizeSearchQuery("User_Name"), "User\\_Name");
+    // Comma replaced by space, then % escaped
+    assert.strictEqual(sanitizeSearchQuery("100%, Guaranteed"), "100\\% Guaranteed");
   });
 });
