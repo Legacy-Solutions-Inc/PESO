@@ -512,7 +512,7 @@ export function JobseekerRegistrationFormLayout({
       <main className="custom-scrollbar min-h-0 flex-1 overflow-y-auto p-6 lg:p-8">
         <div className="mx-auto max-w-5xl">
           <FormProvider {...formMethods}>
-            <form onSubmit={onSubmit} className="space-y-8">
+            <form onSubmit={onSubmit} className="space-y-8" noValidate>
               {/* Step content rendered based on currentStep */}
               <StepRenderer currentStep={currentStep} />
 

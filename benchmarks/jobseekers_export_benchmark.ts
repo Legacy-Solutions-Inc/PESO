@@ -228,8 +228,8 @@ async function optimizedPaginatedExport() {
   const supabase = createMockSupabase();
 
   // 1. Init CSV with headers
-  // Using an array of strings is better than one huge string concatenation loop
-  const csvParts = [headers.join(",")];
+  // Using string concatenation directly is better than array push + join
+  let csv = headers.join(",") + "\n";
 
   // 2. Paginate
   let page = 0;
@@ -250,7 +250,7 @@ async function optimizedPaginatedExport() {
 
     // Process chunk
     data.forEach((record: any) => {
-      csvParts.push(convertRecordToCsvRow(record));
+      csv += convertRecordToCsvRow(record) + "\n";
     });
 
     // Check if we reached the end
@@ -259,8 +259,6 @@ async function optimizedPaginatedExport() {
     }
     page++;
   }
-
-  const csv = csvParts.join("\n");
 
   const endTime = performance.now();
   const endMem = process.memoryUsage().heapUsed;

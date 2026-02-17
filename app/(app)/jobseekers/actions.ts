@@ -221,8 +221,10 @@ export async function getJobseekers(
     if (filters.sex) query = query.eq("sex", filters.sex);
     if (filters.employmentStatus)
       query = query.eq("employment_status", filters.employmentStatus);
-    if (filters.city) query = query.ilike("city", `%${filters.city}%`);
-    if (filters.province) query = query.ilike("province", `%${filters.province}%`);
+    if (filters.city)
+      query = query.ilike("city", `%${escapeLikeWildcards(filters.city)}%`);
+    if (filters.province)
+      query = query.ilike("province", `%${escapeLikeWildcards(filters.province)}%`);
     if (filters.isOfw !== undefined && filters.isOfw !== "")
       query = query.eq("is_ofw", filters.isOfw === "true");
     if (filters.is4PsBeneficiary !== undefined && filters.is4PsBeneficiary !== "")
@@ -233,7 +235,10 @@ export async function getJobseekers(
       query = query.eq("personal_info->>civilStatus", filters.civilStatus);
     }
     if (filters.barangay) {
-      query = query.ilike("personal_info->address->>barangay", `%${filters.barangay}%`);
+      query = query.ilike(
+        "personal_info->address->>barangay",
+        `%${escapeLikeWildcards(filters.barangay)}%`
+      );
     }
     if (filters.employedType) {
       query = query.eq("employment->>employedType", filters.employedType);
@@ -245,10 +250,16 @@ export async function getJobseekers(
       query = query.eq("job_preference->>employmentType", filters.employmentType);
     }
     if (filters.occupation1) {
-      query = query.ilike("job_preference->>occupation1", `%${filters.occupation1}%`);
+      query = query.ilike(
+        "job_preference->>occupation1",
+        `%${escapeLikeWildcards(filters.occupation1)}%`
+      );
     }
     if (filters.tertiaryCourse) {
-      query = query.ilike("education->tertiary->>course", `%${filters.tertiaryCourse}%`);
+      query = query.ilike(
+        "education->tertiary->>course",
+        `%${escapeLikeWildcards(filters.tertiaryCourse)}%`
+      );
     }
 
     // Sorting
