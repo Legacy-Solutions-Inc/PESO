@@ -121,6 +121,7 @@ const createMockSupabase = () => {
         or: (filter: string) => queryBuilder,
         eq: (col: string, val: any) => queryBuilder,
         ilike: (col: string, val: any) => queryBuilder,
+        order: (col: string, opts: any) => queryBuilder,
         range: (start: number, end: number) => {
           return Promise.resolve({ data: getDataSlice(start, end), error: null });
         },
@@ -216,10 +217,10 @@ async function baselineExport() {
 }
 
 // ============================================================================
-// OPTIMIZED
+// OPTIMIZED (Paginated, Array Push)
 // ============================================================================
 
-async function optimizedExport() {
+async function optimizedPaginatedExport() {
   global.gc?.();
   const startMem = process.memoryUsage().heapUsed;
   const startTime = performance.now();
@@ -263,10 +264,65 @@ async function optimizedExport() {
   const endMem = process.memoryUsage().heapUsed;
 
   return {
-      name: "Optimized (Paginated)",
+      name: "Optimized (Paginated + Array Push)",
       timeMs: endTime - startTime,
       memoryDiffMB: (endMem - startMem) / 1024 / 1024,
       resultLength: csv.length
+  };
+}
+
+// ============================================================================
+// OPTIMIZED (Paginated, String Concat)
+// ============================================================================
+
+async function optimizedStringConcatExport() {
+  global.gc?.();
+  const startMem = process.memoryUsage().heapUsed;
+  const startTime = performance.now();
+
+  const supabase = createMockSupabase();
+
+  // 1. Init CSV with headers
+  // Using direct string concatenation
+  let csvString = headers.join(",") + "\n";
+
+  // 2. Paginate
+  let page = 0;
+  const pageSize = 1000;
+  let hasMore = true;
+
+  while (hasMore) {
+    const start = page * pageSize;
+    const end = start + pageSize - 1;
+
+    // Fetch chunk
+    const { data } = await supabase.from("jobseekers").select("*").range(start, end);
+
+    if (!data || data.length === 0) {
+      hasMore = false;
+      break;
+    }
+
+    // Process chunk
+    data.forEach((record: any) => {
+      csvString += convertRecordToCsvRow(record) + "\n";
+    });
+
+    // Check if we reached the end
+    if (data.length < pageSize) {
+      hasMore = false;
+    }
+    page++;
+  }
+
+  const endTime = performance.now();
+  const endMem = process.memoryUsage().heapUsed;
+
+  return {
+      name: "Optimized (Paginated + String Concat)",
+      timeMs: endTime - startTime,
+      memoryDiffMB: (endMem - startMem) / 1024 / 1024,
+      resultLength: csvString.length
   };
 }
 
@@ -281,8 +337,11 @@ async function run() {
     const baseline = await baselineExport();
     console.log(baseline);
 
-    const optimized = await optimizedExport();
-    console.log(optimized);
+    const optimizedPaginated = await optimizedPaginatedExport();
+    console.log(optimizedPaginated);
+
+    const optimizedStringConcat = await optimizedStringConcatExport();
+    console.log(optimizedStringConcat);
 
   } catch (e) {
     console.error(e);
