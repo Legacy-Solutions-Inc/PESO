@@ -550,12 +550,13 @@ export async function exportJobseekersCSV(
       "Status",
     ];
 
-    const csvRows = [headers.join(",")];
+    let csv = headers.join(",") + "\n";
 
     // Pagination config
     const PAGE_SIZE = 1000;
     let page = 0;
     let hasMore = true;
+    let hasData = false;
 
     while (hasMore) {
         // Build query fresh for each iteration
@@ -627,6 +628,7 @@ export async function exportJobseekersCSV(
 
         // Process this chunk
         data.forEach((record: DBJobseekerRecord) => {
+          hasData = true;
           const personalInfo = (record.personal_info || {}) as Record<string, unknown>;
           const address = (personalInfo.address || {}) as Record<string, unknown>;
           const disability = (personalInfo.disability || {}) as Record<string, unknown>;
@@ -813,7 +815,7 @@ export async function exportJobseekersCSV(
             escapeCSV(record.status),
           ];
 
-          csvRows.push(row.join(","));
+          csv += row.join(",") + "\n";
         });
 
         // Check for termination
@@ -823,11 +825,9 @@ export async function exportJobseekersCSV(
         page++;
     }
 
-    if (csvRows.length === 1) { // Only headers
+    if (!hasData) {
         return { error: "No data to export" };
     }
-
-    const csv = csvRows.join("\n");
     const filename = `jobseekers_${new Date().toISOString().split("T")[0]}.csv`;
 
     return { csv, filename };
