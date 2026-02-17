@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { ZodError } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import {
   jobseekerRegistrationSchema,
@@ -114,22 +115,21 @@ export async function createJobseeker(
     return { success: true, id: jobseeker.id.toString() };
   } catch (error) {
     // Handle Zod validation errors with detailed messages
-    if (error instanceof Error && error.name === 'ZodError') {
-      try {
-        const zodError = JSON.parse(error.message);
-        const firstError = zodError[0];
-        const fieldPath = firstError.path.join(' → ');
-        return { 
-          error: `Validation Error: ${firstError.message}`,
-          field: fieldPath,
-          details: zodError.slice(0, 3).map((err: { path: string[]; message: string }) => ({
-            field: err.path.join(' → '),
-            message: err.message
-          }))
-        };
-      } catch {
+    if (error instanceof ZodError) {
+      const firstError = error.issues[0];
+      if (!firstError) {
         return { error: error.message };
       }
+
+      const fieldPath = firstError.path.join(' → ');
+      return {
+        error: `Validation Error: ${firstError.message}`,
+        field: fieldPath,
+        details: error.issues.slice(0, 3).map((issue) => ({
+          field: issue.path.join(' → '),
+          message: issue.message,
+        })),
+      };
     }
     
     if (error instanceof Error) {
