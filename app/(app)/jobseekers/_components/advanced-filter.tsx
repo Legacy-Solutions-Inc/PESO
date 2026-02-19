@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useId } from "react";
 import {
   User,
   Briefcase,
@@ -73,15 +73,17 @@ function FilterField({
   type = "text",
   options,
 }: FilterFieldProps) {
+  const id = useId();
+
   return (
     <div className="space-y-2">
-      <Label>{label}</Label>
+      <Label htmlFor={id}>{label}</Label>
       {type === "select" ? (
         <Select
           value={value || ALL_VALUE}
           onValueChange={(v) => onChange(v === ALL_VALUE ? "" : v)}
         >
-          <SelectTrigger>
+          <SelectTrigger id={id}>
             <SelectValue placeholder={placeholder || "All"} />
           </SelectTrigger>
           <SelectContent>
@@ -95,6 +97,7 @@ function FilterField({
         </Select>
       ) : (
         <Input
+          id={id}
           type={type}
           value={value || ""}
           onChange={(e) => onChange(e.target.value)}

@@ -1,4 +1,4 @@
-import { test, describe } from "node:test";
+import { test, describe, it } from "node:test";
 import assert from "node:assert";
 import { sanitizeSearchQuery, escapeLikeWildcards } from "./search-utils.ts";
 
@@ -28,6 +28,7 @@ describe("sanitizeSearchQuery", () => {
     // Trims whitespace
     assert.strictEqual(sanitizeSearchQuery("   "), "");
   });
+});
 
 describe('Jobseeker Search Utils', () => {
   describe('escapeLikeWildcards', () => {
