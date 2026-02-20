@@ -1,9 +1,13 @@
 export const escapeCSV = (val: unknown): string => {
   if (val === null || val === undefined) return "";
-  let str = String(val);
+  let str = typeof val === 'string' ? val : String(val);
 
-  // Prevent CSV injection
-  if (/^[=+\-@]/.test(str)) {
+  if (str.length === 0) return "";
+
+  // Prevent CSV injection: check for =, +, -, @ at the start
+  // using charCodeAt is faster than regex
+  const firstChar = str.charCodeAt(0);
+  if (firstChar === 61 || firstChar === 43 || firstChar === 45 || firstChar === 64) {
     str = `'${str}`;
   }
 
