@@ -26,6 +26,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { AdvancedFilter } from "./advanced-filter";
 import { ExportButton } from "./export-button";
 import { BulkActions } from "./bulk-actions";
@@ -171,7 +177,7 @@ export function JobseekersTable({
   const endRecord = Math.min(initialPage * pageSize, initialTotal);
 
   return (
-    <>
+    <TooltipProvider>
       {/* Search & Actions Bar */}
       <div className="glass-panel mb-6 flex flex-col gap-4 rounded-xl p-4 md:flex-row">
         <div className="group relative w-full md:max-w-md">
@@ -333,32 +339,36 @@ export function JobseekersTable({
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            title="View details"
-                            asChild
-                          >
-                            <Link
-                              href={`/jobseekers/${jobseeker.id}`}
-                              aria-label={`View details for ${jobseeker.first_name} ${jobseeker.surname}`}
-                            >
-                              <Eye className="size-4" />
-                            </Link>
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            title="Edit record"
-                            asChild
-                          >
-                            <Link
-                              href={`/jobseekers/${jobseeker.id}/edit`}
-                              aria-label={`Edit record for ${jobseeker.first_name} ${jobseeker.surname}`}
-                            >
-                              <Edit className="size-4" />
-                            </Link>
-                          </Button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" asChild>
+                                <Link
+                                  href={`/jobseekers/${jobseeker.id}`}
+                                  aria-label={`View details for ${jobseeker.first_name} ${jobseeker.surname}`}
+                                >
+                                  <Eye className="size-4" />
+                                </Link>
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>View details</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" asChild>
+                                <Link
+                                  href={`/jobseekers/${jobseeker.id}/edit`}
+                                  aria-label={`Edit record for ${jobseeker.first_name} ${jobseeker.surname}`}
+                                >
+                                  <Edit className="size-4" />
+                                </Link>
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Edit record</p>
+                            </TooltipContent>
+                          </Tooltip>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -435,6 +445,6 @@ export function JobseekersTable({
         onApply={handleFilterApply}
         currentFilters={currentFilters}
       />
-    </>
+    </TooltipProvider>
   );
 }
