@@ -37,3 +37,18 @@ export function sanitizeSearchQuery(query: string): string {
   // 2. Escape SQL wildcards
   return escapeLikeWildcards(clean);
 }
+
+/**
+ * Escapes characters that have special meaning in SQL LIKE/ILIKE queries.
+ *
+ * The characters `%` (wildcard for any sequence of characters) and `_` (wildcard for
+ * any single character) are escaped with a backslash. Backslashes themselves are also
+ * escaped to prevent them from being interpreted as escape characters for other things.
+ *
+ * This prevents users from injecting wildcards to perform DoS attacks (e.g. `%%%%%`)
+ * or bypass filters.
+ */
+export function escapeLikeWildcards(query: string): string {
+  if (!query) return "";
+  return query.replace(/[%_\\]/g, "\\$&");
+}

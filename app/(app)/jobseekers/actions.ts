@@ -219,8 +219,9 @@ export async function getJobseekers(
     if (filters.search) {
       const sanitizedSearch = sanitizeSearchQuery(filters.search);
       if (sanitizedSearch) {
+        const escapedSearch = escapeLikeWildcards(sanitizedSearch);
         query = query.or(
-          `surname.ilike.%${sanitizedSearch}%,first_name.ilike.%${sanitizedSearch}%`
+          `surname.ilike.%${escapedSearch}%,first_name.ilike.%${escapedSearch}%`
         );
       }
     }
@@ -566,8 +567,9 @@ export async function exportJobseekersCSV(
         if (filters.search) {
           const sanitizedSearch = sanitizeSearchQuery(filters.search);
           if (sanitizedSearch) {
+            const escapedSearch = escapeLikeWildcards(sanitizedSearch);
             query = query.or(
-              `surname.ilike.%${sanitizedSearch}%,first_name.ilike.%${sanitizedSearch}%`
+              `surname.ilike.%${escapedSearch}%,first_name.ilike.%${escapedSearch}%`
             );
           }
         }

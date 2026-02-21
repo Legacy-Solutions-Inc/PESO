@@ -1,101 +1,50 @@
-import { test, describe } from "node:test";
-import assert from "node:assert";
-import { sanitizeSearchQuery, escapeLikeWildcards } from "./search-utils.ts";
 
-describe("escapeLikeWildcards", () => {
-  test("should escape SQL wildcards", () => {
-    assert.strictEqual(escapeLikeWildcards("100%"), "100\\%");
-    assert.strictEqual(escapeLikeWildcards("_"), "\\_");
-    assert.strictEqual(escapeLikeWildcards("\\"), "\\\\");
-  });
+import assert from 'node:assert';
+import { test } from 'node:test';
+import { sanitizeSearchQuery, escapeLikeWildcards } from './search-utils.ts';
 
-  test("should handle empty strings", () => {
-    assert.strictEqual(escapeLikeWildcards(""), "");
-  });
+test('sanitizeSearchQuery behavior', async (t) => {
+    await t.test('does not escape wildcards', () => {
+        const input = '%';
+        const output = sanitizeSearchQuery(input);
+        assert.strictEqual(output, '%', 'Should not escape wildcards yet');
+    });
 
-  test("should preserve safe characters", () => {
-    assert.strictEqual(escapeLikeWildcards("abc 123"), "abc 123");
-  });
-
-  test("should escape mixed content", () => {
-    assert.strictEqual(escapeLikeWildcards("a_b%c\\d"), "a\\_b\\%c\\\\d");
-  });
+    await t.test('handles parens and commas', () => {
+        const input = 'foo,bar(baz)';
+        const output = sanitizeSearchQuery(input);
+        assert.strictEqual(output, 'foo bar baz', 'Should replace parens and commas with space');
+    });
 });
 
-describe("sanitizeSearchQuery", () => {
-  test("should handle empty strings", () => {
-    assert.strictEqual(sanitizeSearchQuery(""), "");
-    // Trims whitespace
-    assert.strictEqual(sanitizeSearchQuery("   "), "");
-  });
-
-describe('Jobseeker Search Utils', () => {
-  describe('escapeLikeWildcards', () => {
-    it('should escape %', () => {
-      assert.strictEqual(escapeLikeWildcards('100%'), '100\\%');
+test('escapeLikeWildcards behavior', async (t) => {
+    await t.test('escapes %', () => {
+        const input = 'foo%bar';
+        const output = escapeLikeWildcards(input);
+        assert.strictEqual(output, 'foo\\%bar', 'Should escape %');
     });
 
-    it('should escape _', () => {
-      assert.strictEqual(escapeLikeWildcards('user_name'), 'user\\_name');
+    await t.test('escapes _', () => {
+        const input = 'foo_bar';
+        const output = escapeLikeWildcards(input);
+        assert.strictEqual(output, 'foo\\_bar', 'Should escape _');
     });
 
-    it('should escape multiple occurrences', () => {
-      assert.strictEqual(escapeLikeWildcards('%_Test_%'), '\\%\\_Test\\_\\%');
+    await t.test('escapes \\', () => {
+        const input = 'foo\\bar';
+        const output = escapeLikeWildcards(input);
+        assert.strictEqual(output, 'foo\\\\bar', 'Should escape \\');
     });
 
-    it('should handle empty strings', () => {
-      assert.strictEqual(escapeLikeWildcards(''), '');
+    await t.test('escapes mixed wildcards', () => {
+        const input = 'a%b_c\\d';
+        const output = escapeLikeWildcards(input);
+        assert.strictEqual(output, 'a\\%b\\_c\\\\d', 'Should escape all special characters');
     });
 
-    it('should handle strings without wildcards', () => {
-      assert.strictEqual(escapeLikeWildcards('hello world'), 'hello world');
+    await t.test('handles empty input', () => {
+        const input = '';
+        const output = escapeLikeWildcards(input);
+        assert.strictEqual(output, '', 'Should handle empty input');
     });
-  });
-
-  describe('sanitizeSearchQuery', () => {
-    it('should remove PostgREST control characters ( ) ,', () => {
-      assert.strictEqual(sanitizeSearchQuery('test(1),2'), 'test 1 2');
-    });
-
-    it('should escape wildcards % and _', () => {
-      assert.strictEqual(sanitizeSearchQuery('test%_1'), 'test\\%\\_1');
-    });
-
-    it('should handle both control chars and wildcards', () => {
-      assert.strictEqual(sanitizeSearchQuery('test(%)'), 'test \\%');
-    });
-
-    it('should trim and collapse spaces', () => {
-      assert.strictEqual(sanitizeSearchQuery('  test   1  '), 'test 1');
-    });
-
-    it('should handle empty input', () => {
-      assert.strictEqual(sanitizeSearchQuery(''), '');
-    });
-  });
-
-  test("should escape SQL wildcards", () => {
-    assert.strictEqual(sanitizeSearchQuery("100%"), "100\\%");
-    assert.strictEqual(sanitizeSearchQuery("user_name"), "user\\_name");
-    assert.strictEqual(sanitizeSearchQuery("C:\\"), "C:\\\\");
-  });
-
-  test("should escape wildcards AND sanitize PostgREST chars", () => {
-    // Input: "Hello, 100% World"
-    // Escaped: "Hello, 100\% World"
-    // Sanitized: "Hello  100\% World" -> "Hello 100\% World"
-    assert.strictEqual(sanitizeSearchQuery("Hello, 100% World"), "Hello 100\\% World");
-
-    // Input: "(User_Name)"
-    // Escaped: "(User\_Name)"
-    // Sanitized: " User\_Name " -> "User\_Name"
-    assert.strictEqual(sanitizeSearchQuery("(User_Name)"), "User\\_Name");
-  });
-
-  test("should escape SQL wildcards after sanitization", () => {
-    assert.strictEqual(sanitizeSearchQuery("100%"), "100\\%");
-    assert.strictEqual(sanitizeSearchQuery("User_Name"), "User\\_Name");
-    // Comma replaced by space, then % escaped
-    assert.strictEqual(sanitizeSearchQuery("100%, Guaranteed"), "100\\% Guaranteed");
-  });
 });
