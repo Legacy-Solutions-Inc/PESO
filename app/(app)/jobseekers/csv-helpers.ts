@@ -1,14 +1,28 @@
 export const escapeCSV = (val: unknown): string => {
   if (val === null || val === undefined) return "";
-  let str = String(val);
 
-  // Prevent CSV injection
-  if (/^[=+\-@]/.test(str)) {
+  let str: string;
+  if (typeof val === "string") {
+    str = val;
+  } else {
+    str = String(val);
+  }
+
+  // Prevent CSV injection: starts with =, +, -, @
+  // Optimized using charCodeAt(0)
+  // = is 61, + is 43, - is 45, @ is 64
+  const firstChar = str.charCodeAt(0);
+  if (
+    firstChar === 61 ||
+    firstChar === 43 ||
+    firstChar === 45 ||
+    firstChar === 64
+  ) {
     str = `'${str}`;
   }
 
-  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-    return `"${str.replace(/"/g, '""')}"`;
+  if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+    return `"${str.replaceAll('"', '""')}"`;
   }
   return str;
 };
