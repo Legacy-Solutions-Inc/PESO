@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
+import { escapeLikeWildcards } from "@/lib/search-utils";
 import { fetchUserEmails } from "./fetch-emails";
 
 export interface UserListItem {
@@ -58,7 +59,10 @@ export async function getUsersList(filters: UsersListFilters = {}) {
 
     // Search by full_name only (auth.users not joinable from client)
     if (search.trim()) {
-      query = query.ilike("full_name", `%${search.trim()}%`);
+      query = query.ilike(
+        "full_name",
+        `%${escapeLikeWildcards(search.trim())}%`
+      );
     }
 
     // Apply pagination
