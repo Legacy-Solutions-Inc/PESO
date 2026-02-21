@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { requireActiveUser } from "@/lib/auth/require-active-user";
 import type { JobseekerRegistrationData } from "@/lib/validations/jobseeker-registration";
-import { sanitizeSearchQuery, escapeLikeWildcards } from "./search-utils";
+import { sanitizeSearchQuery, escapeLikeWildcards } from "@/lib/search-utils";
 import {
   escapeCSV,
   getTraining,
