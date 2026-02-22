@@ -20,6 +20,10 @@ describe("escapeLikeWildcards", () => {
   test("should escape mixed content", () => {
     assert.strictEqual(escapeLikeWildcards("a_b%c\\d"), "a\\_b\\%c\\\\d");
   });
+
+  test("should escape multiple occurrences", () => {
+    assert.strictEqual(escapeLikeWildcards("%_Test_%"), "\\%\\_Test\\_\\%");
+  });
 });
 
 describe("sanitizeSearchQuery", () => {
@@ -29,55 +33,20 @@ describe("sanitizeSearchQuery", () => {
     assert.strictEqual(sanitizeSearchQuery("   "), "");
   });
 
-describe('Jobseeker Search Utils', () => {
-  describe('escapeLikeWildcards', () => {
-    it('should escape %', () => {
-      assert.strictEqual(escapeLikeWildcards('100%'), '100\\%');
-    });
-
-    it('should escape _', () => {
-      assert.strictEqual(escapeLikeWildcards('user_name'), 'user\\_name');
-    });
-
-    it('should escape multiple occurrences', () => {
-      assert.strictEqual(escapeLikeWildcards('%_Test_%'), '\\%\\_Test\\_\\%');
-    });
-
-    it('should handle empty strings', () => {
-      assert.strictEqual(escapeLikeWildcards(''), '');
-    });
-
-    it('should handle strings without wildcards', () => {
-      assert.strictEqual(escapeLikeWildcards('hello world'), 'hello world');
-    });
+  test("should remove PostgREST control characters ( ) ,", () => {
+    assert.strictEqual(sanitizeSearchQuery("test(1),2"), "test 1 2");
   });
 
-  describe('sanitizeSearchQuery', () => {
-    it('should remove PostgREST control characters ( ) ,', () => {
-      assert.strictEqual(sanitizeSearchQuery('test(1),2'), 'test 1 2');
-    });
-
-    it('should escape wildcards % and _', () => {
-      assert.strictEqual(sanitizeSearchQuery('test%_1'), 'test\\%\\_1');
-    });
-
-    it('should handle both control chars and wildcards', () => {
-      assert.strictEqual(sanitizeSearchQuery('test(%)'), 'test \\%');
-    });
-
-    it('should trim and collapse spaces', () => {
-      assert.strictEqual(sanitizeSearchQuery('  test   1  '), 'test 1');
-    });
-
-    it('should handle empty input', () => {
-      assert.strictEqual(sanitizeSearchQuery(''), '');
-    });
+  test("should escape wildcards % and _", () => {
+    assert.strictEqual(sanitizeSearchQuery("test%_1"), "test\\%\\_1");
   });
 
-  test("should escape SQL wildcards", () => {
-    assert.strictEqual(sanitizeSearchQuery("100%"), "100\\%");
-    assert.strictEqual(sanitizeSearchQuery("user_name"), "user\\_name");
-    assert.strictEqual(sanitizeSearchQuery("C:\\"), "C:\\\\");
+  test("should handle both control chars and wildcards", () => {
+    assert.strictEqual(sanitizeSearchQuery("test(%)"), "test \\%");
+  });
+
+  test("should trim and collapse spaces", () => {
+    assert.strictEqual(sanitizeSearchQuery("  test   1  "), "test 1");
   });
 
   test("should escape wildcards AND sanitize PostgREST chars", () => {
