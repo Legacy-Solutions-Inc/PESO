@@ -37,3 +37,23 @@ export function sanitizeSearchQuery(query: string): string {
   // 2. Escape SQL wildcards
   return escapeLikeWildcards(clean);
 }
+
+export const ALLOWED_SORT_COLUMNS = [
+  "id",
+  "surname",
+  "first_name",
+  "sex",
+  "employment_status",
+  "city",
+  "province",
+  "is_ofw",
+  "is_4ps_beneficiary",
+  "created_at",
+] as const;
+
+export function validateSortColumn(column: string | undefined): string {
+  if (!column || !ALLOWED_SORT_COLUMNS.includes(column as any)) {
+    return "created_at";
+  }
+  return column;
+}

@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { requireActiveUser } from "@/lib/auth/require-active-user";
 import type { JobseekerRegistrationData } from "@/lib/validations/jobseeker-registration";
-import { sanitizeSearchQuery, escapeLikeWildcards } from "./search-utils";
+import { sanitizeSearchQuery, escapeLikeWildcards, validateSortColumn } from "./search-utils";
 import {
   escapeCSV,
   getTraining,
@@ -269,7 +269,7 @@ export async function getJobseekers(
     }
 
     // Sorting
-    const sortBy = filters.sortBy || "created_at";
+    const sortBy = validateSortColumn(filters.sortBy);
     const sortOrder = filters.sortOrder || "desc";
     query = query.order(sortBy, { ascending: sortOrder === "asc" });
 
