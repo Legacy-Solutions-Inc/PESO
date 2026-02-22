@@ -12,6 +12,11 @@ import {
   getProfLicense,
   getWorkExp,
 } from "./csv-helpers";
+import {
+  mapRecentJobseeker,
+  type OptimizedJobseekerDBRecord,
+  type RecentJobseeker,
+} from "./jobseeker-mapper";
 
 export interface JobseekerFilters {
   // Quick search (indexed fields)
@@ -986,16 +991,8 @@ export async function getDashboardStats(): Promise<{
   }
 }
 
-export interface RecentJobseeker {
-  id: number;
-  name: string;
-  initials: string;
-  sex: string;
-  age: number | null;
-  barangay: string;
-  employmentStatus: string;
-  dateRegistered: string;
-}
+// Re-export type for consumers
+export type { RecentJobseeker };
 
 export async function getRecentJobseekers(
   limit = 10
@@ -1008,9 +1005,21 @@ export async function getRecentJobseekers(
 
     const supabase = await createClient();
 
+    // Optimize: Select only needed fields using JSON arrow operators
     const { data: jobseekers, error } = await supabase
       .from("jobseekers")
-      .select("id, personal_info, employment, created_at")
+      .select(
+        `
+        id,
+        created_at,
+        surname:personal_info->>surname,
+        first_name:personal_info->>firstName,
+        date_of_birth:personal_info->>dateOfBirth,
+        sex:personal_info->>sex,
+        barangay:personal_info->address->>barangay,
+        employment_status:employment->>status
+        `
+      )
       .eq("status", "active")
       .order("created_at", { ascending: false })
       .limit(limit);
@@ -1019,55 +1028,10 @@ export async function getRecentJobseekers(
       return { data: null, error: error.message };
     }
 
-    const recent: RecentJobseeker[] =
-      jobseekers?.map((j) => {
-        const personalInfo = j.personal_info as Record<string, unknown> | null;
-        const employment = j.employment as Record<string, unknown> | null;
-        const address = personalInfo?.address as Record<string, unknown> | undefined;
-
-        const surname = (personalInfo?.surname as string) || "";
-        const firstName = (personalInfo?.firstName as string) || "";
-        const name = [surname, firstName].filter(Boolean).join(", ") || "—";
-        const initials = ((surname[0] || "") + (firstName[0] || "")).toUpperCase() || "—";
-
-        const dateOfBirth = personalInfo?.dateOfBirth as string | undefined;
-        let age: number | null = null;
-        if (dateOfBirth) {
-          const dob = new Date(dateOfBirth);
-          const today = new Date();
-          age = today.getFullYear() - dob.getFullYear();
-          const monthDiff = today.getMonth() - dob.getMonth();
-          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
-            age--;
-          }
-        }
-
-        const sex = (personalInfo?.sex as string) || "—";
-        const barangay = (address?.barangay as string) || "—";
-        const employmentStatus =
-          (employment?.status as string) === "EMPLOYED"
-            ? "Employed"
-            : (employment?.status as string) === "UNEMPLOYED"
-              ? "Unemployed"
-              : "—";
-
-        const dateRegistered = new Date(j.created_at).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        });
-
-        return {
-          id: j.id,
-          name,
-          initials,
-          sex,
-          age,
-          barangay,
-          employmentStatus,
-          dateRegistered,
-        };
-      }) || [];
+    // Cast data to expected optimized structure since Supabase types might not infer aliases perfectly
+    const recent = (jobseekers as unknown as OptimizedJobseekerDBRecord[]).map(
+      mapRecentJobseeker
+    );
 
     return { data: recent, error: null };
   } catch (error) {
