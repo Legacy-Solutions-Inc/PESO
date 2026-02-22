@@ -1,18 +1,10 @@
 "use client";
 
-import { useState, useTransition, useMemo, useRef, useEffect, useCallback } from "react";
+import { useState, useTransition, useMemo, useRef, useEffect, useCallback, memo } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, Filter, Eye, Edit, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-function formatDate(date: Date): string {
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  const d = date.getDate();
-  const m = months[date.getMonth()];
-  const y = date.getFullYear();
-  return `${m} ${d.toString().padStart(2, "0")}, ${y}`;
-}
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -29,6 +21,26 @@ import {
 import { AdvancedFilter } from "./advanced-filter";
 import { ExportButton } from "./export-button";
 import { BulkActions } from "./bulk-actions";
+
+function formatDate(date: Date): string {
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const d = date.getDate();
+  const m = months[date.getMonth()];
+  const y = date.getFullYear();
+  return `${m} ${d.toString().padStart(2, "0")}, ${y}`;
+}
+
+// Calculate age from date of birth
+const calculateAge = (dob: string | undefined, today: Date) => {
+  if (!dob) return "N/A";
+  const birth = new Date(dob);
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  return age;
+};
 
 interface JobseekerRecord {
   id: number;
@@ -49,6 +61,101 @@ interface JobseekerRecord {
   };
 }
 
+interface JobseekerRowProps {
+  jobseeker: JobseekerRecord;
+  isSelected: boolean;
+  toggleSelect: (id: number) => void;
+  today: Date;
+}
+
+const JobseekerRow = memo(function JobseekerRow({
+  jobseeker,
+  isSelected,
+  toggleSelect,
+  today,
+}: JobseekerRowProps) {
+  const age = calculateAge(jobseeker.personal_info?.dateOfBirth, today);
+  const barangay = jobseeker.personal_info?.address?.barangay || "N/A";
+
+  return (
+    <TableRow className="hover:bg-primary/5">
+      <TableCell>
+        <Checkbox
+          checked={isSelected}
+          onCheckedChange={() => toggleSelect(jobseeker.id)}
+        />
+      </TableCell>
+      <TableCell>
+        <div className="flex items-center gap-3">
+          <Avatar className="size-10">
+            <AvatarFallback className="bg-primary/10 text-primary">
+              {jobseeker.surname[0]}
+              {jobseeker.first_name[0]}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <div className="font-semibold">
+              {jobseeker.surname}, {jobseeker.first_name}
+            </div>
+            <div className="text-xs text-slate-500">ID: NSRP-{jobseeker.id}</div>
+          </div>
+        </div>
+      </TableCell>
+      <TableCell className="tabular-nums">{age}</TableCell>
+      <TableCell>{jobseeker.sex}</TableCell>
+      <TableCell>{barangay}</TableCell>
+      <TableCell>
+        <Badge
+          variant={
+            jobseeker.employment_status === "EMPLOYED" ? "default" : "secondary"
+          }
+          className={cn(
+            jobseeker.employment_status === "EMPLOYED" &&
+              "bg-emerald-500 hover:bg-emerald-600",
+            jobseeker.employment_status === "UNEMPLOYED" &&
+              "bg-rose-500 hover:bg-rose-600"
+          )}
+        >
+          {jobseeker.employment_status}
+        </Badge>
+      </TableCell>
+      <TableCell>{formatDate(new Date(jobseeker.created_at))}</TableCell>
+      <TableCell className="text-right">
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            title="View details"
+            aria-label={`View details for ${jobseeker.first_name} ${jobseeker.surname}`}
+            asChild
+          >
+            <Link
+              href={`/jobseekers/${jobseeker.id}`}
+              aria-label={`View details for ${jobseeker.first_name} ${jobseeker.surname}`}
+            >
+              <Eye className="size-4" />
+            </Link>
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            title="Edit record"
+            aria-label={`Edit record for ${jobseeker.first_name} ${jobseeker.surname}`}
+            asChild
+          >
+            <Link
+              href={`/jobseekers/${jobseeker.id}/edit`}
+              aria-label={`Edit record for ${jobseeker.first_name} ${jobseeker.surname}`}
+            >
+              <Edit className="size-4" />
+            </Link>
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+});
+
 interface JobseekersTableProps {
   initialData: JobseekerRecord[];
   initialTotal: number;
@@ -67,9 +174,14 @@ export function JobseekersTable({
   const [isPending, startTransition] = useTransition();
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [searchValue, setSearchValue] = useState(searchParams.get("search") || "");
+  const [searchValue, setSearchValue] = useState(
+    searchParams.get("search") || ""
+  );
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Memoize today's date to avoid recalculation and stable prop reference
+  const today = useMemo(() => new Date(), []);
 
   // Clean up timeout on unmount
   useEffect(() => {
@@ -79,19 +191,6 @@ export function JobseekersTable({
       }
     };
   }, []);
-
-  // Calculate age from date of birth
-  const calculateAge = (dob: string | undefined) => {
-    if (!dob) return "N/A";
-    const birth = new Date(dob);
-    const today = new Date();
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--;
-    }
-    return age;
-  };
 
   const handleSearch = useCallback(
     (search: string) => {
@@ -145,15 +244,17 @@ export function JobseekersTable({
     }
   };
 
-  const toggleSelect = (id: number) => {
-    const newSet = new Set(selectedIds);
-    if (newSet.has(id)) {
-      newSet.delete(id);
-    } else {
-      newSet.add(id);
-    }
-    setSelectedIds(newSet);
-  };
+  const toggleSelect = useCallback((id: number) => {
+    setSelectedIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  }, []);
 
   // Extract current filters from URL
   const currentFilters = useMemo(() => {
@@ -275,98 +376,15 @@ export function JobseekersTable({
                   </TableCell>
                 </TableRow>
               ) : (
-                initialData.map((jobseeker) => {
-                  const age = calculateAge(jobseeker.personal_info?.dateOfBirth);
-                  const barangay =
-                    jobseeker.personal_info?.address?.barangay || "N/A";
-
-                  return (
-                    <TableRow
-                      key={jobseeker.id}
-                      className="hover:bg-primary/5"
-                    >
-                      <TableCell>
-                        <Checkbox
-                          checked={selectedIds.has(jobseeker.id)}
-                          onCheckedChange={() => toggleSelect(jobseeker.id)}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="size-10">
-                            <AvatarFallback className="bg-primary/10 text-primary">
-                              {jobseeker.surname[0]}
-                              {jobseeker.first_name[0]}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-semibold">
-                              {jobseeker.surname}, {jobseeker.first_name}
-                            </div>
-                            <div className="text-xs text-slate-500">
-                              ID: NSRP-{jobseeker.id}
-                            </div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="tabular-nums">{age}</TableCell>
-                      <TableCell>{jobseeker.sex}</TableCell>
-                      <TableCell>{barangay}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            jobseeker.employment_status === "EMPLOYED"
-                              ? "default"
-                              : "secondary"
-                          }
-                          className={cn(
-                            jobseeker.employment_status === "EMPLOYED" &&
-                              "bg-emerald-500 hover:bg-emerald-600",
-                            jobseeker.employment_status === "UNEMPLOYED" &&
-                              "bg-rose-500 hover:bg-rose-600"
-                          )}
-                        >
-                          {jobseeker.employment_status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {formatDate(new Date(jobseeker.created_at))}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            title="View details"
-                            aria-label={`View details for ${jobseeker.first_name} ${jobseeker.surname}`}
-                            asChild
-                          >
-                            <Link
-                              href={`/jobseekers/${jobseeker.id}`}
-                              aria-label={`View details for ${jobseeker.first_name} ${jobseeker.surname}`}
-                            >
-                              <Eye className="size-4" />
-                            </Link>
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            title="Edit record"
-                            aria-label={`Edit record for ${jobseeker.first_name} ${jobseeker.surname}`}
-                            asChild
-                          >
-                            <Link
-                              href={`/jobseekers/${jobseeker.id}/edit`}
-                              aria-label={`Edit record for ${jobseeker.first_name} ${jobseeker.surname}`}
-                            >
-                              <Edit className="size-4" />
-                            </Link>
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
+                initialData.map((jobseeker) => (
+                  <JobseekerRow
+                    key={jobseeker.id}
+                    jobseeker={jobseeker}
+                    isSelected={selectedIds.has(jobseeker.id)}
+                    toggleSelect={toggleSelect}
+                    today={today}
+                  />
+                ))
               )}
             </TableBody>
           </Table>
