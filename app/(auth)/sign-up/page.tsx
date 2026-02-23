@@ -1,10 +1,6 @@
 import Image from "next/image";
-import Link from "next/link";
-import { signUp } from "./actions";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { CheckCircle2, Briefcase } from "lucide-react";
+import { SignUpForm } from "./sign-up-form";
 
 export const metadata = {
   title: "Sign Up – NSRP Jobseeker Registration",
@@ -105,7 +101,7 @@ export default function SignUpPage({
             </p>
           </div>
 
-          <SignUpForm searchParams={searchParams} />
+          <SignUpFormWrapper searchParams={searchParams} />
 
           <div className="mt-8 pt-6 border-t border-gray-200 text-center">
             <p className="text-xs text-gray-500">
@@ -120,135 +116,11 @@ export default function SignUpPage({
   );
 }
 
-async function SignUpForm({
+async function SignUpFormWrapper({
   searchParams,
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
   const { error } = await searchParams;
-
-  return (
-    <form action={signUp} className="space-y-6">
-      {error && (
-        <p className="text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2">
-          {error}
-        </p>
-      )}
-      <div className="space-y-1">
-        <Label htmlFor="email" className="ml-1">
-          Email
-        </Label>
-        <div className="relative rounded-md shadow-sm">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-            <svg
-              className="size-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-              />
-            </svg>
-          </div>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            required
-            autoComplete="email"
-            placeholder="Enter your email"
-            className="pl-10 rounded-lg border-gray-300 bg-white/50"
-          />
-        </div>
-      </div>
-      <div className="space-y-1">
-        <Label htmlFor="password" className="ml-1">
-          Password
-        </Label>
-        <div className="relative rounded-md shadow-sm">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-            <svg
-              className="size-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-              />
-            </svg>
-          </div>
-          <Input
-            id="password"
-            name="password"
-            type="password"
-            required
-            minLength={6}
-            autoComplete="new-password"
-            placeholder="••••••••"
-            className="pl-10 rounded-lg border-gray-300 bg-white/50"
-          />
-        </div>
-      </div>
-      <div className="space-y-1">
-        <Label htmlFor="confirmPassword" className="ml-1">
-          Confirm password
-        </Label>
-        <div className="relative rounded-md shadow-sm">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-            <svg
-              className="size-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-              />
-            </svg>
-          </div>
-          <Input
-            id="confirmPassword"
-            name="confirmPassword"
-            type="password"
-            required
-            minLength={6}
-            autoComplete="new-password"
-            placeholder="••••••••"
-            className="pl-10 rounded-lg border-gray-300 bg-white/50"
-          />
-        </div>
-      </div>
-      <div>
-        <Button
-          type="submit"
-          className="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/30"
-        >
-          Sign up
-        </Button>
-      </div>
-      <p className="text-center text-sm text-gray-600">
-        Already have an account?{" "}
-        <Link
-          href="/login"
-          className="font-medium text-blue-600 hover:text-blue-700"
-        >
-          Sign in
-        </Link>
-      </p>
-    </form>
-  );
+  return <SignUpForm initialError={error} />;
 }

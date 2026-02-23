@@ -3,24 +3,24 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-export async function signUp(formData: FormData) {
+export type SignUpState = { error?: string };
+
+export async function signUp(
+  _prevState: SignUpState | null,
+  formData: FormData
+): Promise<SignUpState> {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
   const confirmPassword = formData.get("confirmPassword") as string;
 
   if (!email?.trim()) {
-    redirect("/sign-up?error=" + encodeURIComponent("Email is required."));
+    return { error: "Email is required." };
   }
   if (!password || password.length < 6) {
-    redirect(
-      "/sign-up?error=" +
-        encodeURIComponent("Password must be at least 6 characters.")
-    );
+    return { error: "Password must be at least 6 characters." };
   }
   if (password !== confirmPassword) {
-    redirect(
-      "/sign-up?error=" + encodeURIComponent("Passwords do not match.")
-    );
+    return { error: "Passwords do not match." };
   }
 
   const supabase = await createClient();
@@ -34,7 +34,7 @@ export async function signUp(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/sign-up?error=${encodeURIComponent(error.message)}`);
+    return { error: error.message };
   }
 
   redirect(
