@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 type CookieOption = { name: string; value: string; options?: object };
 
 export async function updateSession(request: NextRequest) {
-  let response = NextResponse.next({
+  const response = NextResponse.next({
     request,
   });
 
