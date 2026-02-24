@@ -5,3 +5,7 @@
 ## 2026-02-12 - Accessibility in Data Tables
 **Learning:** Data tables consistently use icon-only buttons for row actions and search inputs without visible labels, creating significant accessibility barriers.
 **Action:** Systematically audit `Table` components for `aria-label` on search inputs and icon-only action buttons. Use descriptive labels that include the row's context (e.g., "Edit record for [Name]") instead of generic text.
+
+## 2026-02-12 - Tooltip Implementation in Client Components
+**Learning:** `TooltipProvider` is not globally provided in `AppLayout` or `RootLayout`. To use `Tooltip` components in a Client Component (like a data table), the component itself (or a parent) must be wrapped in `<TooltipProvider>`.
+**Action:** When adding tooltips to Client Components, check for an existing `TooltipProvider` context. If absent, wrap the component or section with `<TooltipProvider>` to ensure tooltips render correctly.
