@@ -26,6 +26,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { AdvancedFilter } from "./advanced-filter";
 import { ExportButton } from "./export-button";
 import { BulkActions } from "./bulk-actions";
@@ -196,15 +201,22 @@ export function JobseekersTable({
             className="pl-10 pr-8"
           />
           {searchValue && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-1 top-1/2 size-7 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-              onClick={handleClearSearch}
-              aria-label="Clear search"
-            >
-              <X className="size-4" />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 size-7 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  onClick={handleClearSearch}
+                  aria-label="Clear search"
+                >
+                  <X className="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Clear search</p>
+              </TooltipContent>
+            </Tooltip>
           )}
         </div>
 
@@ -334,34 +346,47 @@ export function JobseekersTable({
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            title="View details"
-                            aria-label={`View details for ${jobseeker.first_name} ${jobseeker.surname}`}
-                            asChild
-                          >
-                            <Link
-                              href={`/jobseekers/${jobseeker.id}`}
-                              aria-label={`View details for ${jobseeker.first_name} ${jobseeker.surname}`}
-                            >
-                              <Eye className="size-4" />
-                            </Link>
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            title="Edit record"
-                            aria-label={`Edit record for ${jobseeker.first_name} ${jobseeker.surname}`}
-                            asChild
-                          >
-                            <Link
-                              href={`/jobseekers/${jobseeker.id}/edit`}
-                              aria-label={`Edit record for ${jobseeker.first_name} ${jobseeker.surname}`}
-                            >
-                              <Edit className="size-4" />
-                            </Link>
-                          </Button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                aria-label={`View details for ${jobseeker.first_name} ${jobseeker.surname}`}
+                                asChild
+                              >
+                                <Link
+                                  href={`/jobseekers/${jobseeker.id}`}
+                                  aria-label={`View details for ${jobseeker.first_name} ${jobseeker.surname}`}
+                                >
+                                  <Eye className="size-4" />
+                                </Link>
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>View details</p>
+                            </TooltipContent>
+                          </Tooltip>
+
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                aria-label={`Edit record for ${jobseeker.first_name} ${jobseeker.surname}`}
+                                asChild
+                              >
+                                <Link
+                                  href={`/jobseekers/${jobseeker.id}/edit`}
+                                  aria-label={`Edit record for ${jobseeker.first_name} ${jobseeker.surname}`}
+                                >
+                                  <Edit className="size-4" />
+                                </Link>
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Edit record</p>
+                            </TooltipContent>
+                          </Tooltip>
                         </div>
                       </TableCell>
                     </TableRow>
