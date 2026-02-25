@@ -1,14 +1,22 @@
 export const escapeCSV = (val: unknown): string => {
   if (val === null || val === undefined) return "";
-  let str = String(val);
 
-  // Prevent CSV injection
-  if (/^[=+\-@]/.test(str)) {
+  // Use explicit string if available, otherwise convert
+  let str = typeof val === 'string' ? val : String(val);
+
+  if (str.length === 0) return "";
+
+  // Prevent CSV injection using charCodeAt (faster than regex)
+  // = (61), + (43), - (45), @ (64)
+  const firstChar = str.charCodeAt(0);
+  if (firstChar === 61 || firstChar === 43 || firstChar === 45 || firstChar === 64) {
     str = `'${str}`;
   }
 
+  // Check for special characters that require quoting
   if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-    return `"${str.replace(/"/g, '""')}"`;
+    // replaceAll is generally faster than replace with global regex for simple string replacement in V8
+    return `"${str.replaceAll('"', '""')}"`;
   }
   return str;
 };
