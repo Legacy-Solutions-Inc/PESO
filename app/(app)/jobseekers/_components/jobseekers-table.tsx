@@ -166,6 +166,10 @@ export function JobseekersTable({
     return filters;
   }, [searchParams]);
 
+  const activeFilterCount = Object.keys(currentFilters).filter(
+    (k) => k !== "search" && k !== "pageSize"
+  ).length;
+
   const totalPages = Math.ceil(initialTotal / pageSize);
   const startRecord = (initialPage - 1) * pageSize + 1;
   const endRecord = Math.min(initialPage * pageSize, initialTotal);
@@ -212,6 +216,14 @@ export function JobseekersTable({
           <Button variant="outline" onClick={() => setIsFilterOpen(true)}>
             <Filter className="size-4" />
             Filter
+            {activeFilterCount > 0 && (
+              <Badge
+                variant="secondary"
+                className="ml-2 rounded-full px-1.5 py-0.5 text-xs"
+              >
+                {activeFilterCount}
+              </Badge>
+            )}
           </Button>
 
           <ExportButton
@@ -232,7 +244,12 @@ export function JobseekersTable({
       </div>
 
       {/* Table */}
-      <div className="glass-panel overflow-hidden rounded-xl">
+      <div
+        className={cn(
+          "glass-panel overflow-hidden rounded-xl transition-opacity duration-200",
+          isPending && "opacity-50 pointer-events-none"
+        )}
+      >
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
