@@ -2,25 +2,22 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { signUpSchema } from "@/lib/validations/auth";
 
 export async function signUp(formData: FormData) {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
   const confirmPassword = formData.get("confirmPassword") as string;
 
-  if (!email?.trim()) {
-    redirect("/sign-up?error=" + encodeURIComponent("Email is required."));
-  }
-  if (!password || password.length < 6) {
-    redirect(
-      "/sign-up?error=" +
-        encodeURIComponent("Password must be at least 6 characters.")
-    );
-  }
-  if (password !== confirmPassword) {
-    redirect(
-      "/sign-up?error=" + encodeURIComponent("Passwords do not match.")
-    );
+  const validationResult = signUpSchema.safeParse({
+    email,
+    password,
+    confirmPassword,
+  });
+
+  if (!validationResult.success) {
+    const errorMessage = validationResult.error.issues[0].message;
+    redirect("/sign-up?error=" + encodeURIComponent(errorMessage));
   }
 
   const supabase = await createClient();
