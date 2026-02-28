@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { requireActiveUser } from "@/lib/auth/require-active-user";
 import { createClient } from "@/lib/supabase/server";
 import {
   jobseekerRegistrationSchema,
@@ -71,14 +72,14 @@ export async function createJobseeker(
     const validated = jobseekerRegistrationSchema.parse(cleanedData);
 
     // Get current user
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
+    const auth = await requireActiveUser();
+    if (auth.error || !auth.data) {
+      // Return a generic error to prevent leaking detailed auth errors
       return { error: "Unauthorized" };
     }
+    const user = auth.data.user;
+
+    const supabase = await createClient();
 
     // Insert to Supabase jobseekers table
     const { data: jobseeker, error } = await supabase
@@ -145,14 +146,14 @@ export async function saveDraft(
   completedSteps: number[]
 ): Promise<ActionResult> {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
+    const auth = await requireActiveUser();
+    if (auth.error || !auth.data) {
+      // Return a generic error to prevent leaking detailed auth errors
       return { error: "Unauthorized" };
     }
+    const user = auth.data.user;
+
+    const supabase = await createClient();
 
     // Upsert draft (insert or update if exists)
     const { error } = await supabase
@@ -185,14 +186,14 @@ export async function saveDraft(
 
 export async function loadDraft(): Promise<DraftData | null> {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
+    const auth = await requireActiveUser();
+    if (auth.error || !auth.data) {
+      // Return a generic error/null to prevent leaking detailed auth errors
       return null;
     }
+    const user = auth.data.user;
+
+    const supabase = await createClient();
 
     const { data: draft, error } = await supabase
       .from("jobseeker_drafts")
