@@ -22,6 +22,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
@@ -110,43 +115,64 @@ export function UserActionsMenu({
   return (
     <>
       <div className="flex items-center justify-end gap-2">
-        <button
-          onClick={() => setIsRoleDialogOpen(true)}
-          className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-dashboard-primary dark:hover:bg-slate-800"
-          title="Edit Role"
-        >
-          <Edit className="h-4 w-4" />
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => setIsRoleDialogOpen(true)}
+              className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-dashboard-primary dark:hover:bg-slate-800"
+              aria-label="Edit Role"
+            >
+              <Edit className="h-4 w-4" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>Edit Role</TooltipContent>
+        </Tooltip>
 
         {currentStatus === "pending" ? (
-          <button
-            onClick={handleActivatePending}
-            disabled={isLoading}
-            className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-emerald-50 hover:text-emerald-600 disabled:opacity-50 dark:hover:bg-emerald-900/20"
-            title="Activate User"
-          >
-            {isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <CheckCircle className="h-4 w-4" />
-            )}
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={handleActivatePending}
+                disabled={isLoading}
+                className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-emerald-50 hover:text-emerald-600 disabled:opacity-50 dark:hover:bg-emerald-900/20"
+                aria-label="Activate User"
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <CheckCircle className="h-4 w-4" />
+                )}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Activate User</TooltipContent>
+          </Tooltip>
         ) : (
-          <button
-            onClick={() => setIsStatusDialogOpen(true)}
-            className={`rounded-md p-1.5 text-slate-400 transition-colors ${
-              currentStatus === "active"
-                ? "hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
-                : "hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-900/20"
-            }`}
-            title={currentStatus === "active" ? "Deactivate User" : "Activate User"}
-          >
-            {currentStatus === "active" ? (
-              <XCircle className="h-4 w-4" />
-            ) : (
-              <CheckCircle className="h-4 w-4" />
-            )}
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setIsStatusDialogOpen(true)}
+                className={`rounded-md p-1.5 text-slate-400 transition-colors ${
+                  currentStatus === "active"
+                    ? "hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                    : "hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-900/20"
+                }`}
+                aria-label={
+                  currentStatus === "active"
+                    ? "Deactivate User"
+                    : "Activate User"
+                }
+              >
+                {currentStatus === "active" ? (
+                  <XCircle className="h-4 w-4" />
+                ) : (
+                  <CheckCircle className="h-4 w-4" />
+                )}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {currentStatus === "active" ? "Deactivate User" : "Activate User"}
+            </TooltipContent>
+          </Tooltip>
         )}
       </div>
 
@@ -156,34 +182,53 @@ export function UserActionsMenu({
           <DialogHeader>
             <DialogTitle>Change User Role</DialogTitle>
             <DialogDescription>
-              Update the role for <span className="font-medium text-slate-900 dark:text-white">{userEmail}</span>
+              Update the role for{" "}
+              <span className="font-medium text-slate-900 dark:text-white">
+                {userEmail}
+              </span>
             </DialogDescription>
           </DialogHeader>
 
           <div className="py-4">
-            <RadioGroup value={selectedRole} onValueChange={(value) => setSelectedRole(value as "admin" | "encoder")}>
+            <RadioGroup
+              value={selectedRole}
+              onValueChange={(value) =>
+                setSelectedRole(value as "admin" | "encoder")
+              }
+            >
               <div className="flex items-center space-x-3 rounded-lg border border-slate-200 p-4 dark:border-slate-700">
                 <RadioGroupItem value="admin" id="role-admin" />
                 <Label htmlFor="role-admin" className="flex-1 cursor-pointer">
                   <div className="font-medium">Admin</div>
-                  <div className="text-sm text-slate-500">Full access to all features including user management</div>
+                  <div className="text-sm text-slate-500">
+                    Full access to all features including user management
+                  </div>
                 </Label>
               </div>
               <div className="flex items-center space-x-3 rounded-lg border border-slate-200 p-4 dark:border-slate-700">
                 <RadioGroupItem value="encoder" id="role-encoder" />
                 <Label htmlFor="role-encoder" className="flex-1 cursor-pointer">
                   <div className="font-medium">Encoder</div>
-                  <div className="text-sm text-slate-500">Can encode and edit jobseeker data</div>
+                  <div className="text-sm text-slate-500">
+                    Can encode and edit jobseeker data
+                  </div>
                 </Label>
               </div>
             </RadioGroup>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsRoleDialogOpen(false)} disabled={isLoading}>
+            <Button
+              variant="outline"
+              onClick={() => setIsRoleDialogOpen(false)}
+              disabled={isLoading}
+            >
               Cancel
             </Button>
-            <Button onClick={handleRoleChange} disabled={isLoading || selectedRole === currentRole}>
+            <Button
+              onClick={handleRoleChange}
+              disabled={isLoading || selectedRole === currentRole}
+            >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Update Role
             </Button>
@@ -192,29 +237,44 @@ export function UserActionsMenu({
       </Dialog>
 
       {/* Status Toggle Alert Dialog */}
-      <AlertDialog open={isStatusDialogOpen} onOpenChange={setIsStatusDialogOpen}>
+      <AlertDialog
+        open={isStatusDialogOpen}
+        onOpenChange={setIsStatusDialogOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {currentStatus === "active" ? "Deactivate User?" : "Activate User?"}
+              {currentStatus === "active"
+                ? "Deactivate User?"
+                : "Activate User?"}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {currentStatus === "active" ? (
                 <>
-                  This will prevent <span className="font-medium text-slate-900 dark:text-white">{userEmail}</span> from
-                  accessing the system. They will be signed out on their next request.
+                  This will prevent{" "}
+                  <span className="font-medium text-slate-900 dark:text-white">
+                    {userEmail}
+                  </span>{" "}
+                  from accessing the system. They will be signed out on their
+                  next request.
                 </>
               ) : (
                 <>
-                  This will allow <span className="font-medium text-slate-900 dark:text-white">{userEmail}</span> to
-                  access the system.
+                  This will allow{" "}
+                  <span className="font-medium text-slate-900 dark:text-white">
+                    {userEmail}
+                  </span>{" "}
+                  to access the system.
                 </>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleStatusToggle} disabled={isLoading}>
+            <AlertDialogAction
+              onClick={handleStatusToggle}
+              disabled={isLoading}
+            >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {currentStatus === "active" ? "Deactivate" : "Activate"}
             </AlertDialogAction>
