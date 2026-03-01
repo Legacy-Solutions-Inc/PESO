@@ -32,6 +32,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { AdvancedFilter } from "./advanced-filter";
 import { ExportButton } from "./export-button";
 import { BulkActions } from "./bulk-actions";
@@ -349,11 +355,7 @@ export function JobseekersTable({
                         <div className="flex justify-end gap-2">
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                asChild
-                              >
+                              <Button variant="ghost" size="icon" asChild>
                                 <Link
                                   href={`/jobseekers/${jobseeker.id}`}
                                   aria-label={`View details for ${jobseeker.first_name} ${jobseeker.surname}`}
@@ -368,11 +370,7 @@ export function JobseekersTable({
                           </Tooltip>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                asChild
-                              >
+                              <Button variant="ghost" size="icon" asChild>
                                 <Link
                                   href={`/jobseekers/${jobseeker.id}/edit`}
                                   aria-label={`Edit record for ${jobseeker.first_name} ${jobseeker.surname}`}
