@@ -273,7 +273,22 @@ export async function getJobseekers(
     }
 
     // Sorting
-    const sortBy = validateSortColumn(filters.sortBy || "");
+    const ALLOWED_SORT_COLUMNS = [
+      "created_at",
+      "surname",
+      "first_name",
+      "sex",
+      "employment_status",
+      "city",
+      "province",
+      "is_ofw",
+      "is_4ps_beneficiary",
+      "id",
+    ] as const;
+    const sortBy = validateSortColumn(
+      filters.sortBy || "created_at",
+      ALLOWED_SORT_COLUMNS
+    );
     const sortOrder = filters.sortOrder || "desc";
     query = query.order(sortBy, { ascending: sortOrder === "asc" });
 

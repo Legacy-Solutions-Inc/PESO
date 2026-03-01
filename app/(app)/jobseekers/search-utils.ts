@@ -38,27 +38,24 @@ export function sanitizeSearchQuery(query: string): string {
   return escapeLikeWildcards(clean);
 }
 
-// Columns that are safe to sort by (must be top-level table columns)
-export const ALLOWED_SORT_COLUMNS = [
-  "created_at",
-  "updated_at",
-  "surname",
-  "first_name",
-  "sex",
-  "employment_status",
-  "city",
-  "province",
-  "is_ofw",
-  "is_4ps_beneficiary",
-];
-
 /**
- * Validates the sort column against a whitelist of allowed columns.
- * Defaults to "created_at" if the column is not allowed.
+ * Validates the sort column against a list of allowed columns.
+ *
+ * This prevents users from sorting by arbitrary columns, which could lead to:
+ * 1. Information disclosure (verifying column existence or internal schema via errors).
+ * 2. DoS (sorting by large unindexed columns like JSONB).
+ *
+ * @param column The input column name to validate.
+ * @param allowedColumns The whitelist of allowed column names.
+ * @returns The verified column name, or the first allowed column as a default.
  */
-export function validateSortColumn(column: string): string {
-  if (!column || !ALLOWED_SORT_COLUMNS.includes(column)) {
-    return "created_at";
+export function validateSortColumn(
+  column: string,
+  allowedColumns: readonly string[]
+): string {
+  // If no column provided or not in whitelist, return default (first allowed)
+  if (!column || !allowedColumns.includes(column)) {
+    return allowedColumns.length > 0 ? allowedColumns[0] : "created_at";
   }
   return column;
 }
