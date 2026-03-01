@@ -1,4 +1,4 @@
-import { test, describe } from "node:test";
+import { test, describe, it } from "node:test";
 import assert from "node:assert";
 import {
   sanitizeSearchQuery,
@@ -79,6 +79,7 @@ describe("validateSortColumn", () => {
     assert.strictEqual(validateSortColumn("sex"), "sex");
     assert.strictEqual(validateSortColumn("employment_status"), "employment_status");
   });
+});
 
   test("should fallback to default for invalid columns", () => {
     assert.strictEqual(validateSortColumn("password"), "created_at");
