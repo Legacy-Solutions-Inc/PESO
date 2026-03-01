@@ -70,7 +70,7 @@ export default async function JobseekersPage({ searchParams }: PageProps) {
           </nav>
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
             <div>
-              <h1 className="text-3xl font-bold">Jobseeker Records</h1>
+              <h1 className="text-2xl font-bold sm:text-3xl">Jobseeker Records</h1>
               <p className="mt-2 text-slate-500">
                 Manage and view all registered jobseekers in the database.
               </p>
@@ -100,7 +100,7 @@ export default async function JobseekersPage({ searchParams }: PageProps) {
         </nav>
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>
-            <h1 className="text-3xl font-bold">Jobseeker Records</h1>
+            <h1 className="text-2xl font-bold sm:text-3xl">Jobseeker Records</h1>
             <p className="mt-2 text-slate-500">
               Manage and view all registered jobseekers in the database.
             </p>

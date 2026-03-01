@@ -38,23 +38,30 @@ export function Step5Language() {
       </div>
 
       <div className="rounded-xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-slate-700/50 dark:bg-slate-900/50 lg:p-8">
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
+        <p className="mb-2 block text-xs text-slate-500 md:hidden dark:text-slate-400">
+          Swipe to see all columns
+        </p>
+        <div
+          className="max-w-full overflow-x-auto scroll-smooth snap-x snap-mandatory [-webkit-overflow-scrolling:touch]"
+          role="region"
+          aria-label="Language proficiency table"
+        >
+          <table className="w-full min-w-max snap-start border-collapse">
             <thead>
               <tr className="border-b-2 border-slate-200 dark:border-slate-700">
-                <th className="p-3 text-left font-semibold text-slate-700 dark:text-slate-200">
+                <th className="whitespace-nowrap p-3 text-left font-semibold text-slate-700 dark:text-slate-200">
                   Language
                 </th>
-                <th className="p-3 text-center font-semibold text-slate-700 dark:text-slate-200">
+                <th className="whitespace-nowrap p-3 text-center font-semibold text-slate-700 dark:text-slate-200">
                   Read
                 </th>
-                <th className="p-3 text-center font-semibold text-slate-700 dark:text-slate-200">
+                <th className="whitespace-nowrap p-3 text-center font-semibold text-slate-700 dark:text-slate-200">
                   Write
                 </th>
-                <th className="p-3 text-center font-semibold text-slate-700 dark:text-slate-200">
+                <th className="whitespace-nowrap p-3 text-center font-semibold text-slate-700 dark:text-slate-200">
                   Speak
                 </th>
-                <th className="p-3 text-center font-semibold text-slate-700 dark:text-slate-200">
+                <th className="whitespace-nowrap p-3 text-center font-semibold text-slate-700 dark:text-slate-200">
                   Understand
                 </th>
               </tr>
@@ -70,20 +77,22 @@ export function Step5Language() {
                   </td>
                   {LANGUAGE_SKILLS.map((skill) => (
                     <td key={skill} className="p-3 text-center">
-                      <FormField
-                        control={form.control}
-                        name={`language.${language.id}.${skill}`}
-                        render={({ field }) => (
-                          <FormItem className="flex items-center justify-center">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
+                      <div className="flex min-h-11 min-w-11 items-center justify-center">
+                        <FormField
+                          control={form.control}
+                          name={`language.${language.id}.${skill}`}
+                          render={({ field }) => (
+                            <FormItem className="flex items-center justify-center">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
                     </td>
                   ))}
                 </tr>

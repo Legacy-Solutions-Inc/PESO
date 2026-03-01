@@ -36,6 +36,7 @@ interface ProgressSidebarProps {
   onSaveDraft: () => void;
   isSaving: boolean;
   lastSaved?: Date;
+  variant?: "sidebar" | "drawer";
 }
 
 function getStepStatus(
@@ -63,11 +64,12 @@ export function ProgressSidebar({
   onSaveDraft,
   isSaving,
   lastSaved,
+  variant = "sidebar",
 }: ProgressSidebarProps) {
   const progressPercentage = (completedSteps.size / FORM_STEPS.length) * 100;
 
-  return (
-    <aside className="flex w-70 shrink-0 flex-col border-r border-slate-200/80 bg-white shadow-sm dark:border-slate-700/50 dark:bg-slate-900">
+  const content = (
+    <>
       <div className="border-b border-slate-200/80 p-6 pb-4 dark:border-slate-700/50">
         <h1 className="mb-1 text-xl font-bold text-slate-800 dark:text-white">
           Registration Form
@@ -148,7 +150,7 @@ export function ProgressSidebar({
           onClick={onSaveDraft}
           disabled={isSaving}
           variant="outline"
-          className="w-full font-semibold shadow-sm"
+          className="min-h-11 w-full font-semibold shadow-sm"
         >
           <Save className="size-4" aria-hidden />
           {isSaving ? "Saving..." : "Save Draft"}
@@ -157,6 +159,20 @@ export function ProgressSidebar({
           Last saved: {getTimeAgo(lastSaved)}
         </p>
       </div>
+    </>
+  );
+
+  if (variant === "drawer") {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <aside className="flex w-70 shrink-0 flex-col border-r border-slate-200/80 bg-white shadow-sm dark:border-slate-700/50 dark:bg-slate-900">
+      {content}
     </aside>
   );
 }

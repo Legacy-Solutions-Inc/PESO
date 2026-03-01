@@ -2,10 +2,14 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useForm, FormProvider } from "react-hook-form";
+import { List } from "lucide-react";
 import { ProgressSidebar } from "./progress-sidebar";
 import { NavigationBar } from "./navigation-bar";
 import { StepRenderer } from "./step-renderer";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 import {
   createJobseeker,
   saveDraft as saveDraftAction,
@@ -218,6 +222,10 @@ export function JobseekerRegistrationFormLayout({
   const [lastSaved, setLastSaved] = useState<Date | undefined>();
   const [isSaving, setIsSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [stepsOpen, setStepsOpen] = useState(false);
+
+  const isMobile = useIsMobile();
+  const progressPercentage = (completedSteps.size / TOTAL_STEPS) * 100;
 
   // React Hook Form - initialize with default values to avoid uncontrolled to controlled warnings
   const formMethods = useForm({
@@ -498,6 +506,80 @@ export function JobseekerRegistrationFormLayout({
     }
   });
 
+  const mainContent = (
+    <main className="custom-scrollbar min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-6 lg:p-8">
+      <div className="mx-auto max-w-5xl">
+        <FormProvider {...formMethods}>
+          <form onSubmit={onSubmit} className="space-y-8" noValidate>
+            <StepRenderer currentStep={currentStep} />
+
+            <NavigationBar
+              currentStep={currentStep}
+              totalSteps={TOTAL_STEPS}
+              onPrevious={handlePrevious}
+              onNext={handleNext}
+              onSaveDraft={saveDraft}
+              isFirstStep={currentStep === 1}
+              isLastStep={currentStep === TOTAL_STEPS}
+              isSubmitting={isSubmitting}
+              isSaving={isSaving}
+            />
+          </form>
+        </FormProvider>
+      </div>
+    </main>
+  );
+
+  if (isMobile) {
+    return (
+      <div className="flex min-h-svh flex-col bg-dashboard-surface">
+        <header className="sticky top-0 z-10 flex shrink-0 items-center justify-between border-b border-slate-200/80 bg-white px-4 py-3 shadow-sm dark:border-slate-700/50 dark:bg-slate-900">
+          <div className="min-w-0">
+            <h1 className="truncate text-base font-bold text-slate-800 dark:text-white">
+              Registration
+            </h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {Math.round(progressPercentage)}% complete
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="default"
+            className="min-h-11 shrink-0"
+            onClick={() => setStepsOpen(true)}
+            aria-label="Open steps menu"
+          >
+            <List className="size-4" aria-hidden />
+            Steps
+          </Button>
+        </header>
+
+        <Sheet open={stepsOpen} onOpenChange={setStepsOpen}>
+          <SheetContent
+            side="left"
+            className="flex max-h-full flex-col overflow-hidden p-0 sm:max-w-70"
+          >
+            <ProgressSidebar
+              variant="drawer"
+              currentStep={currentStep}
+              completedSteps={completedSteps}
+              onStepClick={(step) => {
+                goToStep(step);
+                setStepsOpen(false);
+              }}
+              onSaveDraft={saveDraft}
+              isSaving={isSaving}
+              lastSaved={lastSaved}
+            />
+          </SheetContent>
+        </Sheet>
+
+        <div className="flex min-h-0 flex-1 flex-col">{mainContent}</div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-svh bg-dashboard-surface">
       <ProgressSidebar
@@ -509,28 +591,7 @@ export function JobseekerRegistrationFormLayout({
         lastSaved={lastSaved}
       />
 
-      <main className="custom-scrollbar min-h-0 flex-1 overflow-y-auto p-6 lg:p-8">
-        <div className="mx-auto max-w-5xl">
-          <FormProvider {...formMethods}>
-            <form onSubmit={onSubmit} className="space-y-8" noValidate>
-              {/* Step content rendered based on currentStep */}
-              <StepRenderer currentStep={currentStep} />
-
-              <NavigationBar
-                currentStep={currentStep}
-                totalSteps={TOTAL_STEPS}
-                onPrevious={handlePrevious}
-                onNext={handleNext}
-                onSaveDraft={saveDraft}
-                isFirstStep={currentStep === 1}
-                isLastStep={currentStep === TOTAL_STEPS}
-                isSubmitting={isSubmitting}
-                isSaving={isSaving}
-              />
-            </form>
-          </FormProvider>
-        </div>
-      </main>
+      {mainContent}
     </div>
   );
 }

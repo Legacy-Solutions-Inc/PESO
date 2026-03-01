@@ -18,6 +18,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -122,6 +124,7 @@ export function AdvancedFilter({
   currentFilters,
 }: AdvancedFilterProps) {
   const [filters, setFilters] = useState(currentFilters);
+  const isMobile = useIsMobile();
 
   const handleReset = () => {
     setFilters({});
@@ -137,8 +140,10 @@ export function AdvancedFilter({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-6xl max-h-[90vh] p-0">
-        <DialogHeader className="border-b px-6 pb-4 pt-6">
+      <DialogContent
+        className="flex max-h-[90vh] max-w-[min(42rem,calc(100vw-2rem))] flex-col p-0 sm:max-w-6xl"
+      >
+        <DialogHeader className="shrink-0 border-b px-4 pb-4 pt-6 sm:px-6">
           <DialogTitle className="text-xl font-bold">Advanced Filters</DialogTitle>
           <p className="text-sm text-slate-500">
             Filter jobseekers by any field from the registration form
@@ -147,15 +152,28 @@ export function AdvancedFilter({
 
         <Tabs
           defaultValue="basic"
-          orientation="vertical"
-          className="grid h-150 min-h-0 grid-cols-[11rem_1fr] overflow-hidden"
+          orientation={isMobile ? "horizontal" : "vertical"}
+          className={cn(
+            "flex min-h-0 flex-1 flex-col overflow-hidden",
+            !isMobile && "grid grid-cols-[11rem_1fr]"
+          )}
         >
-          <TabsList className="flex h-full w-full flex-col justify-start gap-0.5 overflow-y-auto rounded-none border-r border-slate-200 bg-slate-50 p-2 dark:border-slate-700 dark:bg-slate-800/50">
+          <TabsList
+            className={cn(
+              "shrink-0 gap-0.5 border-slate-200 bg-slate-50 p-2 dark:border-slate-700 dark:bg-slate-800/50",
+              isMobile
+                ? "flex w-full flex-row overflow-x-auto rounded-none border-b border-r-0 pb-2 scrollbar-thin"
+                : "flex h-full w-full flex-col justify-start overflow-y-auto rounded-none border-r"
+            )}
+          >
             {FILTER_SECTIONS.map(({ id, label, icon: Icon }) => (
               <TabsTrigger
                 key={id}
                 value={id}
-                className="w-full justify-start gap-2 rounded-md px-3 py-2 text-left"
+                className={cn(
+                  "min-h-11 shrink-0 justify-start gap-2 rounded-md px-3 py-3 text-left",
+                  isMobile ? "flex-row" : "w-full py-2"
+                )}
               >
                 <Icon className="size-4 shrink-0" />
                 <span className="truncate">{label}</span>
@@ -163,8 +181,8 @@ export function AdvancedFilter({
             ))}
           </TabsList>
 
-          <div className="min-w-0 overflow-hidden">
-            <ScrollArea className="h-full w-full p-6">
+          <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
+            <ScrollArea className="h-full w-full p-4 sm:p-6">
             {/* Basic Info Tab */}
             <TabsContent value="basic" className="mt-0 space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
@@ -473,15 +491,25 @@ export function AdvancedFilter({
           </div>
         </Tabs>
 
-        <div className="flex justify-between border-t px-6 py-4">
-          <Button variant="outline" onClick={handleReset}>
+        <div className="flex shrink-0 flex-col gap-3 border-t px-4 py-4 sm:flex-row sm:justify-between sm:px-6">
+          <Button
+            variant="outline"
+            onClick={handleReset}
+            className="min-h-11"
+          >
             Reset All Filters
           </Button>
           <div className="flex gap-2">
-            <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            <Button
+              variant="ghost"
+              onClick={() => onOpenChange(false)}
+              className="min-h-11"
+            >
               Cancel
             </Button>
-            <Button onClick={handleApply}>Apply Filters</Button>
+            <Button onClick={handleApply} className="min-h-11">
+              Apply Filters
+            </Button>
           </div>
         </div>
       </DialogContent>

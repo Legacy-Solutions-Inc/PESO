@@ -93,7 +93,12 @@ export function BulkActions({ selectedIds, onComplete }: BulkActionsProps) {
         </span>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" disabled={isPending}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="min-h-11"
+              disabled={isPending}
+            >
               Bulk Actions
             </Button>
           </DropdownMenuTrigger>
@@ -131,7 +136,7 @@ export function BulkActions({ selectedIds, onComplete }: BulkActionsProps) {
             <AlertDialogAction
               onClick={handleBulkDelete}
               disabled={isPending}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-red-600 hover:bg-red-700 active:bg-red-800"
             >
               {isPending ? "Deleting..." : "Delete"}
             </AlertDialogAction>
