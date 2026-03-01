@@ -28,6 +28,10 @@ describe('csv-helpers', () => {
       assert.strictEqual(escapeCSV('foo\nbar'), '"foo\nbar"');
     });
 
+    it('should quote strings with injection characters and special CSV chars', () => {
+      assert.strictEqual(escapeCSV('=foo,bar'), '"\'=foo,bar"');
+    });
+
     it('should handle normal strings', () => {
       assert.strictEqual(escapeCSV('foobar'), 'foobar');
     });

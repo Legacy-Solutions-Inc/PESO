@@ -2,6 +2,6 @@
 **Learning:** Authentication forms were missing basic loading indicators during submission and lacked password visibility toggles, which are critical for usability and error reduction.
 **Action:** When working on forms with `useActionState`, ensure `isPending` is used to provide feedback. Consider extracting password visibility logic into a reusable `<PasswordInput />` component for consistency.
 
-## 2026-02-12 - Accessibility in Data Tables
-**Learning:** Data tables consistently use icon-only buttons for row actions and search inputs without visible labels, creating significant accessibility barriers.
-**Action:** Systematically audit `Table` components for `aria-label` on search inputs and icon-only action buttons. Use descriptive labels that include the row's context (e.g., "Edit record for [Name]") instead of generic text.
+## 2026-02-17 - Table Actions Accessibility
+**Learning:** Tables often use icon-only buttons (like "View", "Edit") to save space, but relying solely on `title` attributes or visual cues creates poor UX for keyboard/screen reader users.
+**Action:** Consistently wrap table action buttons in `Tooltip` components (with `TooltipProvider` at the component level if not global) to provide clear, accessible labels on hover and focus.

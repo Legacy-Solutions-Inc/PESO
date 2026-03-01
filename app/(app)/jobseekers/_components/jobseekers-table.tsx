@@ -5,6 +5,12 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, Filter, Eye, Edit, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 function formatDate(date: Date): string {
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -176,7 +182,7 @@ export function JobseekersTable({
   const endRecord = Math.min(initialPage * pageSize, initialTotal);
 
   return (
-    <>
+    <TooltipProvider>
       {/* Search & Actions Bar */}
       <div className="glass-panel mb-6 flex flex-col gap-4 rounded-xl p-4 md:flex-row">
         <div className="group relative w-full md:max-w-md">
@@ -469,6 +475,6 @@ export function JobseekersTable({
         onApply={handleFilterApply}
         currentFilters={currentFilters}
       />
-    </>
+    </TooltipProvider>
   );
 }
