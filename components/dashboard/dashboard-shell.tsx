@@ -3,11 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Bell,
   FolderOpen,
   LayoutDashboard,
   LogOut,
-  Search,
   UserPlus,
   Users,
 } from "lucide-react";
@@ -31,8 +29,9 @@ import {
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { NotificationBell } from "@/components/dashboard/notification-bell";
+import type { NotificationSummary } from "@/app/(app)/notifications/actions";
 
 const SIDEBAR_NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard, adminOnly: false },
@@ -54,11 +53,23 @@ function getInitialsFromEmail(email: string): string {
 export interface DashboardShellProps {
   userEmail: string;
   userRole: "admin" | "encoder";
+  notificationSummary?: NotificationSummary;
   children: React.ReactNode;
 }
 
-export function DashboardShell({ userEmail, userRole, children }: DashboardShellProps) {
+const ROLE_LABEL: Record<"admin" | "encoder", string> = {
+  admin: "Admin",
+  encoder: "Encoder",
+};
+
+export function DashboardShell({
+  userEmail,
+  userRole,
+  notificationSummary = { pendingUserCount: 0 },
+  children,
+}: DashboardShellProps) {
   const pathname = usePathname();
+  const roleLabel = ROLE_LABEL[userRole];
 
   const sidebarWidth = "18rem"; // w-72: must match --sidebar-width so gap and fixed sidebar align (no overlap)
 
@@ -143,7 +154,7 @@ export function DashboardShell({ userEmail, userRole, children }: DashboardShell
             </Avatar>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-slate-900 dark:text-white">
-                User
+                {roleLabel}
               </p>
               <p className="truncate text-xs text-slate-500 dark:text-slate-400">
                 {userEmail}
@@ -175,25 +186,10 @@ export function DashboardShell({ userEmail, userRole, children }: DashboardShell
             </h1>
           </div>
           <div className="flex items-center gap-4">
-            <div className="relative hidden md:block">
-              <Search
-                className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400"
-                aria-hidden
-              />
-              <Input
-                placeholder="Quick search..."
-                className="w-64 rounded-full border-slate-200 bg-slate-50 py-1.5 pl-9 pr-4 text-sm dark:border-slate-700 dark:bg-slate-800/80"
-              />
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative rounded-full text-slate-500 hover:text-dashboard-primary focus-visible:ring-2 focus-visible:ring-dashboard-primary"
-              aria-label="Notifications"
-            >
-              <Bell className="size-5" aria-hidden />
-              <span className="absolute right-1.5 top-1.5 size-2 rounded-full border-2 border-white bg-red-500 dark:border-slate-900" aria-hidden />
-            </Button>
+            <NotificationBell
+              pendingUserCount={notificationSummary.pendingUserCount}
+              userRole={userRole}
+            />
             <Separator orientation="vertical" className="hidden h-8 sm:block" />
             <div className="hidden text-right sm:block">
               <p className="text-sm font-semibold text-slate-900 dark:text-white">

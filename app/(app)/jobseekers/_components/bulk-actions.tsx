@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Trash2, Archive } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -19,7 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { bulkDeleteJobseekers, bulkArchiveJobseekers } from "../actions";
+import { bulkDeleteJobseekers } from "../actions";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 
@@ -30,7 +30,6 @@ interface BulkActionsProps {
 
 export function BulkActions({ selectedIds, onComplete }: BulkActionsProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const router = useRouter();
@@ -60,31 +59,6 @@ export function BulkActions({ selectedIds, onComplete }: BulkActionsProps) {
     });
   };
 
-  const handleBulkArchive = async () => {
-    startTransition(async () => {
-      const result = await bulkArchiveJobseekers(selectedIds);
-
-      if (result.error) {
-        toast({
-          title: "❌ Archive Failed",
-          description: result.error,
-          duration: 5000,
-        });
-        return;
-      }
-
-      toast({
-        title: "✅ Archived Successfully",
-        description: `${selectedIds.length} jobseeker(s) archived`,
-        duration: 3000,
-      });
-
-      setIsArchiveDialogOpen(false);
-      onComplete();
-      router.refresh();
-    });
-  };
-
   return (
     <>
       <div className="flex items-center gap-2">
@@ -93,18 +67,16 @@ export function BulkActions({ selectedIds, onComplete }: BulkActionsProps) {
         </span>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" disabled={isPending}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="min-h-11"
+              disabled={isPending}
+            >
               Bulk Actions
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              onClick={() => setIsArchiveDialogOpen(true)}
-              disabled={isPending}
-            >
-              <Archive className="mr-2 size-4" />
-              Archive Selected
-            </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => setIsDeleteDialogOpen(true)}
               className="text-red-600 focus:text-red-600"
@@ -131,30 +103,9 @@ export function BulkActions({ selectedIds, onComplete }: BulkActionsProps) {
             <AlertDialogAction
               onClick={handleBulkDelete}
               disabled={isPending}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-red-600 hover:bg-red-700 active:bg-red-800"
             >
               {isPending ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog
-        open={isArchiveDialogOpen}
-        onOpenChange={setIsArchiveDialogOpen}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Archive Jobseekers?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will archive {selectedIds.length} jobseeker record(s).
-              Archived records will be hidden from the default list.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleBulkArchive} disabled={isPending}>
-              {isPending ? "Archiving..." : "Archive"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

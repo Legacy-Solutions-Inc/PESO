@@ -40,14 +40,14 @@ export default async function JobseekerProfilePage({ params }: PageProps) {
       >
         <Link
           href="/"
-          className="transition-colors hover:text-dashboard-primary"
+          className="transition-colors hover:text-dashboard-primary active:text-dashboard-primary"
         >
           Dashboard
         </Link>
         <ChevronRight className="mx-2 size-4 text-slate-300" />
         <Link
           href="/jobseekers"
-          className="transition-colors hover:text-dashboard-primary"
+          className="transition-colors hover:text-dashboard-primary active:text-dashboard-primary"
         >
           Jobseekers
         </Link>

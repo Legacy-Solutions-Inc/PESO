@@ -2,35 +2,41 @@ import { z } from "zod";
 
 // Step 1: Personal Information
 export const personalInfoSchema = z.object({
-  surname: z.string().min(1, "Surname is required"),
-  firstName: z.string().min(1, "First name is required"),
-  middleName: z.string().optional(),
+  surname: z.string().trim().min(1, "Surname is required"),
+  firstName: z.string().trim().min(1, "First name is required"),
+  middleName: z.string().trim().optional(),
   suffix: z.enum(["JR", "SR", "III", "IV", "V"]).optional(),
   dateOfBirth: z.string().min(1, "Date of birth is required"),
-  placeOfBirth: z.string().optional(),
+  placeOfBirth: z.string().trim().optional(),
   sex: z.enum(["MALE", "FEMALE"], { message: "Sex is required" }),
-  religion: z.string().optional(),
+  religion: z.string().trim().optional(),
   civilStatus: z.enum(["SINGLE", "MARRIED", "WIDOWED", "SEPARATED"], {
     message: "Civil status is required",
   }),
   address: z.object({
-    houseStreet: z.string().optional(),
-    barangay: z.string().optional(),
-    city: z.string().optional(),
-    province: z.string().optional(),
+    houseStreet: z.string().trim().optional(),
+    barangay: z.string().trim().optional(),
+    city: z.string().trim().optional(),
+    province: z.string().trim().optional(),
   }),
-  tin: z.string().optional(),
+  tin: z.string().trim().optional(),
   disability: z.object({
     visual: z.boolean().optional(),
     hearing: z.boolean().optional(),
     speech: z.boolean().optional(),
     physical: z.boolean().optional(),
     mental: z.boolean().optional(),
-    others: z.string().optional(),
+    others: z.string().trim().optional(),
   }),
-  height: z.string().optional(),
-  contactNumber: z.string().optional(),
-  email: z.string().email("Invalid email address").optional(),
+  height: z.string().trim().optional(),
+  contactNumber: z.string().trim().optional(),
+  email: z
+    .union([
+      z.string().trim().toLowerCase().email("Invalid email address"),
+      z.literal(""),
+    ])
+    .transform((val) => (val === "" ? undefined : val))
+    .optional(),
 });
 
 // Step 2: Employment Status

@@ -55,12 +55,6 @@ export default function ForgotPasswordPage({
             Back to sign in
           </Link>
         </div>
-
-        <div className="mt-8 pt-6 border-t border-gray-200 text-center">
-          <p className="text-xs text-gray-500">
-            Protected by Government Security Standards.
-          </p>
-        </div>
       </div>
     </div>
   );

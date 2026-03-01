@@ -1,6 +1,6 @@
 import { test, describe } from "node:test";
 import assert from "node:assert";
-import { personalInfoSchema } from "./jobseeker-registration.ts";
+import { personalInfoSchema } from "./jobseeker-registration";
 
 describe("personalInfoSchema", () => {
   const validData = {
@@ -53,47 +53,52 @@ describe("personalInfoSchema", () => {
   });
 
   test("should fail if surname is missing", () => {
-    const { surname, ...invalidData } = validData;
+    const invalidData: Partial<typeof validData> = { ...validData };
+    delete invalidData.surname;
     const result = personalInfoSchema.safeParse(invalidData);
     assert.strictEqual(result.success, false);
     if (!result.success) {
-      assert.ok(result.error.errors.some((e) => e.path.includes("surname")));
+      assert.ok(result.error.issues.some((e) => e.path.includes("surname")));
     }
   });
 
   test("should fail if firstName is missing", () => {
-    const { firstName, ...invalidData } = validData;
+    const invalidData: Partial<typeof validData> = { ...validData };
+    delete invalidData.firstName;
     const result = personalInfoSchema.safeParse(invalidData);
     assert.strictEqual(result.success, false);
     if (!result.success) {
-      assert.ok(result.error.errors.some((e) => e.path.includes("firstName")));
+      assert.ok(result.error.issues.some((e) => e.path.includes("firstName")));
     }
   });
 
   test("should fail if dateOfBirth is missing", () => {
-    const { dateOfBirth, ...invalidData } = validData;
+    const invalidData: Partial<typeof validData> = { ...validData };
+    delete invalidData.dateOfBirth;
     const result = personalInfoSchema.safeParse(invalidData);
     assert.strictEqual(result.success, false);
     if (!result.success) {
-      assert.ok(result.error.errors.some((e) => e.path.includes("dateOfBirth")));
+      assert.ok(result.error.issues.some((e) => e.path.includes("dateOfBirth")));
     }
   });
 
   test("should fail if sex is missing", () => {
-    const { sex, ...invalidData } = validData;
+    const invalidData: Partial<typeof validData> = { ...validData };
+    delete invalidData.sex;
     const result = personalInfoSchema.safeParse(invalidData);
     assert.strictEqual(result.success, false);
     if (!result.success) {
-      assert.ok(result.error.errors.some((e) => e.path.includes("sex")));
+      assert.ok(result.error.issues.some((e) => e.path.includes("sex")));
     }
   });
 
   test("should fail if civilStatus is missing", () => {
-    const { civilStatus, ...invalidData } = validData;
+    const invalidData: Partial<typeof validData> = { ...validData };
+    delete invalidData.civilStatus;
     const result = personalInfoSchema.safeParse(invalidData);
     assert.strictEqual(result.success, false);
     if (!result.success) {
-      assert.ok(result.error.errors.some((e) => e.path.includes("civilStatus")));
+      assert.ok(result.error.issues.some((e) => e.path.includes("civilStatus")));
     }
   });
 
@@ -120,7 +125,7 @@ describe("personalInfoSchema", () => {
     const result = personalInfoSchema.safeParse(invalidData);
     assert.strictEqual(result.success, false);
     if (!result.success) {
-      assert.ok(result.error.errors.some((e) => e.message === "Invalid email address"));
+      assert.ok(result.error.issues.some((e) => e.message === "Invalid email address"));
     }
   });
 });

@@ -32,11 +32,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { AdvancedFilter } from "./advanced-filter";
 import { ExportButton } from "./export-button";
 import { BulkActions } from "./bulk-actions";
@@ -127,10 +122,12 @@ export function JobseekersTable({
   };
 
   const handleFilterApply = (filters: Record<string, string>) => {
-    const params = new URLSearchParams();
+    const params = new URLSearchParams(searchParams);
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined && value !== "") {
         params.set(key, String(value));
+      } else {
+        params.delete(key);
       }
     });
     params.set("page", "1");
@@ -212,7 +209,7 @@ export function JobseekersTable({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="absolute right-1 top-1/2 size-7 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  className="absolute right-1 top-1/2 min-h-11 min-w-11 -translate-y-1/2 text-slate-400 hover:text-slate-600 active:bg-slate-100 active:opacity-80"
                   onClick={handleClearSearch}
                   aria-label="Clear search"
                 >
@@ -226,8 +223,12 @@ export function JobseekersTable({
           )}
         </div>
 
-        <div className="flex w-full items-center gap-3 md:w-auto">
-          <Button variant="outline" onClick={() => setIsFilterOpen(true)}>
+        <div className="flex w-full flex-wrap items-center gap-3 md:w-auto">
+          <Button
+            variant="outline"
+            onClick={() => setIsFilterOpen(true)}
+            className="min-h-11"
+          >
             <Filter className="size-4" />
             Filter
           </Button>
@@ -255,7 +256,7 @@ export function JobseekersTable({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-12">
+                <TableHead className="w-12 py-3">
                   <Checkbox
                     checked={
                       selectedIds.size === initialData.length &&
@@ -282,6 +283,7 @@ export function JobseekersTable({
                       <Button
                         variant="outline"
                         size="sm"
+                        className="min-h-11"
                         onClick={() => {
                           setSearchValue("");
                           router.push("/jobseekers");
@@ -301,9 +303,9 @@ export function JobseekersTable({
                   return (
                     <TableRow
                       key={jobseeker.id}
-                      className="hover:bg-primary/5"
+                      className="hover:bg-primary/5 active:bg-primary/10 focus-within:bg-primary/5"
                     >
-                      <TableCell>
+                      <TableCell className="py-3">
                         <Checkbox
                           checked={selectedIds.has(jobseeker.id)}
                           onCheckedChange={() => toggleSelect(jobseeker.id)}
@@ -357,6 +359,7 @@ export function JobseekersTable({
                               <Button
                                 variant="ghost"
                                 size="icon"
+                                className="min-h-11 min-w-11"
                                 aria-label={`View details for ${jobseeker.first_name} ${jobseeker.surname}`}
                                 asChild
                               >
@@ -378,6 +381,7 @@ export function JobseekersTable({
                               <Button
                                 variant="ghost"
                                 size="icon"
+                                className="min-h-11 min-w-11"
                                 aria-label={`Edit record for ${jobseeker.first_name} ${jobseeker.surname}`}
                                 asChild
                               >
@@ -405,14 +409,15 @@ export function JobseekersTable({
 
         {/* Pagination Footer */}
         {initialTotal > 0 && (
-          <div className="flex items-center justify-between border-t px-6 py-4">
+          <div className="flex flex-col gap-4 border-t px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <div className="text-sm text-slate-500">
               Showing {startRecord} to {endRecord} of {initialTotal} results
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
+                className="min-h-11 min-w-11 sm:min-w-0"
                 onClick={() => handlePageChange(initialPage - 1)}
                 disabled={initialPage <= 1 || isPending}
                 aria-label="Go to previous page"
@@ -440,7 +445,7 @@ export function JobseekersTable({
                       size="sm"
                       onClick={() => handlePageChange(pageNum)}
                       disabled={isPending}
-                      className="min-w-10"
+                      className="min-h-11 min-w-11"
                       aria-label={
                         initialPage === pageNum
                           ? `Current page, page ${pageNum}`
@@ -456,6 +461,7 @@ export function JobseekersTable({
               <Button
                 variant="outline"
                 size="sm"
+                className="min-h-11 min-w-11 sm:min-w-0"
                 onClick={() => handlePageChange(initialPage + 1)}
                 disabled={initialPage >= totalPages || isPending}
                 aria-label="Go to next page"

@@ -1,5 +1,4 @@
 import Image from "next/image";
-import { CheckCircle2, Briefcase } from "lucide-react";
 import { SignUpForm } from "./sign-up-form";
 
 export const metadata = {
@@ -17,12 +16,6 @@ export default function SignUpPage({
       {/* Left column: hero + features (same as login) */}
       <div className="lg:col-span-7 flex flex-col justify-center space-y-8 order-2 lg:order-1 text-center lg:text-left">
         <div className="space-y-6">
-          <div className="inline-flex items-center gap-3 px-3 py-1 rounded-full bg-blue-100 text-blue-700 w-fit mx-auto lg:mx-0">
-            <span className="flex h-2 w-2 rounded-full bg-blue-600" />
-            <span className="text-xs font-semibold uppercase tracking-wide">
-              Official Portal
-            </span>
-          </div>
           <h1 className="text-4xl lg:text-6xl font-extrabold tracking-tight text-gray-900 leading-tight">
             NSRP Jobseeker{" "}
             <br />
@@ -37,37 +30,6 @@ export default function SignUpPage({
             your registration process, ensuring efficient and secure access to
             employment services provided by the local government.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
-            <div className="flex items-center gap-2 text-gray-500">
-              <CheckCircle2 className="size-5 text-green-500 shrink-0" />
-              <span className="text-sm font-medium">Secure Data</span>
-            </div>
-            <div className="flex items-center gap-2 text-gray-500">
-              <CheckCircle2 className="size-5 text-green-500 shrink-0" />
-              <span className="text-sm font-medium">Fast Processing</span>
-            </div>
-            <div className="flex items-center gap-2 text-gray-500">
-              <CheckCircle2 className="size-5 text-green-500 shrink-0" />
-              <span className="text-sm font-medium">Government Certified</span>
-            </div>
-          </div>
-        </div>
-        <div className="relative hidden lg:block mt-8">
-          <div className="absolute -left-4 -top-4 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl" />
-          <div className="flex items-center gap-6 p-6 rounded-2xl bg-white/40 border border-white/50 backdrop-blur-sm max-w-lg">
-            <div className="p-4 bg-blue-100 rounded-xl shrink-0">
-              <Briefcase className="size-10 text-blue-600" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900 text-lg">
-                Job Matching Services
-              </h3>
-              <p className="text-sm text-gray-600">
-                Efficiently connecting skills with local and overseas
-                opportunities.
-              </p>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -102,14 +64,6 @@ export default function SignUpPage({
           </div>
 
           <SignUpFormWrapper searchParams={searchParams} />
-
-          <div className="mt-8 pt-6 border-t border-gray-200 text-center">
-            <p className="text-xs text-gray-500">
-              Protected by Government Security Standards.
-              <br />
-              Unauthorized access is prohibited.
-            </p>
-          </div>
         </div>
       </main>
     </div>

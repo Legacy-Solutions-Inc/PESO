@@ -55,7 +55,7 @@ export function ExportButton({ filters }: ExportButtonProps) {
       onClick={handleExport}
       disabled={isExporting}
       variant="outline"
-      className="gap-2"
+      className="min-h-11 gap-2"
     >
       <Download className="size-4" />
       {isExporting ? "Exporting..." : "Export CSV"}

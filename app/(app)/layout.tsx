@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getUserProfile } from "@/lib/auth/get-user-profile";
+import { getNotificationSummary } from "@/app/(app)/notifications/actions";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { Toaster } from "@/components/ui/toaster";
 
@@ -14,6 +15,10 @@ export default async function AppLayout({ children }: AppLayoutProps) {
     redirect("/login");
   }
 
+  const summaryResult = await getNotificationSummary();
+  const notificationSummary =
+    summaryResult.data ?? { pendingUserCount: 0 };
+
   return (
     <div className="relative flex min-h-svh bg-dashboard-surface text-slate-900 dark:text-slate-100">
       <div
@@ -24,7 +29,11 @@ export default async function AppLayout({ children }: AppLayoutProps) {
         <div className="absolute -left-40 top-1/2 h-96 w-96 rounded-full bg-slate-200/40 blur-[100px] dark:bg-slate-600/10" />
       </div>
       <div className="relative flex min-h-svh w-full">
-        <DashboardShell userEmail={data.user.email} userRole={data.profile.role}>
+        <DashboardShell
+          userEmail={data.user.email}
+          userRole={data.profile.role}
+          notificationSummary={notificationSummary}
+        >
           {children}
         </DashboardShell>
       </div>

@@ -175,7 +175,7 @@ export function JobseekerProfileView({ record }: JobseekerProfileViewProps) {
           </div>
           <div className="min-w-0 flex-1 space-y-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl md:text-4xl">
+              <h1 className="text-2xl font-bold wrap-break-word tracking-tight text-slate-900 dark:text-white sm:text-3xl md:text-4xl">
                 {fullName || "—"}
               </h1>
               <span className="inline-flex w-fit items-center rounded-full bg-dashboard-primary/10 px-3 py-1 text-xs font-semibold tracking-wide text-dashboard-primary dark:bg-dashboard-primary/20">
@@ -203,7 +203,7 @@ export function JobseekerProfileView({ record }: JobseekerProfileViewProps) {
             <Button
               variant="outline"
               size="lg"
-              className="flex-1 border-slate-200 bg-white font-medium shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800/50 dark:hover:bg-slate-800 md:flex-none"
+              className="min-h-11 flex-1 border-slate-200 bg-white font-medium shadow-sm transition hover:bg-slate-50 active:opacity-90 dark:border-slate-700 dark:bg-slate-800/50 dark:hover:bg-slate-800 md:flex-none"
               asChild
             >
               <Link href="/jobseekers" className="gap-2">
@@ -213,7 +213,7 @@ export function JobseekerProfileView({ record }: JobseekerProfileViewProps) {
             </Button>
             <Button
               size="lg"
-              className="flex-1 gap-2 bg-dashboard-primary font-semibold shadow-lg shadow-dashboard-primary/25 transition hover:bg-dashboard-primary/90 hover:shadow-xl hover:shadow-dashboard-primary/20 md:flex-none"
+              className="min-h-11 flex-1 gap-2 bg-dashboard-primary font-semibold shadow-lg shadow-dashboard-primary/25 transition hover:bg-dashboard-primary/90 active:opacity-90 hover:shadow-xl hover:shadow-dashboard-primary/20 md:flex-none"
               asChild
             >
               <Link href={`/jobseekers/${record.id}/edit`}>
@@ -233,9 +233,9 @@ export function JobseekerProfileView({ record }: JobseekerProfileViewProps) {
       >
         <AccordionItem
           value="personal"
-          className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition-shadow hover:shadow-md dark:border-slate-700/50 dark:bg-slate-900/30"
+          className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition-shadow hover:shadow-md active:shadow-md focus-within:shadow-md dark:border-slate-700/50 dark:bg-slate-900/30"
         >
-          <AccordionTrigger className="px-6 py-6 text-left hover:no-underline data-[state=open]:bg-slate-50/80 dark:data-[state=open]:bg-slate-800/30">
+          <AccordionTrigger className="min-h-11 px-6 py-6 text-left hover:no-underline active:bg-slate-100 dark:active:bg-slate-800/50 data-[state=open]:bg-slate-50/80 dark:data-[state=open]:bg-slate-800/30">
             <div className="flex items-center gap-4">
               <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-dashboard-primary/10 text-dashboard-primary">
                 <UserIcon className="size-5" />
@@ -309,9 +309,9 @@ export function JobseekerProfileView({ record }: JobseekerProfileViewProps) {
 
         <AccordionItem
           value="contact"
-          className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition-shadow hover:shadow-md dark:border-slate-700/50 dark:bg-slate-900/30"
+          className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition-shadow hover:shadow-md active:shadow-md focus-within:shadow-md dark:border-slate-700/50 dark:bg-slate-900/30"
         >
-          <AccordionTrigger className="px-6 py-6 text-left hover:no-underline data-[state=open]:bg-slate-50/80 dark:data-[state=open]:bg-slate-800/30">
+          <AccordionTrigger className="min-h-11 px-6 py-6 text-left hover:no-underline active:bg-slate-100 dark:active:bg-slate-800/50 data-[state=open]:bg-slate-50/80 dark:data-[state=open]:bg-slate-800/30">
             <div className="flex items-center gap-4">
               <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400">
                 <Phone className="size-5" />
@@ -353,9 +353,9 @@ export function JobseekerProfileView({ record }: JobseekerProfileViewProps) {
 
         <AccordionItem
           value="employment"
-          className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition-shadow hover:shadow-md dark:border-slate-700/50 dark:bg-slate-900/30"
+          className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition-shadow hover:shadow-md active:shadow-md focus-within:shadow-md dark:border-slate-700/50 dark:bg-slate-900/30"
         >
-          <AccordionTrigger className="px-6 py-6 text-left hover:no-underline data-[state=open]:bg-slate-50/80 dark:data-[state=open]:bg-slate-800/30">
+          <AccordionTrigger className="min-h-11 px-6 py-6 text-left hover:no-underline active:bg-slate-100 dark:active:bg-slate-800/50 data-[state=open]:bg-slate-50/80 dark:data-[state=open]:bg-slate-800/30">
             <div className="flex items-center gap-4">
               <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
                 <Briefcase className="size-5" />
@@ -431,9 +431,9 @@ export function JobseekerProfileView({ record }: JobseekerProfileViewProps) {
 
         <AccordionItem
           value="jobpref"
-          className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition-shadow hover:shadow-md dark:border-slate-700/50 dark:bg-slate-900/30"
+          className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition-shadow hover:shadow-md active:shadow-md focus-within:shadow-md dark:border-slate-700/50 dark:bg-slate-900/30"
         >
-          <AccordionTrigger className="px-6 py-6 text-left hover:no-underline data-[state=open]:bg-slate-50/80 dark:data-[state=open]:bg-slate-800/30">
+          <AccordionTrigger className="min-h-11 px-6 py-6 text-left hover:no-underline active:bg-slate-100 dark:active:bg-slate-800/50 data-[state=open]:bg-slate-50/80 dark:data-[state=open]:bg-slate-800/30">
             <div className="flex items-center gap-4">
               <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
                 <Target className="size-5" />
@@ -505,9 +505,9 @@ export function JobseekerProfileView({ record }: JobseekerProfileViewProps) {
 
         <AccordionItem
           value="education"
-          className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition-shadow hover:shadow-md dark:border-slate-700/50 dark:bg-slate-900/30"
+          className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition-shadow hover:shadow-md active:shadow-md focus-within:shadow-md dark:border-slate-700/50 dark:bg-slate-900/30"
         >
-          <AccordionTrigger className="px-6 py-6 text-left hover:no-underline data-[state=open]:bg-slate-50/80 dark:data-[state=open]:bg-slate-800/30">
+          <AccordionTrigger className="min-h-11 px-6 py-6 text-left hover:no-underline active:bg-slate-100 dark:active:bg-slate-800/50 data-[state=open]:bg-slate-50/80 dark:data-[state=open]:bg-slate-800/30">
             <div className="flex items-center gap-4">
               <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
                 <GraduationCap className="size-5" />
@@ -582,9 +582,9 @@ export function JobseekerProfileView({ record }: JobseekerProfileViewProps) {
 
         <AccordionItem
           value="skills"
-          className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition-shadow hover:shadow-md dark:border-slate-700/50 dark:bg-slate-900/30"
+          className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition-shadow hover:shadow-md active:shadow-md focus-within:shadow-md dark:border-slate-700/50 dark:bg-slate-900/30"
         >
-          <AccordionTrigger className="px-6 py-6 text-left hover:no-underline data-[state=open]:bg-slate-50/80 dark:data-[state=open]:bg-slate-800/30">
+          <AccordionTrigger className="min-h-11 px-6 py-6 text-left hover:no-underline active:bg-slate-100 dark:active:bg-slate-800/50 data-[state=open]:bg-slate-50/80 dark:data-[state=open]:bg-slate-800/30">
             <div className="flex items-center gap-4">
               <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-pink-100 text-pink-600 dark:bg-pink-900/30 dark:text-pink-400">
                 <Award className="size-5" />
