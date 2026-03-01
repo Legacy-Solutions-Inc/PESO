@@ -85,11 +85,11 @@ export async function getUsersList(filters: UsersListFilters = {}) {
       emailByUserId = await fetchUserEmails(adminClient, userIds);
     }
 
-    // Map profiles with user data (email from auth when available, else empty)
+    // Map profiles with user data (email: live from auth when available, else stored in profiles)
     const users: UserListItem[] =
       profiles?.map((profile) => ({
         id: profile.user_id,
-        email: emailByUserId[profile.user_id] ?? "",
+        email: emailByUserId[profile.user_id] ?? (profile.email?.trim() ?? ""),
         profile: {
           id: profile.id,
           role: profile.role as "admin" | "encoder",
