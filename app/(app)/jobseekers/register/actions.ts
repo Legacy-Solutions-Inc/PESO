@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { requireActiveUser } from "@/lib/auth/require-active-user";
 import {
   jobseekerRegistrationSchema,
   type JobseekerRegistrationData,
@@ -72,13 +73,13 @@ export async function createJobseeker(
 
     // Get current user
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const auth = await requireActiveUser();
 
-    if (!user) {
-      return { error: "Unauthorized" };
+    if (auth.error || !auth.data) {
+      return { error: auth.error || "Unauthorized" };
     }
+
+    const user = auth.data.user;
 
     // Insert to Supabase jobseekers table
     const { data: jobseeker, error } = await supabase
@@ -146,13 +147,13 @@ export async function saveDraft(
 ): Promise<ActionResult> {
   try {
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const auth = await requireActiveUser();
 
-    if (!user) {
-      return { error: "Unauthorized" };
+    if (auth.error || !auth.data) {
+      return { error: auth.error || "Unauthorized" };
     }
+
+    const user = auth.data.user;
 
     // Upsert draft (insert or update if exists)
     const { error } = await supabase
@@ -186,13 +187,13 @@ export async function saveDraft(
 export async function loadDraft(): Promise<DraftData | null> {
   try {
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const auth = await requireActiveUser();
 
-    if (!user) {
+    if (auth.error || !auth.data) {
       return null;
     }
+
+    const user = auth.data.user;
 
     const { data: draft, error } = await supabase
       .from("jobseeker_drafts")
