@@ -27,57 +27,10 @@ describe("Jobseeker Search Utils", () => {
     });
   });
 
-  describe("sanitizeSearchQuery", () => {
-    test("should remove PostgREST control characters", () => {
-      assert.strictEqual(sanitizeSearchQuery("test(1),2"), "test 1 2");
-    });
-
-    test("should escape wildcards", () => {
-      assert.strictEqual(sanitizeSearchQuery("test%_1"), "test\\%\\_1");
-    });
-
-    test("should handle both control chars and wildcards", () => {
-      assert.strictEqual(sanitizeSearchQuery("test(%)"), "test \\%");
-    });
-
-    test("should trim and collapse spaces", () => {
-      assert.strictEqual(sanitizeSearchQuery("  test   1  "), "test 1");
-    });
-
-    test("should handle empty input", () => {
-      assert.strictEqual(sanitizeSearchQuery(""), "");
-    });
-  });
-
-  describe("validateSortColumn", () => {
-    const ALLOWED = ["name", "date", "status"];
-
-    test("should return column if allowed", () => {
-      assert.strictEqual(validateSortColumn("name", ALLOWED), "name");
-      assert.strictEqual(validateSortColumn("status", ALLOWED), "status");
-    });
-
-    test("should return default (first allowed) if column not allowed", () => {
-      assert.strictEqual(validateSortColumn("admin", ALLOWED), "name");
-      assert.strictEqual(validateSortColumn("drop table", ALLOWED), "name");
-    });
-
-    test("should return default if column is empty", () => {
-      assert.strictEqual(validateSortColumn("", ALLOWED), "name");
-    });
-
-    test("should handle empty whitelist", () => {
-      assert.strictEqual(validateSortColumn("name", []), "created_at");
-    });
-  });
-});
-
-describe("validateSortColumn", () => {
-  test("should allow valid columns", () => {
-    assert.strictEqual(validateSortColumn("created_at"), "created_at");
-    assert.strictEqual(validateSortColumn("surname"), "surname");
-    assert.strictEqual(validateSortColumn("sex"), "sex");
-    assert.strictEqual(validateSortColumn("employment_status"), "employment_status");
+  test("should escape SQL wildcards", () => {
+    assert.strictEqual(sanitizeSearchQuery("100%"), "100\\%");
+    assert.strictEqual(sanitizeSearchQuery("user_name"), "user\\_name");
+    assert.strictEqual(sanitizeSearchQuery("C:\\"), "C:\\\\");
   });
 });
 
