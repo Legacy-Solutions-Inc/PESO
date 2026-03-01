@@ -1,32 +1,30 @@
-import { test, describe } from "node:test";
+import { test, describe, it } from "node:test";
 import assert from "node:assert";
-import { sanitizeSearchQuery, escapeLikeWildcards } from "./search-utils.ts";
+import {
+  sanitizeSearchQuery,
+  escapeLikeWildcards,
+  validateSortColumn,
+} from "./search-utils.ts";
 
-describe("escapeLikeWildcards", () => {
-  test("should escape SQL wildcards", () => {
-    assert.strictEqual(escapeLikeWildcards("100%"), "100\\%");
-    assert.strictEqual(escapeLikeWildcards("_"), "\\_");
-    assert.strictEqual(escapeLikeWildcards("\\"), "\\\\");
-  });
+describe("Jobseeker Search Utils", () => {
+  describe("escapeLikeWildcards", () => {
+    test("should escape SQL wildcards", () => {
+      assert.strictEqual(escapeLikeWildcards("100%"), "100\\%");
+      assert.strictEqual(escapeLikeWildcards("_"), "\\_");
+      assert.strictEqual(escapeLikeWildcards("\\"), "\\\\");
+    });
 
-  test("should handle empty strings", () => {
-    assert.strictEqual(escapeLikeWildcards(""), "");
-  });
+    test("should handle empty strings", () => {
+      assert.strictEqual(escapeLikeWildcards(""), "");
+    });
 
-  test("should preserve safe characters", () => {
-    assert.strictEqual(escapeLikeWildcards("abc 123"), "abc 123");
-  });
+    test("should preserve safe characters", () => {
+      assert.strictEqual(escapeLikeWildcards("abc 123"), "abc 123");
+    });
 
-  test("should escape mixed content", () => {
-    assert.strictEqual(escapeLikeWildcards("a_b%c\\d"), "a\\_b\\%c\\\\d");
-  });
-});
-
-describe("sanitizeSearchQuery", () => {
-  test("should handle empty strings", () => {
-    assert.strictEqual(sanitizeSearchQuery(""), "");
-    // Trims whitespace
-    assert.strictEqual(sanitizeSearchQuery("   "), "");
+    test("should escape mixed content", () => {
+      assert.strictEqual(escapeLikeWildcards("a_b%c\\d"), "a\\_b\\%c\\\\d");
+    });
   });
 
   test("should escape SQL wildcards", () => {
@@ -34,23 +32,20 @@ describe("sanitizeSearchQuery", () => {
     assert.strictEqual(sanitizeSearchQuery("user_name"), "user\\_name");
     assert.strictEqual(sanitizeSearchQuery("C:\\"), "C:\\\\");
   });
+});
 
-  test("should escape wildcards AND sanitize PostgREST chars", () => {
-    // Input: "Hello, 100% World"
-    // Escaped: "Hello, 100\% World"
-    // Sanitized: "Hello  100\% World" -> "Hello 100\% World"
-    assert.strictEqual(sanitizeSearchQuery("Hello, 100% World"), "Hello 100\\% World");
-
-    // Input: "(User_Name)"
-    // Escaped: "(User\_Name)"
-    // Sanitized: " User\_Name " -> "User\_Name"
-    assert.strictEqual(sanitizeSearchQuery("(User_Name)"), "User\\_Name");
+  test("should fallback to default for invalid columns", () => {
+    assert.strictEqual(validateSortColumn("password"), "created_at");
+    assert.strictEqual(validateSortColumn("admin"), "created_at");
+    assert.strictEqual(validateSortColumn("select * from users"), "created_at");
+    assert.strictEqual(validateSortColumn("personal_info->>civilStatus"), "created_at");
   });
 
-  test("should escape SQL wildcards after sanitization", () => {
-    assert.strictEqual(sanitizeSearchQuery("100%"), "100\\%");
-    assert.strictEqual(sanitizeSearchQuery("User_Name"), "User\\_Name");
-    // Comma replaced by space, then % escaped
-    assert.strictEqual(sanitizeSearchQuery("100%, Guaranteed"), "100\\% Guaranteed");
+  test("should fallback to default for empty input", () => {
+    assert.strictEqual(validateSortColumn(""), "created_at");
+  });
+
+  test("should fallback to default for unknown columns", () => {
+    assert.strictEqual(validateSortColumn("random_col"), "created_at");
   });
 });

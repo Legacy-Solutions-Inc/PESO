@@ -30,6 +30,7 @@ interface BulkActionsProps {
 
 export function BulkActions({ selectedIds, onComplete }: BulkActionsProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const router = useRouter();
@@ -78,6 +79,7 @@ export function BulkActions({ selectedIds, onComplete }: BulkActionsProps) {
         duration: 3000,
       });
 
+      setIsArchiveDialogOpen(false);
       onComplete();
       router.refresh();
     });
@@ -96,7 +98,10 @@ export function BulkActions({ selectedIds, onComplete }: BulkActionsProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={handleBulkArchive} disabled={isPending}>
+            <DropdownMenuItem
+              onClick={() => setIsArchiveDialogOpen(true)}
+              disabled={isPending}
+            >
               <Archive className="mr-2 size-4" />
               Archive Selected
             </DropdownMenuItem>
@@ -129,6 +134,27 @@ export function BulkActions({ selectedIds, onComplete }: BulkActionsProps) {
               className="bg-red-600 hover:bg-red-700"
             >
               {isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={isArchiveDialogOpen}
+        onOpenChange={setIsArchiveDialogOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive Jobseekers?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will archive {selectedIds.length} jobseeker record(s).
+              Archived records will be hidden from the default list.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBulkArchive} disabled={isPending}>
+              {isPending ? "Archiving..." : "Archive"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

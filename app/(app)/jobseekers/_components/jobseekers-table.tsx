@@ -5,6 +5,12 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, Filter, Eye, Edit, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 function formatDate(date: Date): string {
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -185,6 +191,7 @@ export function JobseekersTable({
           <Input
             ref={inputRef}
             placeholder="Search by name, ID, or email..."
+            aria-label="Search jobseekers"
             value={searchValue}
             onChange={(e) => {
               const value = e.target.value;
@@ -398,6 +405,7 @@ export function JobseekersTable({
                 size="sm"
                 onClick={() => handlePageChange(initialPage - 1)}
                 disabled={initialPage <= 1 || isPending}
+                aria-label="Go to previous page"
               >
                 <ChevronLeft className="size-4" />
                 Previous
@@ -423,7 +431,11 @@ export function JobseekersTable({
                       onClick={() => handlePageChange(pageNum)}
                       disabled={isPending}
                       className="min-w-10"
-                      aria-label={`Page ${pageNum}`}
+                      aria-label={
+                        initialPage === pageNum
+                          ? `Current page, page ${pageNum}`
+                          : `Go to page ${pageNum}`
+                      }
                       aria-current={initialPage === pageNum ? "page" : undefined}
                     >
                       {pageNum}
@@ -436,6 +448,7 @@ export function JobseekersTable({
                 size="sm"
                 onClick={() => handlePageChange(initialPage + 1)}
                 disabled={initialPage >= totalPages || isPending}
+                aria-label="Go to next page"
               >
                 Next
                 <ChevronRight className="size-4" />
