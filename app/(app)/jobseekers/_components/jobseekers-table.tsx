@@ -177,7 +177,7 @@ export function JobseekersTable({
         <div className="group relative w-full md:max-w-md">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
           <Input
-            ref={inputRef}
+            aria-label="Search jobseekers"
             placeholder="Search by name, ID, or email..."
             aria-label="Search jobseekers"
             value={searchValue}
@@ -410,11 +410,7 @@ export function JobseekersTable({
                       onClick={() => handlePageChange(pageNum)}
                       disabled={isPending}
                       className="min-w-10"
-                      aria-label={
-                        initialPage === pageNum
-                          ? `Current page, page ${pageNum}`
-                          : `Go to page ${pageNum}`
-                      }
+                      aria-label={`Go to page ${pageNum}`}
                       aria-current={initialPage === pageNum ? "page" : undefined}
                     >
                       {pageNum}
