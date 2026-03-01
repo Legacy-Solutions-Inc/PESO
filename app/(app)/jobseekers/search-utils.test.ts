@@ -71,3 +71,27 @@ describe("Jobseeker Search Utils", () => {
     });
   });
 });
+
+describe("validateSortColumn", () => {
+  test("should allow valid columns", () => {
+    assert.strictEqual(validateSortColumn("created_at"), "created_at");
+    assert.strictEqual(validateSortColumn("surname"), "surname");
+    assert.strictEqual(validateSortColumn("sex"), "sex");
+    assert.strictEqual(validateSortColumn("employment_status"), "employment_status");
+  });
+
+  test("should fallback to default for invalid columns", () => {
+    assert.strictEqual(validateSortColumn("password"), "created_at");
+    assert.strictEqual(validateSortColumn("admin"), "created_at");
+    assert.strictEqual(validateSortColumn("select * from users"), "created_at");
+    assert.strictEqual(validateSortColumn("personal_info->>civilStatus"), "created_at");
+  });
+
+  test("should fallback to default for empty input", () => {
+    assert.strictEqual(validateSortColumn(""), "created_at");
+  });
+
+  test("should fallback to default for unknown columns", () => {
+    assert.strictEqual(validateSortColumn("random_col"), "created_at");
+  });
+});
