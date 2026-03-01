@@ -1314,36 +1314,6 @@ export async function bulkDeleteJobseekers(
   }
 }
 
-export async function bulkArchiveJobseekers(
-  ids: number[]
-): Promise<{ success?: boolean; error?: string }> {
-  try {
-    const auth = await requireActiveUser();
-    if (auth.error) {
-      return { error: auth.error };
-    }
-
-    const supabase = await createClient();
-    const { error } = await supabase
-      .from("jobseekers")
-      .update({ status: "archived" })
-      .in("id", ids);
-
-    if (error) {
-      console.error("Bulk archive error:", error);
-      return { error: error.message };
-    }
-
-    return { success: true };
-  } catch (error) {
-    console.error("bulkArchiveJobseekers error:", error);
-    if (error instanceof Error) {
-      return { error: error.message };
-    }
-    return { error: "Failed to archive jobseekers" };
-  }
-}
-
 // ============================================================================
 // Dashboard Statistics
 // ============================================================================
