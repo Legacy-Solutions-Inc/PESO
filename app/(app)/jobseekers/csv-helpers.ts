@@ -1,26 +1,20 @@
 export const escapeCSV = (val: unknown): string => {
   if (val === null || val === undefined) return "";
-  const str = String(val);
 
-  const firstChar = str.charCodeAt(0);
-  const isRiskyStart =
-    firstChar === 61 || // =
-    firstChar === 43 || // +
-    firstChar === 45 || // -
-    firstChar === 64; // @
+  // Optimize: Avoid String() allocation if already a string
+  let str = typeof val === 'string' ? val : String(val);
+  if (str.length === 0) return "";
 
-  const needsQuotes =
-    str.includes(",") || str.includes('"') || str.includes("\n");
-
-  let finalStr = str;
-
-  // Prevent CSV injection
-  if (isRiskyStart) {
-    finalStr = `'${finalStr}`;
+  // Optimize: Use charCodeAt(0) instead of regex /^[=+\-@]/.test(str)
+  // 61: =, 43: +, 45: -, 64: @
+  const first = str.charCodeAt(0);
+  if (first === 61 || first === 43 || first === 45 || first === 64) {
+      str = "'" + str;
   }
 
-  if (needsQuotes) {
-    return `"${finalStr.replace(/"/g, '""')}"`;
+  // Optimize: Check for special chars before replacing
+  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+    return `"${str.replace(/"/g, '""')}"`;
   }
   return finalStr;
 };
