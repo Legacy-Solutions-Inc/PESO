@@ -57,8 +57,14 @@ export interface DashboardShellProps {
   children: React.ReactNode;
 }
 
+const ROLE_LABEL: Record<"admin" | "encoder", string> = {
+  admin: "Admin",
+  encoder: "Encoder",
+};
+
 export function DashboardShell({ userEmail, userRole, children }: DashboardShellProps) {
   const pathname = usePathname();
+  const roleLabel = ROLE_LABEL[userRole];
 
   const sidebarWidth = "18rem"; // w-72: must match --sidebar-width so gap and fixed sidebar align (no overlap)
 
@@ -143,7 +149,7 @@ export function DashboardShell({ userEmail, userRole, children }: DashboardShell
             </Avatar>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-slate-900 dark:text-white">
-                User
+                {roleLabel}
               </p>
               <p className="truncate text-xs text-slate-500 dark:text-slate-400">
                 {userEmail}
