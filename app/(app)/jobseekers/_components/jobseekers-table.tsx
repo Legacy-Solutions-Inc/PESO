@@ -3,7 +3,7 @@
 import { useState, useTransition, useMemo, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search, Filter, Eye, Edit, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Filter, Eye, Edit, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function formatDate(date: Date): string {
@@ -69,6 +69,7 @@ export function JobseekersTable({
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [searchValue, setSearchValue] = useState(searchParams.get("search") || "");
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Clean up timeout on unmount
   useEffect(() => {
@@ -107,6 +108,12 @@ export function JobseekersTable({
     },
     [router, searchParams]
   );
+
+  const handleClearSearch = () => {
+    setSearchValue("");
+    handleSearch("");
+    inputRef.current?.focus();
+  };
 
   const handleFilterApply = (filters: Record<string, string>) => {
     const params = new URLSearchParams();
@@ -170,7 +177,9 @@ export function JobseekersTable({
         <div className="group relative w-full md:max-w-md">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
           <Input
+            ref={inputRef}
             placeholder="Search by name, ID, or email..."
+            aria-label="Search jobseekers"
             value={searchValue}
             onChange={(e) => {
               const value = e.target.value;
@@ -184,8 +193,19 @@ export function JobseekersTable({
                 handleSearch(value);
               }, 500);
             }}
-            className="pl-10"
+            className="pl-10 pr-8"
           />
+          {searchValue && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-1 top-1/2 size-7 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              onClick={handleClearSearch}
+              aria-label="Clear search"
+            >
+              <X className="size-4" />
+            </Button>
+          )}
         </div>
 
         <div className="flex w-full items-center gap-3 md:w-auto">
@@ -318,9 +338,13 @@ export function JobseekersTable({
                             variant="ghost"
                             size="icon"
                             title="View details"
+                            aria-label={`View details for ${jobseeker.first_name} ${jobseeker.surname}`}
                             asChild
                           >
-                            <Link href={`/jobseekers/${jobseeker.id}`}>
+                            <Link
+                              href={`/jobseekers/${jobseeker.id}`}
+                              aria-label={`View details for ${jobseeker.first_name} ${jobseeker.surname}`}
+                            >
                               <Eye className="size-4" />
                             </Link>
                           </Button>
@@ -328,9 +352,13 @@ export function JobseekersTable({
                             variant="ghost"
                             size="icon"
                             title="Edit record"
+                            aria-label={`Edit record for ${jobseeker.first_name} ${jobseeker.surname}`}
                             asChild
                           >
-                            <Link href={`/jobseekers/${jobseeker.id}/edit`}>
+                            <Link
+                              href={`/jobseekers/${jobseeker.id}/edit`}
+                              aria-label={`Edit record for ${jobseeker.first_name} ${jobseeker.surname}`}
+                            >
                               <Edit className="size-4" />
                             </Link>
                           </Button>
@@ -356,6 +384,7 @@ export function JobseekersTable({
                 size="sm"
                 onClick={() => handlePageChange(initialPage - 1)}
                 disabled={initialPage <= 1 || isPending}
+                aria-label="Go to previous page"
               >
                 <ChevronLeft className="size-4" />
                 Previous
@@ -381,6 +410,12 @@ export function JobseekersTable({
                       onClick={() => handlePageChange(pageNum)}
                       disabled={isPending}
                       className="min-w-10"
+                      aria-label={
+                        initialPage === pageNum
+                          ? `Current page, page ${pageNum}`
+                          : `Go to page ${pageNum}`
+                      }
+                      aria-current={initialPage === pageNum ? "page" : undefined}
                     >
                       {pageNum}
                     </Button>
@@ -392,6 +427,7 @@ export function JobseekersTable({
                 size="sm"
                 onClick={() => handlePageChange(initialPage + 1)}
                 disabled={initialPage >= totalPages || isPending}
+                aria-label="Go to next page"
               >
                 Next
                 <ChevronRight className="size-4" />
