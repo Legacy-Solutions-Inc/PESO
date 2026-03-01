@@ -37,6 +37,11 @@ interface ProgressSidebarProps {
   isSaving: boolean;
   lastSaved?: Date;
   variant?: "sidebar" | "drawer";
+  /** When provided (e.g. edit mode), used instead of "Registration Form" / "Jobseeker Application". */
+  title?: string;
+  subtitle?: string;
+  /** When false (e.g. edit mode), the Save Draft button and last-saved text are hidden. */
+  showSaveDraft?: boolean;
 }
 
 function getStepStatus(
@@ -65,17 +70,22 @@ export function ProgressSidebar({
   isSaving,
   lastSaved,
   variant = "sidebar",
+  title: titleProp,
+  subtitle: subtitleProp,
+  showSaveDraft = true,
 }: ProgressSidebarProps) {
   const progressPercentage = (completedSteps.size / FORM_STEPS.length) * 100;
+  const title = titleProp ?? "Registration Form";
+  const subtitle = subtitleProp ?? "Jobseeker Application";
 
   const content = (
     <>
       <div className="border-b border-slate-200/80 p-6 pb-4 dark:border-slate-700/50">
         <h1 className="mb-1 text-xl font-bold text-slate-800 dark:text-white">
-          Registration Form
+          {title}
         </h1>
         <p className="text-sm text-slate-500 dark:text-slate-400">
-          Jobseeker Application
+          {subtitle}
         </p>
         <div className="mt-6">
           <div className="mb-2 flex justify-between text-xs font-semibold text-slate-600 dark:text-slate-300">
@@ -144,21 +154,23 @@ export function ProgressSidebar({
         })}
       </nav>
 
-      <div className="mt-auto border-t border-slate-200/80 p-4 dark:border-slate-700/50">
-        <Button
-          type="button"
-          onClick={onSaveDraft}
-          disabled={isSaving}
-          variant="outline"
-          className="min-h-11 w-full font-semibold shadow-sm"
-        >
-          <Save className="size-4" aria-hidden />
-          {isSaving ? "Saving..." : "Save Draft"}
-        </Button>
-        <p className="mt-2 text-center text-[10px] text-slate-400">
-          Last saved: {getTimeAgo(lastSaved)}
-        </p>
-      </div>
+      {showSaveDraft && (
+        <div className="mt-auto border-t border-slate-200/80 p-4 dark:border-slate-700/50">
+          <Button
+            type="button"
+            onClick={onSaveDraft}
+            disabled={isSaving}
+            variant="outline"
+            className="min-h-11 w-full font-semibold shadow-sm"
+          >
+            <Save className="size-4" aria-hidden />
+            {isSaving ? "Saving..." : "Save Draft"}
+          </Button>
+          <p className="mt-2 text-center text-[10px] text-slate-400">
+            Last saved: {getTimeAgo(lastSaved)}
+          </p>
+        </div>
+      )}
     </>
   );
 

@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useForm, FormProvider } from "react-hook-form";
+import { useRouter } from "next/navigation";
 import { List } from "lucide-react";
 import { ProgressSidebar } from "./progress-sidebar";
 import { NavigationBar } from "./navigation-bar";
@@ -15,210 +16,33 @@ import {
   saveDraft as saveDraftAction,
   loadDraft,
 } from "@/app/(app)/jobseekers/register/actions";
+import { updateJobseeker } from "@/app/(app)/jobseekers/actions";
 import type { JobseekerRegistrationData } from "@/lib/validations/jobseeker-registration";
+import { JOBSEEKER_REGISTRATION_DEFAULTS } from "@/lib/validations/jobseeker-registration-defaults";
 import { localDraftSchema } from "@/lib/validations/draft";
 
 const TOTAL_STEPS = 9;
 
-// Default form values for initial state and reset
-const DEFAULT_FORM_VALUES = {
-  personalInfo: {
-    surname: "",
-    firstName: "",
-    middleName: "",
-    suffix: "",
-    dateOfBirth: "",
-    placeOfBirth: "",
-    sex: "",
-    religion: "",
-    civilStatus: "",
-    address: {
-      houseStreet: "",
-      barangay: "",
-      city: "",
-      province: "",
-    },
-    tin: "",
-    disability: {
-      visual: false,
-      hearing: false,
-      speech: false,
-      physical: false,
-      mental: false,
-      others: "",
-    },
-    height: "",
-    contactNumber: "",
-    email: "",
-  },
-  employment: {
-    status: "",
-    employedType: "",
-    selfEmployedTypes: {
-      fisherman: false,
-      vendor: false,
-      homeBased: false,
-      transport: false,
-      domestic: false,
-      freelancer: false,
-      artisan: false,
-      others: "",
-    },
-    unemployedReason: "",
-    terminatedCountry: "",
-    unemployedReasonOthers: "",
-    jobSearchDuration: "",
-    isOfw: false,
-    ofwCountry: "",
-    isFormerOfw: false,
-    formerOfwCountry: "",
-    ofwReturnDate: "",
-    is4PsBeneficiary: false,
-    householdIdNumber: "",
-  },
-  jobPreference: {
-    employmentType: "",
-    occupation1: "",
-    occupation2: "",
-    occupation3: "",
-    localLocation1: "",
-    localLocation2: "",
-    localLocation3: "",
-    overseasLocation1: "",
-    overseasLocation2: "",
-    overseasLocation3: "",
-  },
-  language: {
-    english: {
-      read: false,
-      write: false,
-      speak: false,
-      understand: false,
-    },
-    filipino: {
-      read: false,
-      write: false,
-      speak: false,
-      understand: false,
-    },
-    mandarin: {
-      read: false,
-      write: false,
-      speak: false,
-      understand: false,
-    },
-    othersName: "",
-    others: {
-      read: false,
-      write: false,
-      speak: false,
-      understand: false,
-    },
-  },
-  education: {
-    currentlyInSchool: false,
-    elementary: {
-      yearGraduated: "",
-      levelReached: "",
-      yearLastAttended: "",
-    },
-    secondary: {
-      curriculumType: undefined,
-      yearGraduated: "",
-      levelReached: "",
-      yearLastAttended: "",
-    },
-    k12: {
-      yearGraduated: "",
-      levelReached: "",
-      yearLastAttended: "",
-    },
-    seniorHigh: {
-      strand: "",
-      yearGraduated: "",
-      levelReached: undefined,
-      yearLastAttended: "",
-    },
-    tertiary: {
-      course: "",
-      yearGraduated: "",
-      levelReached: "",
-      yearLastAttended: "",
-    },
-    graduate: {
-      course: "",
-      yearGraduated: "",
-      yearLastAttended: "",
-    },
-    postGraduate: {
-      course: "",
-      yearGraduated: "",
-      yearLastAttended: "",
-    },
-  },
-  training: {
-    entries: [],
-  },
-  eligibility: {
-    civilService: [],
-    professionalLicense: [],
-  },
-  workExperience: {
-    entries: [],
-  },
-  skills: {
-    otherSkills: {
-      auto_mechanic: false,
-      beautician: false,
-      carpentry_work: false,
-      computer_literate: false,
-      domestic_chores: false,
-      driver: false,
-      electrician: false,
-      embroidery: false,
-      gardening: false,
-      masonry: false,
-      painter_artist: false,
-      painting_jobs: false,
-      photography: false,
-      plumbing: false,
-      sewing_dresses: false,
-      stenography: false,
-      tailoring: false,
-      others: "",
-    },
-    certification: {
-      acknowledged: false,
-      signature: "",
-      dateSigned: new Date().toISOString().split("T")[0],
-    },
-    pesoUseOnly: {
-      referralPrograms: {
-        spes: false,
-        gip: false,
-        tupad: false,
-        jobstart: false,
-        dileep: false,
-        tesda_training: false,
-        others: "",
-      },
-      assessedBy: "",
-      assessorSignature: "",
-      assessmentDate: "",
-    },
-  },
-};
-
 interface FormLayoutProps {
   encoderEmail: string;
+  /** When both provided, form runs in edit mode: prefilled with initialData, no draft, submit updates this jobseeker. */
+  jobseekerId?: number;
+  initialData?: JobseekerRegistrationData;
 }
 
 export function JobseekerRegistrationFormLayout({
   encoderEmail,
+  jobseekerId,
+  initialData,
 }: FormLayoutProps) {
+  const router = useRouter();
   const { toast } = useToast();
+  const isEditMode = jobseekerId != null && initialData != null;
+
   const [currentStep, setCurrentStep] = useState(1);
-  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(() =>
+    isEditMode ? new Set([1, 2, 3, 4, 5, 6, 7, 8, 9]) : new Set()
+  );
   const [formData, setFormData] = useState<Partial<JobseekerRegistrationData>>({});
   const [lastSaved, setLastSaved] = useState<Date | undefined>();
   const [isSaving, setIsSaving] = useState(false);
@@ -228,21 +52,17 @@ export function JobseekerRegistrationFormLayout({
   const isMobile = useIsMobile();
   const progressPercentage = (completedSteps.size / TOTAL_STEPS) * 100;
 
-  // React Hook Form - initialize with default values to avoid uncontrolled to controlled warnings
   const formMethods = useForm({
     mode: "onBlur",
-    defaultValues: {
-      ...DEFAULT_FORM_VALUES,
-      ...formData,
-    },
+    defaultValues: isEditMode
+      ? initialData
+      : { ...JOBSEEKER_REGISTRATION_DEFAULTS, ...formData },
   });
 
   const { handleSubmit, getValues, formState } = formMethods;
 
-  // Helper function to reset form to initial state
   const resetForm = useCallback(() => {
-    // Reset React Hook Form to default values
-    formMethods.reset(DEFAULT_FORM_VALUES);
+    formMethods.reset(JOBSEEKER_REGISTRATION_DEFAULTS);
     
     // Reset component state
     setFormData({});
@@ -263,13 +83,12 @@ export function JobseekerRegistrationFormLayout({
     });
   }, [formMethods, toast]);
 
-  // Save draft to localStorage and server
   const saveDraft = useCallback(async () => {
+    if (isEditMode) return;
     setIsSaving(true);
     try {
       const currentFormData = { ...formData, ...getValues() } as Partial<JobseekerRegistrationData>;
-      
-      // Save to localStorage (offline backup)
+
       localStorage.setItem(
         "jobseeker-draft",
         JSON.stringify({
@@ -307,7 +126,7 @@ export function JobseekerRegistrationFormLayout({
     } finally {
       setIsSaving(false);
     }
-  }, [formData, getValues, currentStep, completedSteps, encoderEmail, toast]);
+  }, [formData, getValues, currentStep, completedSteps, encoderEmail, toast, isEditMode]);
 
   // Auto-save every 30 seconds if form is dirty
   const saveDraftRef = useRef(saveDraft);
@@ -317,17 +136,15 @@ export function JobseekerRegistrationFormLayout({
   }, [saveDraft]);
 
   useEffect(() => {
-    if (!formState.isDirty) return;
-
+    if (isEditMode || !formState.isDirty) return;
     const interval = setInterval(() => {
       saveDraftRef.current();
     }, 30000);
-
     return () => clearInterval(interval);
-  }, [formState.isDirty]);
+  }, [formState.isDirty, isEditMode]);
 
-  // Load draft from server first, then localStorage fallback
   useEffect(() => {
+    if (isEditMode) return;
     const fixTrainingCertificates = (data: Partial<JobseekerRegistrationData>) => {
       // Fix training.entries[].certificates if it's an array
       if (data?.training?.entries && Array.isArray(data.training.entries)) {
@@ -389,22 +206,20 @@ export function JobseekerRegistrationFormLayout({
         }
       }
     };
-    
     loadDraftData();
-  }, [encoderEmail, formMethods]);
+  }, [encoderEmail, formMethods, isEditMode]);
 
-  // Keyboard shortcut: Ctrl+S / Cmd+S to save
   useEffect(() => {
+    if (isEditMode) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "s") {
         e.preventDefault();
         saveDraft();
       }
     };
-
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [saveDraft]);
+  }, [saveDraft, isEditMode]);
 
   const goToStep = useCallback((step: number) => {
     // Save current step data before navigating
@@ -432,51 +247,77 @@ export function JobseekerRegistrationFormLayout({
     setIsSubmitting(true);
     try {
       const finalData = { ...formData, ...data } as JobseekerRegistrationData;
-      
+
+      if (isEditMode && jobseekerId != null) {
+        const result = await updateJobseeker(jobseekerId, finalData);
+        if (result.error) {
+          if (result.details && result.details.length > 0) {
+            const errorList = result.details
+              .map((err) => `• ${err.field}: ${err.message}`)
+              .join("\n");
+            toast({
+              title: "Validation error",
+              description: (
+                <div className="space-y-2">
+                  <p className="font-medium">Please fix the following:</p>
+                  <div className="text-sm whitespace-pre-line">{errorList}</div>
+                </div>
+              ),
+              duration: 10000,
+            });
+          } else {
+            toast({
+              title: "Update failed",
+              description: result.error,
+              duration: 7000,
+            });
+          }
+          return;
+        }
+        toast({
+          title: "Profile updated successfully",
+          description: "Redirecting to profile.",
+          duration: 3000,
+        });
+        router.push(`/jobseekers/${jobseekerId}`);
+        return;
+      }
+
       const result = await createJobseeker(finalData);
-      
       if (result.error) {
-        // Display detailed validation errors if available
         if (result.details && result.details.length > 0) {
           const errorList = result.details
             .map((err) => `• ${err.field}: ${err.message}`)
-            .join('\n');
-          
+            .join("\n");
           toast({
-            title: "❌ Missing Required Fields",
+            title: "Missing required fields",
             description: (
               <div className="space-y-2">
                 <p className="font-medium">Please fill in the following fields:</p>
                 <div className="text-sm whitespace-pre-line">{errorList}</div>
               </div>
             ),
-            duration: 10000, // 10 seconds
+            duration: 10000,
           });
         } else {
           toast({
-            title: "❌ Submission Failed",
+            title: "Submission failed",
             description: result.error,
             duration: 7000,
           });
         }
         return;
       }
-      
-      // Clear draft immediately
+
       localStorage.removeItem("jobseeker-draft");
-      
-      // Show success with action buttons
       toast({
-        title: "✅ Registration Submitted Successfully",
+        title: "Registration submitted successfully",
         description: (
           <div className="space-y-3">
             <p>Jobseeker #{result.id} has been registered.</p>
             <div className="flex gap-2">
               <button
-                onClick={() => {
-                  // Clear form for new entry
-                  resetForm();
-                }}
+                onClick={() => resetForm()}
                 className="rounded bg-white px-3 py-1.5 text-sm font-medium text-slate-900 hover:bg-slate-100 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700"
               >
                 Register Another
@@ -492,17 +333,13 @@ export function JobseekerRegistrationFormLayout({
             </div>
           </div>
         ),
-        duration: 10000, // 10 seconds to give user time to decide
+        duration: 10000,
       });
-      
-      // Auto-reset after 10 seconds if no action taken
-      setTimeout(() => {
-        resetForm();
-      }, 10000);
+      setTimeout(() => resetForm(), 10000);
     } catch (error) {
       toast({
-        title: "❌ Submission Failed",
-        description: error instanceof Error ? error.message : "Could not submit registration. Please try again.",
+        title: "Submission failed",
+        description: error instanceof Error ? error.message : "Please try again.",
         duration: 7000,
       });
     } finally {
@@ -527,6 +364,8 @@ export function JobseekerRegistrationFormLayout({
               isLastStep={currentStep === TOTAL_STEPS}
               isSubmitting={isSubmitting}
               isSaving={isSaving}
+              submitLabel={isEditMode ? "Update profile" : undefined}
+              showSaveDraft={!isEditMode}
             />
           </form>
         </FormProvider>
@@ -540,7 +379,7 @@ export function JobseekerRegistrationFormLayout({
         <header className="sticky top-0 z-10 flex shrink-0 items-center justify-between border-b border-slate-200/80 bg-white px-4 py-3 shadow-sm dark:border-slate-700/50 dark:bg-slate-900">
           <div className="min-w-0">
             <h1 className="truncate text-base font-bold text-slate-800 dark:text-white">
-              Registration
+              {isEditMode ? "Edit profile" : "Registration"}
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               {Math.round(progressPercentage)}% complete
@@ -575,6 +414,9 @@ export function JobseekerRegistrationFormLayout({
               onSaveDraft={saveDraft}
               isSaving={isSaving}
               lastSaved={lastSaved}
+              title={isEditMode ? "Edit profile" : undefined}
+              subtitle={isEditMode ? "Update jobseeker record" : undefined}
+              showSaveDraft={!isEditMode}
             />
           </SheetContent>
         </Sheet>
@@ -593,8 +435,10 @@ export function JobseekerRegistrationFormLayout({
         onSaveDraft={saveDraft}
         isSaving={isSaving}
         lastSaved={lastSaved}
+        title={isEditMode ? "Edit profile" : undefined}
+        subtitle={isEditMode ? "Update jobseeker record" : undefined}
+        showSaveDraft={!isEditMode}
       />
-
       {mainContent}
     </div>
   );

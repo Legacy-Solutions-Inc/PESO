@@ -25,6 +25,10 @@ interface NavigationBarProps {
   isLastStep: boolean;
   isSubmitting: boolean;
   isSaving: boolean;
+  /** When provided (e.g. edit mode), used for the last-step submit button instead of "Submit Registration". */
+  submitLabel?: string;
+  /** When false (e.g. edit mode), the Save as Draft button is hidden. */
+  showSaveDraft?: boolean;
 }
 
 export function NavigationBar({
@@ -37,8 +41,14 @@ export function NavigationBar({
   isLastStep,
   isSubmitting,
   isSaving,
+  submitLabel,
+  showSaveDraft = true,
 }: NavigationBarProps) {
   const nextStepName = currentStep < totalSteps ? STEP_NAMES[currentStep] : null;
+  const lastStepButtonLabel = submitLabel ?? "Submit Registration";
+  const lastStepButtonSubmittingLabel = submitLabel?.toLowerCase().includes("update")
+    ? "Updating..."
+    : "Submitting...";
 
   return (
     <div className="sticky bottom-0 z-30 -mx-6 mt-8 border-t border-slate-200/80 bg-white/95 px-6 py-4 shadow-lg backdrop-blur-md dark:border-slate-700/50 dark:bg-slate-900/95 lg:-mx-8 lg:px-8">
@@ -54,23 +64,25 @@ export function NavigationBar({
           Previous Step
         </Button>
 
-        <Button
-          type="button"
-          onClick={onSaveDraft}
-          disabled={isSaving}
-          variant="secondary"
-          className="hidden font-semibold sm:inline-flex"
-        >
-          {isSaving ? "Saving..." : "Save as Draft"}
-        </Button>
+        {showSaveDraft && (
+          <Button
+            type="button"
+            onClick={onSaveDraft}
+            disabled={isSaving}
+            variant="secondary"
+            className="hidden min-h-11 font-semibold sm:inline-flex"
+          >
+            {isSaving ? "Saving..." : "Save as Draft"}
+          </Button>
+        )}
 
         {isLastStep ? (
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="bg-dashboard-primary font-bold hover:bg-dashboard-primary-hover focus-visible:ring-2 focus-visible:ring-dashboard-primary"
+            className="min-h-11 bg-dashboard-primary font-bold hover:bg-dashboard-primary-hover focus-visible:ring-2 focus-visible:ring-dashboard-primary"
           >
-            {isSubmitting ? "Submitting..." : "Submit Registration"}
+            {isSubmitting ? lastStepButtonSubmittingLabel : lastStepButtonLabel}
             <ChevronRight className="size-4" aria-hidden />
           </Button>
         ) : (

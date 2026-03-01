@@ -1,9 +1,14 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { requireActiveUser } from "@/lib/auth/require-active-user";
-import type { JobseekerRegistrationData } from "@/lib/validations/jobseeker-registration";
+import { cleanFormData } from "@/lib/jobseeker-registration/clean-form-data";
+import {
+  jobseekerRegistrationSchema,
+  type JobseekerRegistrationData,
+} from "@/lib/validations/jobseeker-registration";
 import {
   sanitizeSearchQuery,
   escapeLikeWildcards,
@@ -207,6 +212,79 @@ export async function getJobseekerById(
       return { error: err.message };
     }
     return { error: "Failed to fetch jobseeker" };
+  }
+}
+
+interface UpdateActionResult {
+  success?: boolean;
+  error?: string;
+  id?: string;
+  field?: string;
+  details?: Array<{ field: string; message: string }>;
+}
+
+export async function updateJobseeker(
+  id: number,
+  data: JobseekerRegistrationData
+): Promise<UpdateActionResult> {
+  const auth = await requireActiveUser();
+  if (auth.error) {
+    return { error: auth.error };
+  }
+
+  const cleanedData = cleanFormData(data);
+  const parseResult = jobseekerRegistrationSchema.safeParse(cleanedData);
+
+  if (!parseResult.success) {
+    const firstError = parseResult.error.issues[0];
+    if (!firstError) {
+      return { error: parseResult.error.message };
+    }
+    const fieldPath = firstError.path.join(" → ");
+    return {
+      error: `Validation Error: ${firstError.message}`,
+      field: fieldPath,
+      details: parseResult.error.issues.slice(0, 3).map((issue) => ({
+        field: issue.path.join(" → "),
+        message: issue.message,
+      })),
+    };
+  }
+
+  const validated = parseResult.data;
+
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from("jobseekers")
+      .update({
+        personal_info: validated.personalInfo,
+        employment: validated.employment,
+        job_preference: validated.jobPreference,
+        language: validated.language,
+        education: validated.education,
+        training: validated.training,
+        eligibility: validated.eligibility,
+        work_experience: validated.workExperience,
+        skills: validated.skills,
+      })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Supabase update error:", error);
+      return { error: error.message };
+    }
+
+    revalidatePath("/jobseekers", "layout");
+    revalidatePath(`/jobseekers/${id}`);
+    revalidatePath(`/jobseekers/${id}/edit`);
+    return { success: true, id: String(id) };
+  } catch (err) {
+    console.error("updateJobseeker error:", err);
+    if (err instanceof Error) {
+      return { error: err.message };
+    }
+    return { error: "Failed to update jobseeker" };
   }
 }
 

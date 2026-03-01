@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { cleanFormData } from "@/lib/jobseeker-registration/clean-form-data";
 import {
   jobseekerRegistrationSchema,
   type JobseekerRegistrationData,
@@ -20,45 +21,6 @@ interface DraftData {
   data: Partial<JobseekerRegistrationData>;
   currentStep: number;
   completedSteps: number[];
-}
-
-// Helper function to convert empty strings to undefined and fix data type issues
-function cleanFormData(data: unknown): unknown {
-  if (data === null || data === undefined) {
-    return data;
-  }
-  
-  if (Array.isArray(data)) {
-    return data.map(cleanFormData);
-  }
-  
-  if (typeof data === 'object') {
-    const cleaned: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(data)) {
-      // Convert empty strings to undefined for optional fields
-      if (value === '') {
-        cleaned[key] = undefined;
-      } 
-      // Fix training.entries[].certificates if it's an array (should be object)
-      else if (key === 'certificates' && Array.isArray(value)) {
-        cleaned[key] = {
-          NC_I: false,
-          NC_II: false,
-          NC_III: false,
-          NC_IV: false,
-          COC: false,
-        };
-      }
-      else if (typeof value === 'object') {
-        cleaned[key] = cleanFormData(value);
-      } else {
-        cleaned[key] = value;
-      }
-    }
-    return cleaned;
-  }
-  
-  return data;
 }
 
 export async function createJobseeker(
@@ -206,7 +168,7 @@ export async function loadDraft(): Promise<DraftData | null> {
     }
 
     return {
-      data: parsed.data.data,
+      data: parsed.data.data ?? {},
       currentStep: parsed.data.current_step,
       completedSteps: parsed.data.completed_steps,
     };
