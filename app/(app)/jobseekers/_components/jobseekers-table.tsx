@@ -32,6 +32,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { AdvancedFilter } from "./advanced-filter";
 import { ExportButton } from "./export-button";
 import { BulkActions } from "./bulk-actions";
@@ -352,6 +357,7 @@ export function JobseekersTable({
                               <Button
                                 variant="ghost"
                                 size="icon"
+                                aria-label={`View details for ${jobseeker.first_name} ${jobseeker.surname}`}
                                 asChild
                               >
                                 <Link
@@ -366,11 +372,13 @@ export function JobseekersTable({
                               <p>View details</p>
                             </TooltipContent>
                           </Tooltip>
+
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
                                 variant="ghost"
                                 size="icon"
+                                aria-label={`Edit record for ${jobseeker.first_name} ${jobseeker.surname}`}
                                 asChild
                               >
                                 <Link
