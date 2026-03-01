@@ -4,7 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { requireActiveUser } from "@/lib/auth/require-active-user";
 import type { JobseekerRegistrationData } from "@/lib/validations/jobseeker-registration";
-import { sanitizeSearchQuery, escapeLikeWildcards } from "./search-utils";
+import {
+  sanitizeSearchQuery,
+  escapeLikeWildcards,
+  validateSortColumn,
+} from "./search-utils";
 import {
   escapeCSV,
   getTraining,
@@ -269,7 +273,7 @@ export async function getJobseekers(
     }
 
     // Sorting
-    const sortBy = filters.sortBy || "created_at";
+    const sortBy = validateSortColumn(filters.sortBy || "");
     const sortOrder = filters.sortOrder || "desc";
     query = query.order(sortBy, { ascending: sortOrder === "asc" });
 
@@ -550,7 +554,9 @@ export async function exportJobseekersCSV(
       "Status",
     ];
 
-    let csv = headers.join(",") + "\n";
+    const headerRow = headers.join(",");
+    // Use string concatenation for memory efficiency (avoids large array allocation)
+    let csv = headerRow;
 
     // Pagination config
     const PAGE_SIZE = 1000;
@@ -815,7 +821,7 @@ export async function exportJobseekersCSV(
             escapeCSV(record.status),
           ];
 
-          csv += row.join(",") + "\n";
+          csv += "\n" + row.join(",");
         });
 
         // Check for termination
@@ -825,7 +831,7 @@ export async function exportJobseekersCSV(
         page++;
     }
 
-    if (!hasData) {
+    if (csv === headerRow) { // Only headers
         return { error: "No data to export" };
     }
     const filename = `jobseekers_${new Date().toISOString().split("T")[0]}.csv`;
