@@ -16,7 +16,7 @@ export const escapeCSV = (val: unknown): string => {
   if (str.includes(',') || str.includes('"') || str.includes('\n')) {
     return `"${str.replace(/"/g, '""')}"`;
   }
-  return str;
+  return finalStr;
 };
 
 export const getTraining = (
