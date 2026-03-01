@@ -1,12 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { ZodError } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import {
   jobseekerRegistrationSchema,
   type JobseekerRegistrationData,
 } from "@/lib/validations/jobseeker-registration";
+import { draftPayloadSchema } from "@/lib/validations/draft";
 
 interface ActionResult {
   success?: boolean;
@@ -64,14 +64,28 @@ function cleanFormData(data: unknown): unknown {
 export async function createJobseeker(
   data: JobseekerRegistrationData
 ): Promise<ActionResult> {
-  try {
-    // Clean empty strings before validation
-    const cleanedData = cleanFormData(data);
-    
-    // Validate with Zod
-    const validated = jobseekerRegistrationSchema.parse(cleanedData);
+  const cleanedData = cleanFormData(data);
+  const parseResult = jobseekerRegistrationSchema.safeParse(cleanedData);
 
-    // Get current user
+  if (!parseResult.success) {
+    const firstError = parseResult.error.issues[0];
+    if (!firstError) {
+      return { error: parseResult.error.message };
+    }
+    const fieldPath = firstError.path.join(" → ");
+    return {
+      error: `Validation Error: ${firstError.message}`,
+      field: fieldPath,
+      details: parseResult.error.issues.slice(0, 3).map((issue) => ({
+        field: issue.path.join(" → "),
+        message: issue.message,
+      })),
+    };
+  }
+
+  const validated = parseResult.data;
+
+  try {
     const supabase = await createClient();
     const {
       data: { user },
@@ -114,24 +128,6 @@ export async function createJobseeker(
     revalidatePath("/jobseekers");
     return { success: true, id: jobseeker.id.toString() };
   } catch (error) {
-    // Handle Zod validation errors with detailed messages
-    if (error instanceof ZodError) {
-      const firstError = error.issues[0];
-      if (!firstError) {
-        return { error: error.message };
-      }
-
-      const fieldPath = firstError.path.join(' → ');
-      return {
-        error: `Validation Error: ${firstError.message}`,
-        field: fieldPath,
-        details: error.issues.slice(0, 3).map((issue) => ({
-          field: issue.path.join(' → '),
-          message: issue.message,
-        })),
-      };
-    }
-    
     if (error instanceof Error) {
       return { error: error.message };
     }
@@ -204,10 +200,15 @@ export async function loadDraft(): Promise<DraftData | null> {
       return null;
     }
 
+    const parsed = draftPayloadSchema.safeParse(draft);
+    if (!parsed.success) {
+      return null;
+    }
+
     return {
-      data: draft.data,
-      currentStep: draft.current_step,
-      completedSteps: draft.completed_steps,
+      data: parsed.data.data,
+      currentStep: parsed.data.current_step,
+      completedSteps: parsed.data.completed_steps,
     };
   } catch (error) {
     console.error("Failed to load draft:", error);

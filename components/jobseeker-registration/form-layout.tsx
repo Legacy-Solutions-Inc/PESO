@@ -16,6 +16,7 @@ import {
   loadDraft,
 } from "@/app/(app)/jobseekers/register/actions";
 import type { JobseekerRegistrationData } from "@/lib/validations/jobseeker-registration";
+import { localDraftSchema } from "@/lib/validations/draft";
 
 const TOTAL_STEPS = 9;
 
@@ -369,15 +370,18 @@ export function JobseekerRegistrationFormLayout({
       const localDraft = localStorage.getItem("jobseeker-draft");
       if (localDraft) {
         try {
-          const parsed = JSON.parse(localDraft);
-          if (parsed.encoderEmail === encoderEmail) {
-            const fixedData = fixTrainingCertificates(parsed.data || {});
+          const parsed = JSON.parse(localDraft) as unknown;
+          const result = localDraftSchema.safeParse(parsed);
+          if (result.success && result.data.encoderEmail === encoderEmail) {
+            const fixedData = fixTrainingCertificates(result.data.data || {});
             setFormData(fixedData);
-            setCurrentStep(parsed.currentStep || 1);
-            setCompletedSteps(new Set(parsed.completedSteps || []));
-            setLastSaved(parsed.timestamp ? new Date(parsed.timestamp) : undefined);
-            
-            // Populate React Hook Form fields with draft data
+            setCurrentStep(result.data.currentStep || 1);
+            setCompletedSteps(new Set(result.data.completedSteps || []));
+            setLastSaved(
+              result.data.timestamp
+                ? new Date(result.data.timestamp as number | string)
+                : undefined
+            );
             formMethods.reset(fixedData);
           }
         } catch (error) {

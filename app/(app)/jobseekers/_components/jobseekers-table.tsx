@@ -122,10 +122,12 @@ export function JobseekersTable({
   };
 
   const handleFilterApply = (filters: Record<string, string>) => {
-    const params = new URLSearchParams();
+    const params = new URLSearchParams(searchParams);
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined && value !== "") {
         params.set(key, String(value));
+      } else {
+        params.delete(key);
       }
     });
     params.set("page", "1");
