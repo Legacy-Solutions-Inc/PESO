@@ -16,6 +16,22 @@ export function cleanFormData(data: unknown): unknown {
     for (const [key, value] of Object.entries(data)) {
       if (value === "") {
         cleaned[key] = undefined;
+      } else if (
+        key === "certification" &&
+        typeof value === "object" &&
+        value !== null &&
+        !Array.isArray(value)
+      ) {
+        const certCleaned = cleanFormData(value) as Record<string, unknown>;
+        const dateVal = certCleaned.dateSigned;
+        const hasDate =
+          typeof dateVal === "string" && String(dateVal).trim().length > 0;
+        cleaned[key] = {
+          ...certCleaned,
+          dateSigned: hasDate
+            ? dateVal
+            : new Date().toISOString().slice(0, 10),
+        };
       } else if (key === "certificates" && Array.isArray(value)) {
         cleaned[key] = {
           NC_I: false,

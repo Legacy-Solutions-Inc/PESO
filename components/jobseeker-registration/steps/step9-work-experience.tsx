@@ -15,12 +15,12 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Plus, Trash2, GripVertical } from "lucide-react";
 
-const EMPLOYMENT_STATUS_OPTIONS = [
-  "Permanent",
-  "Contractual",
-  "Part-time",
-  "Probationary",
-] as const;
+const EMPLOYMENT_STATUS_OPTIONS: { label: string; value: "PERMANENT" | "CONTRACTUAL" | "PART_TIME" | "PROBATIONARY" }[] = [
+  { label: "Permanent", value: "PERMANENT" },
+  { label: "Contractual", value: "CONTRACTUAL" },
+  { label: "Part-time", value: "PART_TIME" },
+  { label: "Probationary", value: "PROBATIONARY" },
+];
 
 export function Step9WorkExperience() {
   const form = useFormContext();
@@ -167,13 +167,13 @@ export function Step9WorkExperience() {
                             className="grid gap-3 md:grid-cols-4"
                           >
                             {EMPLOYMENT_STATUS_OPTIONS.map((status) => (
-                              <div key={status} className="flex items-center gap-2">
+                              <div key={status.value} className="flex items-center gap-2">
                                 <RadioGroupItem
-                                  value={status.toUpperCase()}
-                                  id={`status-${index}-${status}`}
+                                  value={status.value}
+                                  id={`status-${index}-${status.value}`}
                                 />
-                                <Label htmlFor={`status-${index}-${status}`}>
-                                  {status}
+                                <Label htmlFor={`status-${index}-${status.value}`}>
+                                  {status.label}
                                 </Label>
                               </div>
                             ))}
