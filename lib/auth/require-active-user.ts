@@ -4,6 +4,10 @@ import { getUserProfile } from "./get-user-profile";
 /**
  * Ensures the user is authenticated and has an 'active' profile status.
  * Both 'admin' and 'encoder' roles are allowed as long as they are active.
+ *
+ * Called from Server Actions that mutate or read data on behalf of the
+ * encoder. RLS is the real authorization boundary; this guard is
+ * defence-in-depth so action-layer errors bubble up before we touch the DB.
  */
 export const requireActiveUser = cache(async () => {
   const { data, error } = await getUserProfile();
@@ -16,7 +20,6 @@ export const requireActiveUser = cache(async () => {
     return { data: null, error: "Account not active" };
   }
 
-  // Ensure role is valid (though TypeScript types already handle this)
   if (data.profile.role !== "admin" && data.profile.role !== "encoder") {
     return { data: null, error: "Unauthorized: Invalid role" };
   }

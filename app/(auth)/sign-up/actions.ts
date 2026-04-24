@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { signUpSchema } from "@/lib/validations/auth";
 
 export type SignUpState = { error?: string };
 
@@ -9,18 +10,15 @@ export async function signUp(
   _prevState: SignUpState | null,
   formData: FormData
 ): Promise<SignUpState> {
-  const email = formData.get("email") as string;
-  const password = formData.get("password") as string;
-  const confirmPassword = formData.get("confirmPassword") as string;
+  const email = String(formData.get("email") ?? "");
+  const password = String(formData.get("password") ?? "");
+  const confirmPassword = String(formData.get("confirmPassword") ?? "");
 
-  if (!email?.trim()) {
-    return { error: "Email is required." };
-  }
-  if (!password || password.length < 6) {
-    return { error: "Password must be at least 6 characters." };
-  }
-  if (password !== confirmPassword) {
-    return { error: "Passwords do not match." };
+  const parsed = signUpSchema.safeParse({ email, password, confirmPassword });
+  if (!parsed.success) {
+    return {
+      error: parsed.error.issues[0]?.message ?? "Invalid submission.",
+    };
   }
 
   const supabase = await createClient();
@@ -39,6 +37,8 @@ export async function signUp(
 
   redirect(
     "/login?message=" +
-      encodeURIComponent("Account created! Please check your email to confirm, then wait for admin approval before accessing the system.")
+      encodeURIComponent(
+        "Account created. Please check your email to confirm, then wait for admin approval before accessing the system."
+      )
   );
 }
