@@ -7,33 +7,54 @@ describe("processPasswordReset", () => {
 
   test("returns error when email is missing", async () => {
     const formData = new FormData();
-    const mockReset = async (email: string, options: any) => ({ error: null });
+    const mockReset = async () => ({ error: null });
 
     const result = await processPasswordReset(formData, origin, mockReset);
-    assert.match(result, /error=Email%20is%20required/);
+    assert.equal(result.error, "Email is required.");
+    assert.equal(result.message, undefined);
   });
 
-  test("returns success message when reset succeeds", async () => {
+  test("returns generic success message when reset succeeds", async () => {
     const formData = new FormData();
     formData.append("email", "test@example.com");
-    const mockReset = async (email: string, options: any) => ({ error: null });
+    const mockReset = async () => ({ error: null });
 
     const result = await processPasswordReset(formData, origin, mockReset);
-    assert.match(result, /message=Check%20your%20email/);
+    assert.equal(result.error, undefined);
+    assert.match(result.message ?? "", /reset link/i);
   });
 
-  test("returns success message when reset fails (Security Fix)", async () => {
+  test("returns generic success even when Supabase errors (no enumeration)", async () => {
     const formData = new FormData();
     formData.append("email", "test@example.com");
-    const mockReset = async (email: string, options: any) => ({
-      error: { message: "User not found" }
+    const mockReset = async () => ({
+      error: { message: "User not found" },
     });
 
     const result = await processPasswordReset(formData, origin, mockReset);
 
-    // Should not reveal error
-    assert.doesNotMatch(result, /error=User%20not%20found/);
-    // Should show generic success
-    assert.match(result, /message=Check%20your%20email/);
+    // Must not surface the underlying error to the client.
+    assert.equal(result.error, undefined);
+    assert.doesNotMatch(result.message ?? "", /user not found/i);
+    assert.match(result.message ?? "", /reset link/i);
+  });
+
+  test("redirectTo points to the reset-password landing page", async () => {
+    const formData = new FormData();
+    formData.append("email", "test@example.com");
+    let capturedRedirectTo = "";
+    const mockReset = async (
+      _email: string,
+      options: { redirectTo: string }
+    ) => {
+      capturedRedirectTo = options.redirectTo;
+      return { error: null };
+    };
+
+    await processPasswordReset(formData, origin, mockReset);
+    assert.equal(
+      capturedRedirectTo,
+      `${origin}/auth/callback?next=/reset-password`
+    );
   });
 });
