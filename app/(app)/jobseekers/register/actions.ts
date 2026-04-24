@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { requireActiveUser } from "@/lib/auth/require-active-user";
 import { cleanFormData } from "@/lib/jobseeker-registration/clean-form-data";
 import {
   jobseekerRegistrationSchema,
@@ -26,6 +27,11 @@ interface DraftData {
 export async function createJobseeker(
   data: JobseekerRegistrationData
 ): Promise<ActionResult> {
+  const auth = await requireActiveUser();
+  if (auth.error || !auth.data) {
+    return { error: auth.error ?? "Not authenticated" };
+  }
+
   const cleanedData = cleanFormData(data);
   const parseResult = jobseekerRegistrationSchema.safeParse(cleanedData);
 
@@ -49,20 +55,12 @@ export async function createJobseeker(
 
   try {
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
 
-    if (!user) {
-      return { error: "Unauthorized" };
-    }
-
-    // Insert to Supabase jobseekers table
     const { data: jobseeker, error } = await supabase
       .from("jobseekers")
       .insert({
-        user_id: user.id,
-        created_by: user.email,
+        user_id: auth.data.user.id,
+        created_by: auth.data.user.email,
         personal_info: validated.personalInfo,
         employment: validated.employment,
         job_preference: validated.jobPreference,
@@ -77,15 +75,14 @@ export async function createJobseeker(
       .single();
 
     if (error) {
-      console.error("Supabase insert error:", error);
+      console.error("Supabase insert error:", error.code, error.message);
       return { error: error.message };
     }
 
-    // Delete draft after successful submission
     await supabase
       .from("jobseeker_drafts")
       .delete()
-      .eq("user_id", user.id);
+      .eq("user_id", auth.data.user.id);
 
     revalidatePath("/jobseekers");
     return { success: true, id: jobseeker.id.toString() };
@@ -102,33 +99,28 @@ export async function saveDraft(
   currentStep: number,
   completedSteps: number[]
 ): Promise<ActionResult> {
+  const auth = await requireActiveUser();
+  if (auth.error || !auth.data) {
+    return { error: auth.error ?? "Not authenticated" };
+  }
+
   try {
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
 
-    if (!user) {
-      return { error: "Unauthorized" };
-    }
-
-    // Upsert draft (insert or update if exists)
     const { error } = await supabase
       .from("jobseeker_drafts")
       .upsert(
         {
-          user_id: user.id,
+          user_id: auth.data.user.id,
           data: data,
           current_step: currentStep,
           completed_steps: completedSteps,
         },
-        {
-          onConflict: "user_id",
-        }
+        { onConflict: "user_id" }
       );
 
     if (error) {
-      console.error("Draft save error:", error);
+      console.error("Draft save error:", error.code, error.message);
       return { error: error.message };
     }
 
@@ -142,20 +134,18 @@ export async function saveDraft(
 }
 
 export async function loadDraft(): Promise<DraftData | null> {
+  const auth = await requireActiveUser();
+  if (auth.error || !auth.data) {
+    return null;
+  }
+
   try {
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return null;
-    }
 
     const { data: draft, error } = await supabase
       .from("jobseeker_drafts")
       .select("data, current_step, completed_steps")
-      .eq("user_id", user.id)
+      .eq("user_id", auth.data.user.id)
       .single();
 
     if (error || !draft) {
