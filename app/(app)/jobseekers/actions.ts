@@ -228,8 +228,8 @@ export async function updateJobseeker(
   data: JobseekerRegistrationData
 ): Promise<UpdateActionResult> {
   const auth = await requireActiveUser();
-  if (auth.error) {
-    return { error: auth.error };
+  if (auth.error || !auth.data) {
+    return { error: auth.error ?? "Not authenticated" };
   }
 
   const cleanedData = cleanFormData(data);
@@ -267,6 +267,7 @@ export async function updateJobseeker(
         eligibility: validated.eligibility,
         work_experience: validated.workExperience,
         skills: validated.skills,
+        updated_by: auth.data.user.email,
       })
       .eq("id", id);
 
