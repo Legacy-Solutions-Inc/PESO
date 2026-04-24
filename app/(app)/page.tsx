@@ -37,19 +37,27 @@ function calculateTrend(
   previous: number
 ): { trend: string; trendUp: boolean | null } {
   if (previous === 0) {
-    if (current === 0) return { trend: "—", trendUp: null };
-    return { trend: "+100%", trendUp: true };
+    if (current === 0) return { trend: "No change", trendUp: null };
+    return { trend: "New this month", trendUp: null };
   }
   const percent = ((current - previous) / previous) * 100;
   const sign = percent > 0 ? "+" : "";
   return {
-    trend: `${sign}${percent.toFixed(1)}%`,
+    trend: `${sign}${percent.toFixed(1)}% vs last month`,
     trendUp: percent > 0 ? true : percent < 0 ? false : null,
   };
 }
 
 function formatNumber(num: number): string {
-  return num.toLocaleString("en-US");
+  return num.toLocaleString("en-PH");
+}
+
+function formatTimestamp(): string {
+  return new Date().toLocaleTimeString("en-PH", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
 }
 
 export default async function DashboardPage() {
@@ -58,12 +66,14 @@ export default async function DashboardPage() {
     getRecentJobseekers(10),
   ]);
 
-  // Show error state if stats fail
   if (statsResult.error || !statsResult.data) {
     return (
       <div className="space-y-6">
-        <p className="text-red-500">
-          Error loading dashboard: {statsResult.error}
+        <p
+          role="alert"
+          className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+        >
+          Could not load dashboard data. Please try reloading the page, or contact your administrator if the problem continues.
         </p>
       </div>
     );
@@ -72,199 +82,182 @@ export default async function DashboardPage() {
   const stats = statsResult.data;
   const recentJobseekers = recentResult.data || [];
 
-  // Calculate trends for cards that have previous month data
   const totalTrend = calculateTrend(stats.newThisMonth, stats.newLastMonth);
-  const newThisMonthTrend = calculateTrend(stats.newThisMonth, stats.newLastMonth);
 
-  const dashboardStats = [
+  const dashboardStats: Array<{
+    label: string;
+    value: string;
+    trend: string;
+    trendUp: boolean | null;
+    icon: typeof Users;
+  }> = [
     {
-      label: "Total Jobseekers",
+      label: "Total jobseekers",
       value: formatNumber(stats.totalJobseekers),
       trend: totalTrend.trend,
       trendUp: totalTrend.trendUp,
       icon: Users,
-      color: "blue",
-      bgGradient: "from-blue-50 to-blue-100/50",
-      iconBg: "bg-blue-100",
-      iconColor: "text-blue-600",
     },
     {
-      label: "New This Month",
+      label: "New this month",
       value: formatNumber(stats.newThisMonth),
-      trend: newThisMonthTrend.trend,
-      trendUp: newThisMonthTrend.trendUp,
+      trend: totalTrend.trend,
+      trendUp: totalTrend.trendUp,
       icon: UserPlus,
-      color: "purple",
-      bgGradient: "from-purple-50 to-purple-100/50",
-      iconBg: "bg-purple-100",
-      iconColor: "text-purple-600",
     },
     {
       label: "Employed",
       value: formatNumber(stats.employed),
-      trend: "—",
+      trend: "",
       trendUp: null,
       icon: Briefcase,
-      color: "emerald",
-      bgGradient: "from-emerald-50 to-emerald-100/50",
-      iconBg: "bg-emerald-100",
-      iconColor: "text-emerald-600",
     },
     {
       label: "Unemployed",
       value: formatNumber(stats.unemployed),
-      trend: "—",
+      trend: "",
       trendUp: null,
       icon: UserX,
-      color: "amber",
-      bgGradient: "from-amber-50 to-amber-100/50",
-      iconBg: "bg-amber-100",
-      iconColor: "text-amber-600",
     },
     {
-      label: "OFW / Former OFW",
+      label: "OFW / former OFW",
       value: formatNumber(stats.ofwCount),
-      trend: "—",
+      trend: "",
       trendUp: null,
       icon: Plane,
-      color: "cyan",
-      bgGradient: "from-cyan-50 to-cyan-100/50",
-      iconBg: "bg-cyan-100",
-      iconColor: "text-cyan-600",
     },
     {
-      label: "4Ps Beneficiaries",
+      label: "4Ps beneficiaries",
       value: formatNumber(stats.fourPsCount),
-      trend: "—",
+      trend: "",
       trendUp: null,
       icon: Heart,
-      color: "rose",
-      bgGradient: "from-rose-50 to-rose-100/50",
-      iconBg: "bg-rose-100",
-      iconColor: "text-rose-600",
     },
   ];
 
   return (
     <div className="space-y-8">
       <Breadcrumb>
-        <BreadcrumbList className="text-slate-500 dark:text-slate-400">
+        <BreadcrumbList className="text-muted-foreground">
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link
-                href="/"
-                className="hover:text-slate-900 dark:hover:text-white"
-              >
-                Main Menu
+              <Link href="/" className="hover:text-foreground">
+                Main menu
               </Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator>
-            <ChevronRight className="size-3.5 text-slate-400" />
+            <ChevronRight className="size-3.5" />
           </BreadcrumbSeparator>
           <BreadcrumbItem>
-            <BreadcrumbPage className="font-medium text-slate-700 dark:text-slate-200">
+            <BreadcrumbPage className="font-medium text-foreground">
               Dashboard
             </BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-            System Dashboard
+          <h1 className="text-3xl font-medium tracking-tight text-foreground">
+            System dashboard
           </h1>
-          <p className="mt-1.5 text-base text-slate-600 dark:text-slate-400">
+          <p className="mt-1.5 text-base text-muted-foreground">
             Overview of registration data and recent activity for Lambunao.
           </p>
         </div>
-        <div className="flex items-center gap-2.5 rounded-lg border border-emerald-200 bg-emerald-50/50 px-3 py-2 text-sm font-medium text-emerald-700 dark:border-emerald-800/50 dark:bg-emerald-950/30 dark:text-emerald-400">
-          <span className="relative flex size-2" aria-hidden>
-            <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-            <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
-          </span>
-          Live Data
-        </div>
-      </div>
+        <p className="text-xs text-muted-foreground">
+          Updated at {formatTimestamp()}
+        </p>
+      </header>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        {dashboardStats.map(({ label, value, trend, trendUp, icon: Icon, bgGradient, iconBg, iconColor }) => (
+      <section
+        aria-label="Registration statistics"
+        className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
+      >
+        {dashboardStats.map(({ label, value, trend, trendUp, icon: Icon }) => (
           <Card
             key={label}
-            className="group relative overflow-hidden border-0 bg-white shadow-lg shadow-slate-200/50 ring-1 ring-slate-200/80 transition-all hover:shadow-xl hover:shadow-slate-200/60 hover:-translate-y-0.5 dark:bg-slate-900/50 dark:shadow-none dark:ring-slate-700/50"
+            className="border-border bg-card shadow-sm transition-shadow hover:shadow-md"
           >
-            <div className={cn("absolute inset-0 bg-linear-to-br opacity-30 dark:opacity-20", bgGradient)} />
-            <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2 pt-5">
-              <CardTitle className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pt-5">
+              <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 {label}
               </CardTitle>
-              <div className={cn("flex size-9 items-center justify-center rounded-lg", iconBg)}>
-                <Icon className={cn("size-5", iconColor)} aria-hidden />
-              </div>
+              <Icon
+                className="size-4 text-muted-foreground"
+                aria-hidden
+              />
             </CardHeader>
-            <CardContent className="relative pb-5">
-              <div className="text-3xl font-bold tabular-nums text-slate-900 dark:text-white">
+            <CardContent className="pb-5">
+              <div
+                data-tabular
+                className="text-3xl font-medium text-foreground"
+              >
                 {value}
               </div>
-              <p
-                className={cn(
-                  "mt-2 flex items-center gap-1 text-xs font-semibold",
-                  trendUp === true && "text-emerald-600 dark:text-emerald-400",
-                  trendUp === false && "text-red-600 dark:text-red-400",
-                  trendUp === null && "text-slate-500 dark:text-slate-400"
-                )}
-              >
-                <span>{trend}</span>
-                <span className="font-normal">from last month</span>
-              </p>
+              {trend && (
+                <p
+                  className={cn(
+                    "mt-2 text-xs",
+                    trendUp === true && "text-status-positive",
+                    trendUp === false && "text-destructive",
+                    trendUp === null && "text-muted-foreground"
+                  )}
+                >
+                  {trend}
+                </p>
+              )}
             </CardContent>
           </Card>
         ))}
-      </div>
+      </section>
 
-      <section className="space-y-4">
+      <section className="space-y-4" aria-labelledby="recent-heading">
         <div className="flex items-end justify-between">
           <div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-              Recent Jobseeker Registrations
+            <h2
+              id="recent-heading"
+              className="text-xl font-medium tracking-tight text-foreground"
+            >
+              Recent jobseeker registrations
             </h2>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+            <p className="mt-1 text-sm text-muted-foreground">
               Latest entries in the jobseeker registry.
             </p>
           </div>
           <Link
             href="/jobseekers"
-            className="text-sm font-semibold text-dashboard-primary hover:text-dashboard-primary/80 hover:underline"
+            className="text-sm font-medium text-primary underline-offset-4 hover:underline"
           >
-            View all records →
+            View all records
           </Link>
         </div>
 
-        <Card className="overflow-hidden border-0 bg-white shadow-lg shadow-slate-200/50 ring-1 ring-slate-200/80 dark:bg-slate-900/50 dark:shadow-none dark:ring-slate-700/50">
+        <Card className="overflow-hidden border-border bg-card shadow-sm">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="border-slate-200/80 bg-slate-50/50 hover:bg-slate-50/50 dark:border-slate-700/80 dark:bg-slate-800/30">
-                  <TableHead className="py-3.5 font-bold text-slate-900 dark:text-slate-100">
+                <TableRow className="border-border bg-muted/50">
+                  <TableHead className="py-3 font-medium text-foreground">
                     Name
                   </TableHead>
-                  <TableHead className="py-3.5 font-bold text-slate-900 dark:text-slate-100">
+                  <TableHead className="py-3 font-medium text-foreground">
                     Sex
                   </TableHead>
-                  <TableHead className="py-3.5 font-bold text-slate-900 dark:text-slate-100">
+                  <TableHead className="py-3 font-medium text-foreground">
                     Age
                   </TableHead>
-                  <TableHead className="py-3.5 font-bold text-slate-900 dark:text-slate-100">
+                  <TableHead className="py-3 font-medium text-foreground">
                     Barangay
                   </TableHead>
-                  <TableHead className="py-3.5 font-bold text-slate-900 dark:text-slate-100">
-                    Employment Status
+                  <TableHead className="py-3 font-medium text-foreground">
+                    Employment status
                   </TableHead>
-                  <TableHead className="py-3.5 font-bold text-slate-900 dark:text-slate-100">
-                    Date Registered
+                  <TableHead className="py-3 font-medium text-foreground">
+                    Date registered
                   </TableHead>
-                  <TableHead className="py-3.5 text-right font-bold text-slate-900 dark:text-slate-100">
+                  <TableHead className="py-3 text-right font-medium text-foreground">
                     Action
                   </TableHead>
                 </TableRow>
@@ -274,68 +267,68 @@ export default async function DashboardPage() {
                   <TableRow>
                     <TableCell
                       colSpan={7}
-                      className="py-12 text-center text-slate-500"
+                      className="py-12 text-center text-muted-foreground"
                     >
                       No recent registrations
                     </TableCell>
                   </TableRow>
                 ) : (
                   recentJobseekers.map((row) => {
-                    const statusVariant =
+                    const statusTone: "positive" | "warning" | "muted" =
                       row.employmentStatus === "Employed"
-                        ? "emerald"
+                        ? "positive"
                         : row.employmentStatus === "Unemployed"
-                          ? "amber"
-                          : "slate";
+                          ? "warning"
+                          : "muted";
 
                     return (
                       <TableRow
                         key={row.id}
-                        className="border-slate-200/60 transition-colors hover:bg-slate-50/50 dark:border-slate-700/60 dark:hover:bg-slate-800/30"
+                        className="border-border transition-colors hover:bg-accent/40"
                       >
-                        <TableCell className="py-3.5">
+                        <TableCell className="py-3">
                           <div className="flex items-center gap-3">
-                            <Avatar className="size-9 shrink-0 border-2 border-slate-200 shadow-sm dark:border-slate-600">
-                              <AvatarFallback className="bg-linear-to-br from-blue-100 to-purple-100 text-xs font-bold text-slate-700 dark:from-blue-900/30 dark:to-purple-900/30 dark:text-slate-200">
+                            <Avatar className="size-9 shrink-0 border border-border">
+                              <AvatarFallback className="bg-muted text-xs font-medium text-foreground">
                                 {row.initials}
                               </AvatarFallback>
                             </Avatar>
-                            <span className="font-semibold text-slate-900 dark:text-white">
+                            <span className="font-medium text-foreground">
                               {row.name}
                             </span>
                           </div>
                         </TableCell>
-                        <TableCell className="py-3.5 font-medium text-slate-700 dark:text-slate-300">
+                        <TableCell className="py-3 text-foreground">
                           {row.sex}
                         </TableCell>
-                        <TableCell className="py-3.5 font-medium text-slate-700 dark:text-slate-300">
+                        <TableCell data-tabular className="py-3 text-foreground">
                           {row.age ?? "—"}
                         </TableCell>
-                        <TableCell className="py-3.5 font-medium text-slate-700 dark:text-slate-300">
+                        <TableCell className="py-3 text-foreground">
                           {row.barangay}
                         </TableCell>
-                        <TableCell className="py-3.5">
+                        <TableCell className="py-3">
                           <span
                             className={cn(
-                              "inline-flex items-center rounded-full px-3 py-1 text-xs font-bold shadow-sm ring-1",
-                              statusVariant === "emerald" &&
-                                "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-400 dark:ring-emerald-800",
-                              statusVariant === "amber" &&
-                                "bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-950/50 dark:text-amber-400 dark:ring-amber-800",
-                              statusVariant === "slate" &&
-                                "bg-slate-50 text-slate-700 ring-slate-200 dark:bg-slate-950/50 dark:text-slate-400 dark:ring-slate-700"
+                              "inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium",
+                              statusTone === "positive" &&
+                                "border-status-positive/30 bg-status-positive/10 text-status-positive",
+                              statusTone === "warning" &&
+                                "border-status-warning/30 bg-status-warning/10 text-status-warning",
+                              statusTone === "muted" &&
+                                "border-border bg-muted text-muted-foreground"
                             )}
                           >
                             {row.employmentStatus}
                           </span>
                         </TableCell>
-                        <TableCell className="py-3.5 font-medium text-slate-700 dark:text-slate-300">
+                        <TableCell data-tabular className="py-3 text-foreground">
                           {row.dateRegistered}
                         </TableCell>
-                        <TableCell className="py-3.5 text-right">
+                        <TableCell className="py-3 text-right">
                           <Link
                             href={`/jobseekers/${row.id}`}
-                            className="inline-flex items-center rounded-lg bg-dashboard-primary/10 px-3 py-1.5 text-xs font-bold text-dashboard-primary ring-1 ring-dashboard-primary/20 transition-all hover:bg-dashboard-primary hover:text-white hover:shadow-md hover:shadow-dashboard-primary/20 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-dashboard-primary focus-visible:ring-offset-2"
+                            className="text-sm font-medium text-primary underline-offset-4 hover:underline"
                           >
                             View
                           </Link>
@@ -348,16 +341,23 @@ export default async function DashboardPage() {
             </Table>
           </div>
 
-          <div className="flex flex-col gap-4 border-t border-slate-200/80 bg-slate-50/30 px-6 py-4 dark:border-slate-700/80 dark:bg-slate-800/20 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
-              Showing <span className="font-bold text-slate-900 dark:text-white">{recentJobseekers.length}</span> most recent of{" "}
-              <span className="font-bold text-slate-900 dark:text-white">{formatNumber(stats.totalJobseekers)}</span> total jobseekers
+          <div className="flex flex-col gap-3 border-t border-border bg-muted/30 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">
+              Showing{" "}
+              <span className="font-medium text-foreground">
+                {recentJobseekers.length}
+              </span>{" "}
+              most recent of{" "}
+              <span className="font-medium text-foreground">
+                {formatNumber(stats.totalJobseekers)}
+              </span>{" "}
+              total jobseekers.
             </p>
             <Link
               href="/jobseekers"
-              className="text-sm font-semibold text-dashboard-primary hover:text-dashboard-primary/80 hover:underline"
+              className="text-sm font-medium text-primary underline-offset-4 hover:underline"
             >
-              View all records →
+              View all records
             </Link>
           </div>
         </Card>

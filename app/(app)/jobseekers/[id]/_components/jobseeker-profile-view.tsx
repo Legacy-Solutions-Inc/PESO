@@ -151,24 +151,22 @@ export function JobseekerProfileView({ record }: JobseekerProfileViewProps) {
 
   return (
     <>
-      <section className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xl shadow-slate-200/50 dark:border-slate-700/50 dark:bg-slate-900/50 dark:shadow-none">
-        <div className="absolute -right-24 -top-24 h-80 w-80 rounded-full bg-dashboard-primary/5 blur-3xl" />
-        <div className="absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-slate-200/30 blur-2xl dark:bg-slate-600/10" />
-        <div className="relative flex flex-col gap-8 p-8 sm:p-10 md:flex-row md:items-center md:gap-10">
+      <section className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+        <div className="flex flex-col gap-8 p-8 sm:p-10 md:flex-row md:items-center md:gap-10">
           <div className="relative shrink-0">
-            <Avatar className="h-28 w-28 ring-4 ring-slate-100 shadow-xl dark:ring-slate-800 sm:h-36 sm:w-36">
-              <AvatarFallback className="bg-linear-to-br from-dashboard-primary/20 to-dashboard-primary/5 text-2xl font-semibold text-dashboard-primary sm:text-3xl">
+            <Avatar className="h-28 w-28 border border-border sm:h-36 sm:w-36">
+              <AvatarFallback className="bg-primary/10 text-2xl font-medium text-primary sm:text-3xl">
                 {personalInfo.surname?.[0] ?? ""}
                 {personalInfo.firstName?.[0] ?? ""}
               </AvatarFallback>
             </Avatar>
             <div
-              className={`absolute bottom-0 right-0 h-6 w-6 rounded-full border-[3px] border-white shadow-sm dark:border-slate-900 ${
+              className={`absolute bottom-0 right-0 h-5 w-5 rounded-full border-2 border-card ${
                 record.status === "active"
-                  ? "bg-emerald-500"
+                  ? "bg-status-positive"
                   : record.status === "archived"
-                    ? "bg-slate-400"
-                    : "bg-amber-400"
+                    ? "bg-muted-foreground"
+                    : "bg-status-warning"
               }`}
               title={statusLabel}
             />
@@ -178,7 +176,7 @@ export function JobseekerProfileView({ record }: JobseekerProfileViewProps) {
               <h1 className="text-2xl font-bold wrap-break-word tracking-tight text-slate-900 dark:text-white sm:text-3xl md:text-4xl">
                 {fullName || "—"}
               </h1>
-              <span className="inline-flex w-fit items-center rounded-full bg-dashboard-primary/10 px-3 py-1 text-xs font-semibold tracking-wide text-dashboard-primary dark:bg-dashboard-primary/20">
+              <span className="inline-flex w-fit items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
                 {statusLabel}
               </span>
             </div>
@@ -372,10 +370,10 @@ export function JobseekerProfileView({ record }: JobseekerProfileViewProps) {
                   Current Status
                 </p>
                 <span
-                  className={`inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium ${
+                  className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium ${
                     employment.status === "EMPLOYED"
-                      ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                      : "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400"
+                      ? "border-status-positive/30 bg-status-positive/10 text-status-positive"
+                      : "border-status-warning/30 bg-status-warning/10 text-status-warning"
                   }`}
                 >
                   {formatEmploymentStatus(employment.status)}

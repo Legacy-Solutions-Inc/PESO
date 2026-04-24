@@ -43,8 +43,11 @@ export default async function JobseekersPage({ searchParams }: PageProps) {
             </div>
           </div>
         </div>
-        <div className="glass-panel rounded-xl p-8 text-center">
-          <p className="text-red-600">Error loading jobseekers: {result.error}</p>
+        <div
+          role="alert"
+          className="rounded-lg border border-destructive/30 bg-destructive/10 p-6 text-center text-destructive"
+        >
+          Could not load jobseeker records. Please try reloading the page, or contact your administrator if the problem continues.
         </div>
       </div>
     );

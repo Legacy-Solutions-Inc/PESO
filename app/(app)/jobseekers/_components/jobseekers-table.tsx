@@ -23,7 +23,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -181,13 +180,13 @@ export function JobseekersTable({
   return (
     <TooltipProvider>
       {/* Search & Actions Bar */}
-      <div className="glass-panel mb-6 flex flex-col gap-4 rounded-xl p-4 md:flex-row">
+      <div className="mb-6 flex flex-col gap-4 rounded-lg border border-border bg-card p-4 shadow-sm md:flex-row">
         <div className="group relative w-full md:max-w-md">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
           <Input
             ref={inputRef}
-            placeholder="Search by name, ID, or email..."
-            aria-label="Search jobseekers"
+            placeholder="Search by surname or first name…"
+            aria-label="Search jobseekers by name"
             value={searchValue}
             onChange={(e) => {
               const value = e.target.value;
@@ -251,8 +250,22 @@ export function JobseekersTable({
       </div>
 
       {/* Table */}
-      <div className="glass-panel overflow-hidden rounded-xl">
-        <div className="overflow-x-auto">
+      <div className="relative overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+        {isPending && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-card/60 backdrop-blur-[1px]"
+          >
+            <span className="rounded-md bg-card px-3 py-1.5 text-sm font-medium text-muted-foreground shadow-sm">
+              Loading…
+            </span>
+          </div>
+        )}
+        <div
+          className={cn("overflow-x-auto transition-opacity", isPending && "opacity-50")}
+          aria-busy={isPending}
+        >
           <Table>
             <TableHeader>
               <TableRow>
@@ -333,21 +346,20 @@ export function JobseekersTable({
                       <TableCell>{jobseeker.sex}</TableCell>
                       <TableCell>{barangay}</TableCell>
                       <TableCell>
-                        <Badge
-                          variant={
-                            jobseeker.employment_status === "EMPLOYED"
-                              ? "default"
-                              : "secondary"
-                          }
+                        <span
                           className={cn(
+                            "inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium",
                             jobseeker.employment_status === "EMPLOYED" &&
-                              "bg-emerald-500 hover:bg-emerald-600",
+                              "border-status-positive/30 bg-status-positive/10 text-status-positive",
                             jobseeker.employment_status === "UNEMPLOYED" &&
-                              "bg-rose-500 hover:bg-rose-600"
+                              "border-status-warning/30 bg-status-warning/10 text-status-warning",
+                            jobseeker.employment_status !== "EMPLOYED" &&
+                              jobseeker.employment_status !== "UNEMPLOYED" &&
+                              "border-border bg-muted text-muted-foreground"
                           )}
                         >
                           {jobseeker.employment_status}
-                        </Badge>
+                        </span>
                       </TableCell>
                       <TableCell>
                         {formatDate(new Date(jobseeker.created_at))}
