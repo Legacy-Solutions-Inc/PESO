@@ -32,7 +32,12 @@ export function Step1PersonalInfo() {
       <div className="flex items-center gap-3">
         <Badge className="bg-dashboard-primary text-white">Step 1 of 9</Badge>
         <div>
-          <h2 className="text-2xl font-bold text-slate-800 dark:text-white">
+          <h2
+            id="wizard-step-heading"
+            data-step-heading
+            tabIndex={-1}
+            className="text-2xl font-medium tracking-tight text-foreground outline-none"
+          >
             Personal Information
           </h2>
           <p className="text-sm text-slate-500 dark:text-slate-400">

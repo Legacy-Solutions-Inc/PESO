@@ -9,6 +9,7 @@ import { NavigationBar } from "./navigation-bar";
 import { StepRenderer } from "./step-renderer";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useKeyboardShortcuts, type Shortcut } from "@/hooks/use-keyboard-shortcuts";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,9 +20,24 @@ import {
 import { updateJobseeker } from "@/app/(app)/jobseekers/actions";
 import type { JobseekerRegistrationData } from "@/lib/validations/jobseeker-registration";
 import { JOBSEEKER_REGISTRATION_DEFAULTS } from "@/lib/validations/jobseeker-registration-defaults";
-import { localDraftSchema } from "@/lib/validations/draft";
+import { toUserFacingMessage } from "@/lib/errors/user-facing";
 
 const TOTAL_STEPS = 9;
+
+const STEP_LABELS = [
+  "Personal Information",
+  "Employment Status",
+  "Job Preference",
+  "Language and Dialect",
+  "Education",
+  "Training",
+  "Eligibility and License",
+  "Work Experience",
+  "Skills and Certification",
+] as const;
+
+const AUTOSAVE_DEBOUNCE_MS = 30_000;
+const LEGACY_LOCAL_DRAFT_KEY = "jobseeker-draft";
 
 interface FormLayoutProps {
   encoderEmail: string;
@@ -48,6 +64,9 @@ export function JobseekerRegistrationFormLayout({
   const [isSaving, setIsSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [stepsOpen, setStepsOpen] = useState(false);
+  const [liveAnnouncement, setLiveAnnouncement] = useState("");
+
+  const stepRegionRef = useRef<HTMLDivElement>(null);
 
   const isMobile = useIsMobile();
   const progressPercentage = (completedSteps.size / TOTAL_STEPS) * 100;
@@ -59,175 +78,155 @@ export function JobseekerRegistrationFormLayout({
       : { ...JOBSEEKER_REGISTRATION_DEFAULTS, ...formData },
   });
 
-  const { handleSubmit, getValues, formState } = formMethods;
+  const { handleSubmit, getValues } = formMethods;
 
   const resetForm = useCallback(() => {
     formMethods.reset(JOBSEEKER_REGISTRATION_DEFAULTS);
-    
-    // Reset component state
     setFormData({});
     setCurrentStep(1);
     setCompletedSteps(new Set());
     setLastSaved(undefined);
-    
-    // Clear localStorage
-    localStorage.removeItem("jobseeker-draft");
-    
-    // Scroll to top
+    // Clear any legacy localStorage draft left over from before the server-only migration.
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(LEGACY_LOCAL_DRAFT_KEY);
+    }
     window.scrollTo({ top: 0, behavior: "smooth" });
-    
     toast({
-      title: "✅ Form Reset",
+      title: "Form reset",
       description: "Ready to register a new jobseeker.",
       duration: 3000,
     });
   }, [formMethods, toast]);
 
-  const saveDraft = useCallback(async () => {
-    if (isEditMode) return;
-    setIsSaving(true);
-    try {
-      const currentFormData = { ...formData, ...getValues() } as Partial<JobseekerRegistrationData>;
+  const saveDraft = useCallback(
+    async (options: { silent?: boolean } = {}): Promise<void> => {
+      if (isEditMode) return;
+      setIsSaving(true);
+      try {
+        const currentFormData = {
+          ...formData,
+          ...getValues(),
+        } as Partial<JobseekerRegistrationData>;
 
-      localStorage.setItem(
-        "jobseeker-draft",
-        JSON.stringify({
-          data: currentFormData,
+        const result = await saveDraftAction(
+          currentFormData,
           currentStep,
-          completedSteps: Array.from(completedSteps),
-          encoderEmail,
-          timestamp: new Date().toISOString(),
-        })
-      );
+          Array.from(completedSteps)
+        );
 
-      // Save to server
-      const result = await saveDraftAction(
-        currentFormData,
-        currentStep,
-        Array.from(completedSteps)
-      );
+        if (result.error) {
+          throw new Error(result.error);
+        }
 
-      if (result.error) {
-        throw new Error(result.error);
+        setLastSaved(new Date());
+
+        if (!options.silent) {
+          toast({
+            title: "Draft saved",
+            description: "Your progress is safe.",
+            duration: 2500,
+          });
+        }
+      } catch (error) {
+        toast({
+          title: "Save failed",
+          description: toUserFacingMessage(error),
+          duration: 5000,
+        });
+      } finally {
+        setIsSaving(false);
       }
+    },
+    [formData, getValues, currentStep, completedSteps, toast, isEditMode]
+  );
 
-      setLastSaved(new Date());
-      toast({
-        title: "✅ Draft Saved",
-        description: "Your progress has been saved successfully.",
-        duration: 3000,
-      });
-    } catch (error) {
-      toast({
-        title: "⚠️ Save Failed",
-        description: error instanceof Error ? error.message : "Could not save draft. Please try again.",
-        duration: 5000,
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  }, [formData, getValues, currentStep, completedSteps, encoderEmail, toast, isEditMode]);
-
-  // Auto-save every 30 seconds if form is dirty
+  // Keep latest saveDraft in a ref so the debounced autosave always uses fresh state.
   const saveDraftRef = useRef(saveDraft);
-
   useEffect(() => {
     saveDraftRef.current = saveDraft;
   }, [saveDraft]);
 
-  useEffect(() => {
-    if (isEditMode || !formState.isDirty) return;
-    const interval = setInterval(() => {
-      saveDraftRef.current();
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [formState.isDirty, isEditMode]);
-
+  // Debounced autosave: every user change resets a 30s timer. When the timer
+  // fires we save silently (no toast). No timer exists while the form is idle.
   useEffect(() => {
     if (isEditMode) return;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    const subscription = formMethods.watch(() => {
+      if (!formMethods.formState.isDirty) return;
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        saveDraftRef.current({ silent: true });
+        timeoutId = null;
+      }, AUTOSAVE_DEBOUNCE_MS);
+    });
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      subscription.unsubscribe();
+    };
+  }, [formMethods, isEditMode]);
+
+  // One-time: load the server draft and delete any stale localStorage draft
+  // from before the server-only migration.
+  useEffect(() => {
+    if (isEditMode) return;
+
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(LEGACY_LOCAL_DRAFT_KEY);
+    }
+
     const fixTrainingCertificates = (data: Partial<JobseekerRegistrationData>) => {
-      // Fix training.entries[].certificates if it's an array
       if (data?.training?.entries && Array.isArray(data.training.entries)) {
-        data.training.entries = data.training.entries.map((entry: Record<string, unknown>) => {
-          if (Array.isArray(entry.certificates)) {
-            return {
-              ...entry,
-              certificates: {
-                NC_I: false,
-                NC_II: false,
-                NC_III: false,
-                NC_IV: false,
-                COC: false,
-              },
-            };
+        data.training.entries = data.training.entries.map(
+          (entry: Record<string, unknown>) => {
+            if (Array.isArray(entry.certificates)) {
+              return {
+                ...entry,
+                certificates: {
+                  NC_I: false,
+                  NC_II: false,
+                  NC_III: false,
+                  NC_IV: false,
+                  COC: false,
+                },
+              };
+            }
+            return entry;
           }
-          return entry;
-        });
+        );
       }
       return data;
     };
 
     const loadDraftData = async () => {
-      // Try server first
       const serverDraft = await loadDraft();
-      
-      if (serverDraft) {
-        const fixedData = fixTrainingCertificates(serverDraft.data || {});
-        setFormData(fixedData);
-        setCurrentStep(serverDraft.currentStep || 1);
-        setCompletedSteps(new Set(serverDraft.completedSteps || []));
-        setLastSaved(new Date());
-        
-        // Populate React Hook Form fields with draft data
-        formMethods.reset(fixedData);
-        return;
-      }
-      
-      // Fallback to localStorage
-      const localDraft = localStorage.getItem("jobseeker-draft");
-      if (localDraft) {
-        try {
-          const parsed = JSON.parse(localDraft) as unknown;
-          const result = localDraftSchema.safeParse(parsed);
-          if (result.success && result.data.encoderEmail === encoderEmail) {
-            const fixedData = fixTrainingCertificates(result.data.data || {});
-            setFormData(fixedData);
-            setCurrentStep(result.data.currentStep || 1);
-            setCompletedSteps(new Set(result.data.completedSteps || []));
-            setLastSaved(
-              result.data.timestamp
-                ? new Date(result.data.timestamp as number | string)
-                : undefined
-            );
-            formMethods.reset(fixedData);
-          }
-        } catch (error) {
-          console.error("Failed to load localStorage draft:", error);
-        }
-      }
+      if (!serverDraft) return;
+
+      const fixedData = fixTrainingCertificates(serverDraft.data || {});
+      setFormData(fixedData);
+      setCurrentStep(serverDraft.currentStep || 1);
+      setCompletedSteps(new Set(serverDraft.completedSteps || []));
+      setLastSaved(new Date());
+      formMethods.reset(fixedData);
     };
-    loadDraftData();
+
+    void loadDraftData();
   }, [encoderEmail, formMethods, isEditMode]);
 
-  useEffect(() => {
-    if (isEditMode) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
-        e.preventDefault();
-        saveDraft();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [saveDraft, isEditMode]);
-
-  const goToStep = useCallback((step: number) => {
-    // Save current step data before navigating
-    const currentFormData = getValues();
-    setFormData((prev) => ({ ...prev, ...currentFormData }) as Partial<JobseekerRegistrationData>);
-    setCurrentStep(step);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [getValues]);
+  const goToStep = useCallback(
+    (step: number) => {
+      if (step < 1 || step > TOTAL_STEPS) return;
+      const currentFormData = getValues();
+      setFormData(
+        (prev) =>
+          ({ ...prev, ...currentFormData }) as Partial<JobseekerRegistrationData>
+      );
+      setCurrentStep(step);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    },
+    [getValues]
+  );
 
   const handlePrevious = useCallback(() => {
     if (currentStep > 1) {
@@ -237,11 +236,58 @@ export function JobseekerRegistrationFormLayout({
 
   const handleNext = useCallback(() => {
     if (currentStep < TOTAL_STEPS) {
-      // Mark current step as completed
       setCompletedSteps((prev) => new Set(prev).add(currentStep));
       goToStep(currentStep + 1);
     }
   }, [currentStep, goToStep]);
+
+  // After step renders, move focus to the step heading and announce the change.
+  useEffect(() => {
+    const heading = stepRegionRef.current?.querySelector<HTMLElement>(
+      "[data-step-heading]"
+    );
+    if (heading) {
+      heading.focus({ preventScroll: true });
+    }
+    const label = STEP_LABELS[currentStep - 1] ?? "";
+    setLiveAnnouncement(`Step ${currentStep} of ${TOTAL_STEPS}: ${label}`);
+  }, [currentStep]);
+
+  // Global keyboard shortcuts. Alt+arrows step; Alt+digit jumps; Ctrl/Cmd+S saves;
+  // Esc closes the mobile step drawer.
+  const shortcuts: Shortcut[] = [
+    { key: "arrowright", modifiers: ["alt"], handler: handleNext },
+    { key: "arrowleft", modifiers: ["alt"], handler: handlePrevious },
+    ...Array.from({ length: TOTAL_STEPS }, (_, i): Shortcut => {
+      const step = i + 1;
+      return {
+        key: String(step),
+        modifiers: ["alt"],
+        handler: () => goToStep(step),
+      };
+    }),
+    {
+      key: "s",
+      modifiers: ["ctrl"],
+      handler: () => {
+        if (!isEditMode) void saveDraft();
+      },
+      skipInEditable: false,
+    },
+    {
+      key: "s",
+      modifiers: ["meta"],
+      handler: () => {
+        if (!isEditMode) void saveDraft();
+      },
+      skipInEditable: false,
+    },
+    {
+      key: "escape",
+      handler: () => setStepsOpen(false),
+    },
+  ];
+  useKeyboardShortcuts(shortcuts);
 
   const onSubmit = handleSubmit(async (data) => {
     setIsSubmitting(true);
@@ -268,15 +314,15 @@ export function JobseekerRegistrationFormLayout({
           } else {
             toast({
               title: "Update failed",
-              description: result.error,
+              description: toUserFacingMessage(result.error),
               duration: 7000,
             });
           }
           return;
         }
         toast({
-          title: "Profile updated successfully",
-          description: "Redirecting to profile.",
+          title: "Profile updated",
+          description: "Redirecting to the jobseeker profile.",
           duration: 3000,
         });
         router.push(`/jobseekers/${jobseekerId}`);
@@ -293,7 +339,7 @@ export function JobseekerRegistrationFormLayout({
             title: "Missing required fields",
             description: (
               <div className="space-y-2">
-                <p className="font-medium">Please fill in the following fields:</p>
+                <p className="font-medium">Please fill in the following:</p>
                 <div className="text-sm whitespace-pre-line">{errorList}</div>
               </div>
             ),
@@ -302,33 +348,38 @@ export function JobseekerRegistrationFormLayout({
         } else {
           toast({
             title: "Submission failed",
-            description: result.error,
+            description: toUserFacingMessage(result.error),
             duration: 7000,
           });
         }
         return;
       }
 
-      localStorage.removeItem("jobseeker-draft");
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem(LEGACY_LOCAL_DRAFT_KEY);
+      }
+
       toast({
-        title: "Registration submitted successfully",
+        title: "Registration submitted",
         description: (
           <div className="space-y-3">
             <p>Jobseeker #{result.id} has been registered.</p>
             <div className="flex gap-2">
               <button
+                type="button"
                 onClick={() => resetForm()}
-                className="rounded bg-white px-3 py-1.5 text-sm font-medium text-slate-900 hover:bg-slate-100 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700"
+                className="rounded-md border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground hover:bg-accent"
               >
-                Register Another
+                Register another
               </button>
               <button
+                type="button"
                 onClick={() => {
                   window.location.href = "/jobseekers";
                 }}
-                className="rounded bg-white px-3 py-1.5 text-sm font-medium text-slate-900 hover:bg-slate-100 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700"
+                className="rounded-md border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground hover:bg-accent"
               >
-                View Records
+                View records
               </button>
             </div>
           </div>
@@ -339,7 +390,7 @@ export function JobseekerRegistrationFormLayout({
     } catch (error) {
       toast({
         title: "Submission failed",
-        description: error instanceof Error ? error.message : "Please try again.",
+        description: toUserFacingMessage(error),
         duration: 7000,
       });
     } finally {
@@ -348,11 +399,26 @@ export function JobseekerRegistrationFormLayout({
   });
 
   const mainContent = (
-    <main className="custom-scrollbar min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-6 lg:p-8">
+    <main className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-6 lg:p-8">
       <div className="mx-auto max-w-5xl">
         <FormProvider {...formMethods}>
           <form onSubmit={onSubmit} className="space-y-8" noValidate>
-            <StepRenderer currentStep={currentStep} />
+            <div
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+              className="sr-only"
+            >
+              {liveAnnouncement}
+            </div>
+            <div
+              ref={stepRegionRef}
+              role="region"
+              aria-labelledby="wizard-step-heading"
+              data-wizard
+            >
+              <StepRenderer currentStep={currentStep} />
+            </div>
 
             <NavigationBar
               currentStep={currentStep}
@@ -375,13 +441,13 @@ export function JobseekerRegistrationFormLayout({
 
   if (isMobile) {
     return (
-      <div className="flex min-h-svh flex-col bg-dashboard-surface">
-        <header className="sticky top-0 z-10 flex shrink-0 items-center justify-between border-b border-slate-200/80 bg-white px-4 py-3 shadow-sm dark:border-slate-700/50 dark:bg-slate-900">
+      <div className="flex min-h-svh flex-col bg-background">
+        <header className="sticky top-0 z-10 flex shrink-0 items-center justify-between border-b border-border bg-card px-4 py-3 shadow-sm">
           <div className="min-w-0">
-            <h1 className="truncate text-base font-bold text-slate-800 dark:text-white">
+            <p className="truncate text-base font-medium text-foreground">
               {isEditMode ? "Edit profile" : "Registration"}
-            </h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            </p>
+            <p className="text-xs text-muted-foreground">
               {Math.round(progressPercentage)}% complete
             </p>
           </div>
@@ -411,7 +477,7 @@ export function JobseekerRegistrationFormLayout({
                 goToStep(step);
                 setStepsOpen(false);
               }}
-              onSaveDraft={saveDraft}
+              onSaveDraft={() => saveDraft()}
               isSaving={isSaving}
               lastSaved={lastSaved}
               title={isEditMode ? "Edit profile" : undefined}
@@ -427,12 +493,12 @@ export function JobseekerRegistrationFormLayout({
   }
 
   return (
-    <div className="flex min-h-svh bg-dashboard-surface">
+    <div className="flex min-h-svh bg-background">
       <ProgressSidebar
         currentStep={currentStep}
         completedSteps={completedSteps}
         onStepClick={goToStep}
-        onSaveDraft={saveDraft}
+        onSaveDraft={() => saveDraft()}
         isSaving={isSaving}
         lastSaved={lastSaved}
         title={isEditMode ? "Edit profile" : undefined}

@@ -114,20 +114,20 @@ export function ProgressSidebar({
               className={cn(
                 "group flex items-center gap-3 rounded-lg border-l-[3px] px-4 py-3 text-left transition-all",
                 isActive &&
-                  "border-l-dashboard-primary bg-dashboard-primary/10 text-dashboard-primary",
+                  "border-l-primary bg-primary/10 text-primary",
                 !isActive && status === "completed" &&
-                  "border-l-emerald-500 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800/50",
+                  "border-l-status-positive text-foreground hover:bg-accent",
                 !isActive && status === "pending" &&
-                  "border-l-transparent text-slate-400 hover:bg-slate-50 dark:text-slate-500 dark:hover:bg-slate-800/30",
+                  "border-l-transparent text-muted-foreground hover:bg-accent/50",
                 !canNavigate && "cursor-not-allowed opacity-50"
               )}
             >
               <div
                 className={cn(
                   "flex size-8 shrink-0 items-center justify-center rounded-full transition-colors",
-                  status === "completed" && "bg-emerald-500 text-white",
-                  status === "in_progress" && "bg-dashboard-primary text-white",
-                  status === "pending" && "bg-slate-200 text-slate-400 dark:bg-slate-700"
+                  status === "completed" && "bg-status-positive text-status-positive-foreground",
+                  status === "in_progress" && "bg-primary text-primary-foreground",
+                  status === "pending" && "bg-muted text-muted-foreground"
                 )}
               >
                 {status === "completed" ? (
@@ -139,12 +139,15 @@ export function ProgressSidebar({
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{label}</p>
                 {isActive && (
-                  <p className="text-[10px] font-medium uppercase tracking-wider text-dashboard-primary/80">
-                    In Progress
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-primary/80">
+                    In progress
                   </p>
                 )}
                 {status === "completed" && !isActive && (
-                  <Badge variant="outline" className="mt-0.5 border-emerald-500/50 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400">
+                  <Badge
+                    variant="outline"
+                    className="mt-0.5 border-status-positive/40 bg-status-positive/10 text-status-positive"
+                  >
                     Completed
                   </Badge>
                 )}
