@@ -109,42 +109,49 @@ export function UserActionsMenu({
 
   return (
     <>
-      <div className="flex items-center justify-end gap-2">
+      <div className="flex items-center justify-end gap-1">
         <button
+          type="button"
           onClick={() => setIsRoleDialogOpen(true)}
-          className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-dashboard-primary dark:hover:bg-slate-800"
-          title="Edit Role"
+          className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          aria-label={`Edit role for ${userEmail}`}
         >
-          <Edit className="h-4 w-4" />
+          <Edit className="h-4 w-4" aria-hidden />
         </button>
 
         {currentStatus === "pending" ? (
           <button
+            type="button"
             onClick={handleActivatePending}
             disabled={isLoading}
-            className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-emerald-50 hover:text-emerald-600 disabled:opacity-50 dark:hover:bg-emerald-900/20"
-            title="Activate User"
+            className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-status-positive disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            aria-label={`Activate ${userEmail}`}
           >
             {isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
             ) : (
-              <CheckCircle className="h-4 w-4" />
+              <CheckCircle className="h-4 w-4" aria-hidden />
             )}
           </button>
         ) : (
           <button
+            type="button"
             onClick={() => setIsStatusDialogOpen(true)}
-            className={`rounded-md p-1.5 text-slate-400 transition-colors ${
+            className={`rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${
               currentStatus === "active"
-                ? "hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
-                : "hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-900/20"
+                ? "hover:text-destructive"
+                : "hover:text-status-positive"
             }`}
-            title={currentStatus === "active" ? "Deactivate User" : "Activate User"}
+            aria-label={
+              currentStatus === "active"
+                ? `Deactivate ${userEmail}`
+                : `Activate ${userEmail}`
+            }
           >
             {currentStatus === "active" ? (
-              <XCircle className="h-4 w-4" />
+              <XCircle className="h-4 w-4" aria-hidden />
             ) : (
-              <CheckCircle className="h-4 w-4" />
+              <CheckCircle className="h-4 w-4" aria-hidden />
             )}
           </button>
         )}
