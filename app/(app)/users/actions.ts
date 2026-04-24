@@ -4,6 +4,10 @@ import { revalidatePath } from "next/cache";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { fetchUserEmails } from "./fetch-emails";
+import {
+  userProfilePatchSchema,
+  type UserProfilePatch,
+} from "@/lib/validations/user-profile-patch";
 
 export interface UserListItem {
   id: string;
@@ -120,12 +124,20 @@ export async function getUsersList(filters: UsersListFilters = {}) {
 
 async function updateUserProfile(
   userId: string,
-  updates: Record<string, any>,
+  updates: UserProfilePatch,
   errorMessage: string
 ) {
   const adminCheck = await requireAdmin();
   if (adminCheck.error || !adminCheck.data) {
     return { success: false, error: adminCheck.error ?? "Unauthorized" };
+  }
+
+  const parsed = userProfilePatchSchema.safeParse(updates);
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: parsed.error.issues[0]?.message ?? "Invalid update payload",
+    };
   }
 
   try {
@@ -135,7 +147,7 @@ async function updateUserProfile(
     const { error } = await supabase
       .from("profiles")
       .update({
-        ...updates,
+        ...parsed.data,
         updated_by: adminUserId,
         updated_at: new Date().toISOString(),
       })
