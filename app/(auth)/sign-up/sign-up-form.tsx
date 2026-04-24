@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import Link from "next/link";
-import { Eye, EyeOff, Loader2, Mail, Lock } from "lucide-react";
+import { Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
 import { signUp } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,39 +14,40 @@ export function SignUpForm({ initialError }: { initialError?: string }) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   return (
-    <form action={formAction} className="space-y-6">
-      {(state?.error) && (
-        <p className="text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2">
+    <form action={formAction} className="space-y-5">
+      {state?.error && (
+        <p
+          role="alert"
+          className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+        >
           {state.error}
         </p>
       )}
-      <div className="space-y-1">
-        <Label htmlFor="email" className="ml-1">
-          Email
-        </Label>
-        <div className="relative rounded-md shadow-sm">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-            <Mail className="size-5" aria-hidden="true" />
-          </div>
+      <div className="space-y-2">
+        <Label htmlFor="email">Email</Label>
+        <div className="relative">
+          <Mail
+            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden
+          />
           <Input
             id="email"
             name="email"
             type="email"
             required
             autoComplete="email"
-            placeholder="Enter your email"
-            className="pl-10 rounded-lg border-gray-300 bg-white/50"
+            placeholder="you@lambunao.gov.ph"
+            className="pl-10"
           />
         </div>
       </div>
-      <div className="space-y-1">
-        <Label htmlFor="password" className="ml-1">
-          Password
-        </Label>
-        <div className="relative rounded-md shadow-sm">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-            <Lock className="size-5" aria-hidden="true" />
-          </div>
+      <div className="space-y-2">
+        <Label htmlFor="password">Password</Label>
+        <div className="relative">
+          <Lock
+            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden
+          />
           <Input
             id="password"
             name="password"
@@ -54,31 +55,30 @@ export function SignUpForm({ initialError }: { initialError?: string }) {
             required
             minLength={6}
             autoComplete="new-password"
-            placeholder="••••••••"
-            className="pl-10 pr-10 rounded-lg border-gray-300 bg-white/50"
+            placeholder="At least 6 characters"
+            className="pl-10 pr-10"
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600"
+            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
             aria-label={showPassword ? "Hide password" : "Show password"}
           >
             {showPassword ? (
-              <EyeOff className="size-5" aria-hidden="true" />
+              <EyeOff className="size-4" aria-hidden />
             ) : (
-              <Eye className="size-5" aria-hidden="true" />
+              <Eye className="size-4" aria-hidden />
             )}
           </button>
         </div>
       </div>
-      <div className="space-y-1">
-        <Label htmlFor="confirmPassword" className="ml-1">
-          Confirm password
-        </Label>
-        <div className="relative rounded-md shadow-sm">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-            <Lock className="size-5" aria-hidden="true" />
-          </div>
+      <div className="space-y-2">
+        <Label htmlFor="confirmPassword">Confirm password</Label>
+        <div className="relative">
+          <Lock
+            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden
+          />
           <Input
             id="confirmPassword"
             name="confirmPassword"
@@ -86,38 +86,32 @@ export function SignUpForm({ initialError }: { initialError?: string }) {
             required
             minLength={6}
             autoComplete="new-password"
-            placeholder="••••••••"
-            className="pl-10 pr-10 rounded-lg border-gray-300 bg-white/50"
+            placeholder="Repeat your password"
+            className="pl-10 pr-10"
           />
           <button
             type="button"
             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600"
+            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
             aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
           >
             {showConfirmPassword ? (
-              <EyeOff className="size-5" aria-hidden="true" />
+              <EyeOff className="size-4" aria-hidden />
             ) : (
-              <Eye className="size-5" aria-hidden="true" />
+              <Eye className="size-4" aria-hidden />
             )}
           </button>
         </div>
       </div>
-      <div>
-        <Button
-          type="submit"
-          disabled={isPending}
-          className="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/30"
-        >
-          {isPending && <Loader2 className="mr-2 size-4 animate-spin" />}
-          {isPending ? "Creating account..." : "Sign up"}
-        </Button>
-      </div>
-      <p className="text-center text-sm text-gray-600">
+      <Button type="submit" disabled={isPending} className="w-full">
+        {isPending && <Loader2 className="size-4 animate-spin" aria-hidden />}
+        {isPending ? "Submitting request…" : "Request account"}
+      </Button>
+      <p className="text-center text-sm text-muted-foreground">
         Already have an account?{" "}
         <Link
           href="/login"
-          className="font-medium text-blue-600 hover:text-blue-700"
+          className="font-medium text-primary underline-offset-4 hover:underline"
         >
           Sign in
         </Link>
