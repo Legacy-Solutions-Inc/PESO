@@ -5,24 +5,23 @@ import Link from "next/link";
 import {
   AlertTriangle,
   ArrowRight,
-  CheckCircle2,
   Eye,
   EyeOff,
   Loader2,
   Lock,
   Mail,
 } from "lucide-react";
-import { signIn, type SignInState } from "./actions";
+import { signUp } from "./actions";
 import { HairlineIcon } from "@/components/vanguard/hairline-icon";
 import { PillCTA } from "@/components/vanguard/pill-cta";
 import { cn } from "@/lib/utils";
 
-export function LoginForm({ message }: { message?: string | null }) {
-  const [state, formAction, isPending] = useActionState(
-    signIn,
-    null as SignInState | null,
-  );
+export function SignUpForm({ initialError }: { initialError?: string }) {
+  const [state, formAction, isPending] = useActionState(signUp, {
+    error: initialError,
+  });
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   return (
     <form action={formAction} className="space-y-6">
@@ -36,19 +35,6 @@ export function LoginForm({ message }: { message?: string | null }) {
             className="mt-0.5 size-4 shrink-0"
           />
           <span className="leading-snug">{state.error}</span>
-        </div>
-      ) : null}
-
-      {message ? (
-        <div
-          role="status"
-          className="flex items-start gap-2.5 rounded-[0.9rem] bg-status-positive/[0.08] px-3.5 py-2.5 text-[13px] text-status-positive ring-1 ring-inset ring-status-positive/20"
-        >
-          <HairlineIcon
-            icon={CheckCircle2}
-            className="mt-0.5 size-4 shrink-0"
-          />
-          <span className="leading-snug">{message}</span>
         </div>
       ) : null}
 
@@ -67,28 +53,50 @@ export function LoginForm({ message }: { message?: string | null }) {
         id="password"
         name="password"
         label="Password"
-        labelAddon={
-          <Link
-            href="/forgot-password"
-            className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground underline-offset-4 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:text-foreground"
-          >
-            Forgot?
-          </Link>
-        }
         type={showPassword ? "text" : "password"}
-        autoComplete="current-password"
+        autoComplete="new-password"
         required
-        placeholder="••••••••••"
+        minLength={6}
+        placeholder="At least 6 characters"
         icon={Lock}
         trailing={
           <button
             type="button"
             onClick={() => setShowPassword((v) => !v)}
             aria-label={showPassword ? "Hide password" : "Show password"}
-            className="absolute right-2 top-1/2 flex size-11 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-foreground/[0.05] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+            className="absolute right-3 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-foreground/[0.05] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
           >
             <HairlineIcon
               icon={showPassword ? EyeOff : Eye}
+              className="size-4"
+            />
+          </button>
+        }
+      />
+
+      <VanguardField
+        id="confirmPassword"
+        name="confirmPassword"
+        label="Confirm password"
+        type={showConfirmPassword ? "text" : "password"}
+        autoComplete="new-password"
+        required
+        minLength={6}
+        placeholder="Repeat your password"
+        icon={Lock}
+        trailing={
+          <button
+            type="button"
+            onClick={() => setShowConfirmPassword((v) => !v)}
+            aria-label={
+              showConfirmPassword
+                ? "Hide confirm password"
+                : "Show confirm password"
+            }
+            className="absolute right-3 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-foreground/[0.05] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+          >
+            <HairlineIcon
+              icon={showConfirmPassword ? EyeOff : Eye}
               className="size-4"
             />
           </button>
@@ -104,16 +112,16 @@ export function LoginForm({ message }: { message?: string | null }) {
         icon={isPending ? Loader2 : ArrowRight}
         loading={isPending}
       >
-        {isPending ? "Signing in…" : "Sign in"}
+        {isPending ? "Submitting request…" : "Request account"}
       </PillCTA>
 
       <p className="text-center text-[12.5px] text-muted-foreground">
-        Don’t have an account?{" "}
+        Already have an account?{" "}
         <Link
-          href="/sign-up"
+          href="/login"
           className="font-medium text-foreground underline-offset-4 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:underline"
         >
-          Request one
+          Sign in
         </Link>
       </p>
     </form>
@@ -142,7 +150,7 @@ function VanguardField({
       <div className="flex items-center justify-between">
         <label
           htmlFor={id}
-          className="text-[11px] font-medium uppercase tracking-[0.2em] text-foreground/60"
+          className="text-[11px] font-medium uppercase tracking-[0.18em] text-foreground/60"
         >
           {label}
         </label>
@@ -150,7 +158,7 @@ function VanguardField({
       </div>
       <div
         className={cn(
-          "group relative rounded-2xl bg-foreground/[0.025] p-[1.5px] ring-1 ring-inset ring-foreground/[0.06]",
+          "group relative rounded-[1rem] bg-foreground/[0.025] p-[1.5px] ring-1 ring-inset ring-foreground/[0.06]",
           "transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]",
           "focus-within:ring-foreground/20 focus-within:bg-foreground/[0.04]",
           "focus-within:shadow-[0_12px_32px_-20px_oklch(0.42_0.13_258_/_0.35)]",

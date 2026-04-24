@@ -1,19 +1,44 @@
 "use server";
 
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { signUpSchema } from "@/lib/validations/auth";
+
 export type SignUpState = { error?: string };
 
-/**
- * Public self-service sign-up is disabled per SRS FR-UM-01: user accounts
- * shall be created by administrators. This action exists only to return a
- * clear error if a client POSTs to the old form action (e.g. a browser
- * with a cached form).
- */
 export async function signUp(
   _prevState: SignUpState | null,
-  _formData: FormData
+  formData: FormData
 ): Promise<SignUpState> {
-  return {
-    error:
-      "Self-service sign-up is disabled. Please contact your administrator to request an account.",
-  };
+  const email = String(formData.get("email") ?? "");
+  const password = String(formData.get("password") ?? "");
+  const confirmPassword = String(formData.get("confirmPassword") ?? "");
+
+  const parsed = signUpSchema.safeParse({ email, password, confirmPassword });
+  if (!parsed.success) {
+    return {
+      error: parsed.error.issues[0]?.message ?? "Invalid submission.",
+    };
+  }
+
+  const supabase = await createClient();
+  const origin = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+  const { error } = await supabase.auth.signUp({
+    email: email.trim(),
+    password,
+    options: {
+      emailRedirectTo: `${origin}/auth/callback?next=/login`,
+    },
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  redirect(
+    "/login?message=" +
+      encodeURIComponent(
+        "Account created. Please check your email to confirm, then wait for admin approval before accessing the system."
+      )
+  );
 }
