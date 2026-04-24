@@ -1,6 +1,6 @@
 import { test, describe } from "node:test";
 import assert from "node:assert";
-import { personalInfoSchema } from "./jobseeker-registration";
+import { personalInfoSchema } from "./jobseeker-registration.ts";
 
 describe("personalInfoSchema", () => {
   const validData = {
