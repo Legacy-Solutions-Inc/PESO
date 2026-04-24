@@ -20,7 +20,7 @@ const LANGUAGES = [
   { id: "mandarin", label: "Mandarin" },
 ] as const;
 
-export function Step5Language() {
+export function Step4Language() {
   const form = useFormContext();
 
   return (

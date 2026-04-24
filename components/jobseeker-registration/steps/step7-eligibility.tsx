@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2 } from "lucide-react";
 
-export function Step8Eligibility() {
+export function Step7Eligibility() {
   const form = useFormContext();
   
   const { fields: eligibilityFields, append: appendEligibility, remove: removeEligibility } = useFieldArray({

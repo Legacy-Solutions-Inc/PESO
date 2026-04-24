@@ -1,14 +1,14 @@
 "use client";
 
 import { Step1PersonalInfo } from "./steps/step1-personal-info";
-import { Step3Employment } from "./steps/step3-employment";
-import { Step4JobPreference } from "./steps/step4-job-preference";
-import { Step5Language } from "./steps/step5-language";
-import { Step6Education } from "./steps/step6-education";
-import { Step7Training } from "./steps/step7-training";
-import { Step8Eligibility } from "./steps/step8-eligibility";
-import { Step9WorkExperience } from "./steps/step9-work-experience";
-import { Step10Skills } from "./steps/step10-skills";
+import { Step2Employment } from "./steps/step2-employment";
+import { Step3JobPreference } from "./steps/step3-job-preference";
+import { Step4Language } from "./steps/step4-language";
+import { Step5Education } from "./steps/step5-education";
+import { Step6Training } from "./steps/step6-training";
+import { Step7Eligibility } from "./steps/step7-eligibility";
+import { Step8WorkExperience } from "./steps/step8-work-experience";
+import { Step9Skills } from "./steps/step9-skills";
 
 interface StepRendererProps {
   currentStep: number;
@@ -19,21 +19,21 @@ export function StepRenderer({ currentStep }: StepRendererProps) {
     case 1:
       return <Step1PersonalInfo />;
     case 2:
-      return <Step3Employment />;
+      return <Step2Employment />;
     case 3:
-      return <Step4JobPreference />;
+      return <Step3JobPreference />;
     case 4:
-      return <Step5Language />;
+      return <Step4Language />;
     case 5:
-      return <Step6Education />;
+      return <Step5Education />;
     case 6:
-      return <Step7Training />;
+      return <Step6Training />;
     case 7:
-      return <Step8Eligibility />;
+      return <Step7Eligibility />;
     case 8:
-      return <Step9WorkExperience />;
+      return <Step8WorkExperience />;
     case 9:
-      return <Step10Skills />;
+      return <Step9Skills />;
     default:
       return null;
   }

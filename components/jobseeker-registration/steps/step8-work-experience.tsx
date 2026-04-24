@@ -22,7 +22,7 @@ const EMPLOYMENT_STATUS_OPTIONS: { label: string; value: "PERMANENT" | "CONTRACT
   { label: "Probationary", value: "PROBATIONARY" },
 ];
 
-export function Step9WorkExperience() {
+export function Step8WorkExperience() {
   const form = useFormContext();
   const { fields, append, remove } = useFieldArray({
     control: form.control,

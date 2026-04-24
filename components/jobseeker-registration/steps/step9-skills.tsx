@@ -42,7 +42,7 @@ const REFERRAL_PROGRAMS = [
   "TESDA Training",
 ] as const;
 
-export function Step10Skills() {
+export function Step9Skills() {
   const form = useFormContext();
 
   return (

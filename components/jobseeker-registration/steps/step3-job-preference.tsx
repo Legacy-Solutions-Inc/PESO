@@ -13,7 +13,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 
-export function Step4JobPreference() {
+export function Step3JobPreference() {
   const form = useFormContext();
 
   return (

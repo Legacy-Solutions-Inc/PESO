@@ -18,7 +18,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { CERTIFICATE_OPTIONS } from "@/lib/constants";
 
 
-export function Step7Training() {
+export function Step6Training() {
   const form = useFormContext();
   const { fields, append, remove } = useFieldArray({
     control: form.control,

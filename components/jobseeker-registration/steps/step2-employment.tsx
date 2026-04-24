@@ -14,7 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 
-export function Step3Employment() {
+export function Step2Employment() {
   const form = useFormContext();
   const employmentStatus = form.watch("employment.status");
   const employedType = form.watch("employment.employedType");

@@ -42,7 +42,7 @@ const TERTIARY_LEVELS = [
 
 const SENIOR_HIGH_LEVELS = ["Grade 11", "Grade 12"] as const;
 
-export function Step6Education() {
+export function Step5Education() {
   const form = useFormContext();
 
   return (
