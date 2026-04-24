@@ -9,22 +9,22 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold",
+        "inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-medium",
         status === "active" &&
-          "border-emerald-100 bg-emerald-50 text-emerald-700 dark:border-emerald-900/30 dark:bg-emerald-900/20 dark:text-emerald-300",
+          "border-status-positive/30 bg-status-positive/10 text-status-positive",
         status === "pending" &&
-          "border-amber-100 bg-amber-50 text-amber-700 dark:border-amber-900/30 dark:bg-amber-900/20 dark:text-amber-300",
-        status === "inactive" &&
-          "border-slate-200 bg-slate-100 text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400",
+          "border-status-warning/30 bg-status-warning/10 text-status-warning",
+        status === "inactive" && "border-border bg-muted text-muted-foreground",
         className
       )}
     >
       <span
+        aria-hidden
         className={cn(
           "h-1.5 w-1.5 rounded-full",
-          status === "active" && "bg-emerald-500",
-          status === "pending" && "bg-amber-500",
-          status === "inactive" && "bg-slate-400"
+          status === "active" && "bg-status-positive",
+          status === "pending" && "bg-status-warning",
+          status === "inactive" && "bg-muted-foreground"
         )}
       />
       {status === "active" && "Active"}

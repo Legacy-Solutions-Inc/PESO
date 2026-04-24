@@ -21,14 +21,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 
-const EDUCATION_LEVELS = [
-  "Elementary",
-  "Secondary (Non-K12)",
-  "Senior High",
-  "Tertiary",
-  "Graduate Studies",
-] as const;
-
 const YEAR_LEVELS = ["1st Year", "2nd Year", "3rd Year", "4th Year"] as const;
 
 const TERTIARY_LEVELS = [

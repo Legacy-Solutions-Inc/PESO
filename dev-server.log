@@ -1,13 +1,14 @@
 
-> my-app@0.1.0 dev /app
-> next dev --port 3001
+> my-app@0.1.0 dev
+> next dev
 
+⚠ Port 3000 is in use by process 20336, using available port 3002 instead.
 ▲ Next.js 16.1.6 (Turbopack)
-- Local:         http://localhost:3001
-- Network:       http://192.168.0.2:3001
-- Environments: .env.local
+- Local:         http://localhost:3002
+- Network:       http://192.168.254.107:3002
+- Environments: .env
 
 ✓ Starting...
-✓ Ready in 1701ms
-○ Compiling /sign-up ...
- GET /sign-up 200 in 4.7s (compile: 3.8s, proxy.ts: 251ms, render: 593ms)
+⨯ Unable to acquire lock at D:\PESO\PESO\.next\dev\lock, is another instance of next dev running?
+  Suggestion: If you intended to restart next dev, terminate the other process, and then try again.
+[?25h

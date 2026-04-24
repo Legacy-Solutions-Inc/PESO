@@ -31,6 +31,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { NotificationBell } from "@/components/dashboard/notification-bell";
+import { KeyboardHelpPopover } from "@/components/dashboard/keyboard-help-popover";
 import type { NotificationSummary } from "@/app/(app)/notifications/actions";
 
 const SIDEBAR_NAV_ITEMS = [
@@ -183,7 +184,8 @@ export function DashboardShell({
               <span className="hidden sm:inline">NSRP Jobseeker Registration System</span>
             </p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <KeyboardHelpPopover />
             <NotificationBell
               pendingUserCount={notificationSummary.pendingUserCount}
               userRole={userRole}
