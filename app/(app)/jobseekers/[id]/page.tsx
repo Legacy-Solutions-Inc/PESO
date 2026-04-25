@@ -33,26 +33,33 @@ export default async function JobseekerProfilePage({ params }: PageProps) {
     .join(" ");
 
   return (
-    <div className="min-h-screen space-y-8 bg-slate-50/80 px-1 py-2 dark:bg-slate-950/50">
-      <nav
-        aria-label="Breadcrumb"
-        className="flex items-center text-sm font-medium text-slate-500"
-      >
-        <Link
-          href="/"
-          className="transition-colors hover:text-dashboard-primary active:text-dashboard-primary"
-        >
-          Dashboard
-        </Link>
-        <ChevronRight className="mx-2 size-4 text-slate-300" />
-        <Link
-          href="/jobseekers"
-          className="transition-colors hover:text-dashboard-primary active:text-dashboard-primary"
-        >
-          Jobseekers
-        </Link>
-        <ChevronRight className="mx-2 size-4 text-slate-300" />
-        <span className="text-slate-800 dark:text-slate-200">{fullName}</span>
+    <div className="pb-16 pt-2">
+      <nav aria-label="Breadcrumb" className="mb-8">
+        <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+          <li>
+            <Link
+              href="/"
+              className="transition-colors hover:text-foreground"
+            >
+              Dashboard
+            </Link>
+          </li>
+          <li aria-hidden>
+            <ChevronRight className="size-3" />
+          </li>
+          <li>
+            <Link
+              href="/jobseekers"
+              className="transition-colors hover:text-foreground"
+            >
+              Jobseekers
+            </Link>
+          </li>
+          <li aria-hidden>
+            <ChevronRight className="size-3" />
+          </li>
+          <li className="font-medium text-foreground">{fullName || "—"}</li>
+        </ol>
       </nav>
 
       <JobseekerProfileView record={record} />

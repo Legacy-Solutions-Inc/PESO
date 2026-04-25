@@ -1,19 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  User as UserIcon,
-  Phone,
-  Briefcase,
-  Target,
-  GraduationCap,
-  Award,
-  MapPin,
-  Cake,
-  Heart,
-  Pencil,
-  ArrowLeft,
-} from "lucide-react";
+import { Pencil } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,13 +11,14 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import type { JobseekerFullRecord } from "../../actions";
+import type { JobseekerRegistrationData as Reg } from "@/lib/validations/jobseeker-registration";
 
-import type { JobseekerRegistrationData } from "@/lib/validations/jobseeker-registration";
-function formatDate(value: string | undefined): string {
-  if (!value) return "—";
+// ─── formatting helpers (preserved behavior) ──────────────────────────────
+
+function formatDate(value: string | undefined): string | undefined {
+  if (!value) return undefined;
   try {
-    const d = new Date(value);
-    return d.toLocaleDateString("en-PH", {
+    return new Date(value).toLocaleDateString("en-PH", {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -39,10 +28,10 @@ function formatDate(value: string | undefined): string {
   }
 }
 
-function computeAge(dateOfBirth: string | undefined): number | null {
-  if (!dateOfBirth) return null;
+function computeAge(dob: string | undefined): number | null {
+  if (!dob) return null;
   try {
-    const birth = new Date(dateOfBirth);
+    const birth = new Date(dob);
     const today = new Date();
     let age = today.getFullYear() - birth.getFullYear();
     const m = today.getMonth() - birth.getMonth();
@@ -53,641 +42,605 @@ function computeAge(dateOfBirth: string | undefined): number | null {
   }
 }
 
-function formatSex(sex: string | undefined): string {
-  if (!sex) return "—";
-  return sex === "MALE" ? "Male" : sex === "FEMALE" ? "Female" : sex;
-}
+const SEX_MAP: Record<string, string> = { MALE: "Male", FEMALE: "Female" };
+const CIVIL_STATUS_MAP: Record<string, string> = {
+  SINGLE: "Single",
+  MARRIED: "Married",
+  WIDOWED: "Widowed",
+  SEPARATED: "Separated",
+};
+const EMPLOYMENT_TYPE_MAP: Record<string, string> = {
+  PART_TIME: "Part time",
+  FULL_TIME: "Full time",
+};
+const EMPLOYMENT_STATUS_MAP: Record<string, string> = {
+  EMPLOYED: "Employed",
+  UNEMPLOYED: "Unemployed",
+};
+const EMPLOYED_TYPE_MAP: Record<string, string> = {
+  WAGE: "Wage",
+  SELF_EMPLOYED: "Self-employed",
+};
 
-function formatCivilStatus(s: string | undefined): string {
-  if (!s) return "—";
-  const map: Record<string, string> = {
-    SINGLE: "Single",
-    MARRIED: "Married",
-    WIDOWED: "Widowed",
-    SEPARATED: "Separated",
-  };
-  return map[s] ?? s;
-}
+const lookup = (m: Record<string, string>, s: string | undefined) =>
+  s ? (m[s] ?? s) : undefined;
 
-function formatEmploymentType(s: string | undefined): string {
-  if (!s) return "—";
-  return s === "PART_TIME" ? "Part Time" : s === "FULL_TIME" ? "Full Time" : s;
-}
+const yesNo = (v: boolean | undefined) =>
+  v === true ? "Yes" : v === false ? "No" : undefined;
 
-function formatEmploymentStatus(s: string | undefined): string {
-  if (!s) return "—";
-  return s === "EMPLOYED" ? "Employed" : s === "UNEMPLOYED" ? "Unemployed" : s;
-}
-
-function disabilitySummary(disability: JobseekerRegistrationData["personalInfo"]["disability"] | undefined): string {
-  if (!disability) return "None";
+function disabilitySummary(d: Reg["personalInfo"]["disability"] | undefined) {
+  if (!d) return undefined;
   const parts: string[] = [];
-  if (disability.visual) parts.push("Visual");
-  if (disability.hearing) parts.push("Hearing");
-  if (disability.speech) parts.push("Speech");
-  if (disability.physical) parts.push("Physical");
-  if (disability.mental) parts.push("Mental");
-  const others = disability.others;
-  if (others) parts.push(others);
-  return parts.length ? parts.join(", ") : "None";
+  if (d.visual) parts.push("Visual");
+  if (d.hearing) parts.push("Hearing");
+  if (d.speech) parts.push("Speech");
+  if (d.physical) parts.push("Physical");
+  if (d.mental) parts.push("Mental");
+  if (d.others) parts.push(d.others);
+  return parts.length ? parts.join(", ") : undefined;
 }
 
-function otherSkillsLabels(): Record<string, string> {
-  return {
-    auto_mechanic: "Auto Mechanic",
-    beautician: "Beautician",
-    carpentry_work: "Carpentry Work",
-    computer_literate: "Computer Literate",
-    domestic_chores: "Domestic Chores",
-    driver: "Driver",
-    electrician: "Electrician",
-    embroidery: "Embroidery",
-    gardening: "Gardening",
-    masonry: "Masonry",
-    painter_artist: "Painter/Artist",
-    painting_jobs: "Painting Jobs",
-    photography: "Photography",
-    plumbing: "Plumbing",
-    sewing_dresses: "Sewing Dresses",
-    stenography: "Stenography",
-    tailoring: "Tailoring",
-  };
+const OTHER_SKILL_LABELS: Record<string, string> = {
+  auto_mechanic: "Auto mechanic",
+  beautician: "Beautician",
+  carpentry_work: "Carpentry",
+  computer_literate: "Computer literate",
+  domestic_chores: "Domestic chores",
+  driver: "Driver",
+  electrician: "Electrician",
+  embroidery: "Embroidery",
+  gardening: "Gardening",
+  masonry: "Masonry",
+  painter_artist: "Painter / artist",
+  painting_jobs: "Painting jobs",
+  photography: "Photography",
+  plumbing: "Plumbing",
+  sewing_dresses: "Sewing dresses",
+  stenography: "Stenography",
+  tailoring: "Tailoring",
+};
+
+// ─── document primitives ──────────────────────────────────────────────────
+
+interface FieldDef {
+  label: string;
+  value: string | undefined | null;
+  numeric?: boolean;
+  span?: 1 | 2 | 3;
 }
+
+const isPresent = (v: string | undefined | null): v is string =>
+  typeof v === "string" && v.trim() !== "";
+
+const META_TEXT = "text-[13px] text-muted-foreground";
+
+function FieldRow({ field }: { field: FieldDef }) {
+  const colSpan =
+    field.span === 3
+      ? "lg:col-span-3 md:col-span-2"
+      : field.span === 2
+        ? "md:col-span-2"
+        : "";
+  return (
+    <div className={colSpan}>
+      <dt className="text-[12px] tracking-wide text-muted-foreground">{field.label}</dt>
+      <dd
+        className={
+          "mt-1 text-[15px] leading-relaxed text-foreground" +
+          (field.numeric ? " tabular-nums" : "")
+        }
+      >
+        {field.value}
+      </dd>
+    </div>
+  );
+}
+
+const EmptyOnFile = () => (
+  <p className="text-[14px] text-muted-foreground">No data on file.</p>
+);
+
+function ListEntry({
+  title,
+  meta,
+  body,
+  trail,
+}: {
+  title: string;
+  meta?: string;
+  body?: string;
+  trail?: string;
+}) {
+  return (
+    <li className="space-y-1">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <p className="text-[15px] font-medium text-foreground">{title}</p>
+        {trail && <span data-tabular className={META_TEXT}>{trail}</span>}
+      </div>
+      {meta && <p data-tabular className={META_TEXT}>{meta}</p>}
+      {body && <p className="text-[14px] text-foreground">{body}</p>}
+    </li>
+  );
+}
+
+interface NumeralSectionProps {
+  numeral: string;
+  title: string;
+  value: string;
+  fields?: FieldDef[];
+  emptyWhen?: boolean;
+  children?: React.ReactNode;
+}
+
+function NumeralSection({
+  numeral,
+  title,
+  value,
+  fields,
+  emptyWhen,
+  children,
+}: NumeralSectionProps) {
+  const present = fields?.filter((f) => isPresent(f.value)) ?? [];
+  const missing =
+    fields?.filter((f) => !isPresent(f.value)).map((f) => f.label.toLowerCase()) ?? [];
+  const hasFields = present.length > 0;
+  const childIsEmpty = emptyWhen === true;
+  const renderedChildren =
+    children && (childIsEmpty ? <EmptyOnFile /> : children);
+  const hasChildren = !!children;
+
+  return (
+    <AccordionItem value={value} className="border-b-0 border-t border-border">
+      <AccordionTrigger
+        level={2}
+        className="min-h-11 py-6 text-foreground hover:no-underline"
+      >
+        <span className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+          <span
+            data-tabular
+            className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground"
+          >
+            {numeral}
+          </span>
+          <span className="font-serif text-[1.125rem] font-medium tracking-tight text-foreground sm:text-[1.25rem]">
+            {title}
+          </span>
+        </span>
+      </AccordionTrigger>
+      <AccordionContent className="pb-10 pt-3">
+        {hasFields && (
+          <dl className="grid grid-cols-1 gap-x-10 gap-y-5 md:grid-cols-2 lg:grid-cols-3">
+            {present.map((f) => <FieldRow key={f.label} field={f} />)}
+          </dl>
+        )}
+        {hasChildren && <div className={hasFields ? "mt-8" : ""}>{renderedChildren}</div>}
+        {fields && missing.length > 0 && (
+          <p className="mt-6 text-[13px] italic text-muted-foreground">
+            Not provided: {missing.join(", ")}.
+          </p>
+        )}
+        {!hasFields && !hasChildren && <EmptyOnFile />}
+      </AccordionContent>
+    </AccordionItem>
+  );
+}
+
+// ─── view ─────────────────────────────────────────────────────────────────
+
+const STATUS_LABEL: Record<string, string> = {
+  active: "Active profile",
+  archived: "Archived profile",
+  pending: "Pending profile",
+};
+
+const ALL_VALUES = ["i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x", "xi"];
+
+const LANG_COLS = ["read", "write", "speak", "understand"] as const;
 
 interface JobseekerProfileViewProps {
   record: JobseekerFullRecord;
 }
 
 export function JobseekerProfileView({ record }: JobseekerProfileViewProps) {
-  const personalInfo = record.personal_info ?? {};
+  const personalInfo = record.personal_info ?? ({} as Reg["personalInfo"]);
   const address = personalInfo.address ?? {};
-  const employment = record.employment ?? {};
-  const jobPref = record.job_preference ?? {};
-  const education = record.education ?? {};
-  const training = record.training ?? {};
-  const eligibility = record.eligibility ?? {};
-  const skills = record.skills ?? {};
+  const employment = record.employment ?? ({} as Reg["employment"]);
+  const jobPref = record.job_preference ?? ({} as Reg["jobPreference"]);
+  const language = record.language ?? ({} as Reg["language"]);
+  const education = record.education ?? ({} as Reg["education"]);
+  const training = record.training ?? ({} as Reg["training"]);
+  const eligibility = record.eligibility ?? ({} as Reg["eligibility"]);
+  const workExperience = record.work_experience ?? ({} as Reg["workExperience"]);
+  const skills = record.skills ?? ({} as Reg["skills"]);
   const otherSkills = skills.otherSkills ?? {};
-  const certification = skills.certification ?? {};
-  const fullName = [
-    personalInfo.surname,
-    personalInfo.firstName,
-    personalInfo.middleName,
-  ]
+  const certification =
+    skills.certification ?? { acknowledged: undefined, signature: "", dateSigned: "" };
+  const pesoUse = skills.pesoUseOnly ?? {};
+  const referralPrograms = pesoUse.referralPrograms ?? {};
+
+  const fullName = [personalInfo.surname, personalInfo.firstName, personalInfo.middleName]
     .filter(Boolean)
     .join(" ");
+  const initials = `${personalInfo.surname?.[0] ?? ""}${personalInfo.firstName?.[0] ?? ""}`;
   const age = computeAge(personalInfo.dateOfBirth);
-  const addressLine = [address.houseStreet, address.barangay, address.city, address.province]
-    .filter(Boolean)
-    .join(", ") || "—";
-  const shortAddress = [address.barangay, address.city].filter(Boolean).join(", ") || "—";
+  const fullAddress =
+    [address.houseStreet, address.barangay, address.city, address.province]
+      .filter(Boolean)
+      .join(", ") || undefined;
+  const shortAddress =
+    [address.barangay, address.city].filter(Boolean).join(", ") || undefined;
 
-  const statusLabel =
-    record.status === "active"
-      ? "Active Profile"
-      : record.status === "archived"
-        ? "Archived"
-        : "Pending";
+  const subtitleParts = [
+    `NSRP-${record.id}`,
+    age != null ? `${age} years` : undefined,
+    lookup(SEX_MAP, personalInfo.sex),
+    lookup(CIVIL_STATUS_MAP, personalInfo.civilStatus),
+    shortAddress,
+  ].filter(Boolean) as string[];
+
+  const statusLine = `${
+    STATUS_LABEL[record.status] ?? "Unknown profile"
+  } · Registered ${formatDate(record.created_at) ?? "—"}`;
+
+  // IV
+  const langGroups: Array<{
+    name: string;
+    data?: { read?: boolean; write?: boolean; speak?: boolean; understand?: boolean };
+  }> = [
+    { name: "English", data: language.english },
+    { name: "Filipino", data: language.filipino },
+    { name: "Mandarin", data: language.mandarin },
+    ...(language.othersName ? [{ name: language.othersName, data: language.others }] : []),
+  ];
+  const hasLanguageData = langGroups.some(
+    (g) => g.data && LANG_COLS.some((k) => g.data?.[k])
+  );
+
+  // V
+  const eduItems = [
+    { level: "Tertiary", course: education.tertiary?.course, grad: education.tertiary?.yearGraduated, last: education.tertiary?.yearLastAttended },
+    { level: "Senior High", course: education.seniorHigh?.strand, grad: education.seniorHigh?.yearGraduated, last: education.seniorHigh?.yearLastAttended },
+    { level: "Secondary", course: undefined, grad: education.secondary?.yearGraduated, last: education.secondary?.yearLastAttended },
+    { level: "Elementary", course: undefined, grad: education.elementary?.yearGraduated, last: education.elementary?.yearLastAttended },
+    { level: "Graduate", course: education.graduate?.course, grad: education.graduate?.yearGraduated, last: education.graduate?.yearLastAttended },
+  ].filter((i) => i.course || i.grad || i.last);
+
+  // VI
+  const trainingEntries = (training.entries ?? []).filter(
+    (e) => e.course || e.institution || e.skillsAcquired
+  );
+
+  // VII
+  const csList = (eligibility.civilService ?? []).filter((cs) => cs.name);
+  const plList = (eligibility.professionalLicense ?? []).filter((pl) => pl.name);
+
+  // VIII
+  const workEntries = (workExperience.entries ?? []).filter(
+    (w) => w.companyName || w.position
+  );
+
+  // IX
+  const otherSkillsList = Object.entries(OTHER_SKILL_LABELS)
+    .filter(([key]) => otherSkills[key as keyof typeof otherSkills])
+    .map(([, label]) => label);
+  if (otherSkills.others) otherSkillsList.push(String(otherSkills.others));
+
+  // XI
+  const referralLabels: Array<[keyof typeof referralPrograms, string]> = [
+    ["spes", "SPES"],
+    ["gip", "GIP"],
+    ["tupad", "TUPAD"],
+    ["jobstart", "JobStart"],
+    ["dileep", "DILEEP"],
+    ["tesda_training", "TESDA Training"],
+  ];
+  const referralList = referralLabels.filter(([k]) => referralPrograms[k]).map(([, l]) => l);
+  if (referralPrograms.others) referralList.push(String(referralPrograms.others));
 
   return (
-    <>
-      <section className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-        <div className="flex flex-col gap-8 p-8 sm:p-10 md:flex-row md:items-center md:gap-10">
-          <div className="relative shrink-0">
-            <Avatar className="h-28 w-28 border border-border sm:h-36 sm:w-36">
-              <AvatarFallback className="bg-primary/10 text-2xl font-medium text-primary sm:text-3xl">
-                {personalInfo.surname?.[0] ?? ""}
-                {personalInfo.firstName?.[0] ?? ""}
-              </AvatarFallback>
-            </Avatar>
-            <div
-              className={`absolute bottom-0 right-0 h-5 w-5 rounded-full border-2 border-card ${
-                record.status === "active"
-                  ? "bg-status-positive"
-                  : record.status === "archived"
-                    ? "bg-muted-foreground"
-                    : "bg-status-warning"
-              }`}
-              title={statusLabel}
-            />
-          </div>
-          <div className="min-w-0 flex-1 space-y-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-              <h1 className="text-2xl font-bold wrap-break-word tracking-tight text-slate-900 dark:text-white sm:text-3xl md:text-4xl">
-                {fullName || "—"}
-              </h1>
-              <span className="inline-flex w-fit items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-                {statusLabel}
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {[
-                { icon: Cake, label: age != null ? `${age} years old` : "—" },
-                { icon: UserIcon, label: formatSex(personalInfo.sex) },
-                { icon: Heart, label: formatCivilStatus(personalInfo.civilStatus) },
-                { icon: MapPin, label: shortAddress },
-              ].map(({ icon: Icon, label }) => (
-                <span
-                  key={label}
-                  className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                >
-                  <Icon className="size-4 text-slate-500 dark:text-slate-400" />
-                  {label}
-                </span>
-              ))}
-            </div>
-          </div>
-          <div className="flex w-full shrink-0 flex-col gap-3 sm:flex-row md:w-auto">
-            <Button
-              variant="outline"
-              size="lg"
-              className="min-h-11 flex-1 border-slate-200 bg-white font-medium shadow-sm transition hover:bg-slate-50 active:opacity-90 dark:border-slate-700 dark:bg-slate-800/50 dark:hover:bg-slate-800 md:flex-none"
-              asChild
-            >
-              <Link href="/jobseekers" className="gap-2">
-                <ArrowLeft className="size-4" />
-                Back to Records
-              </Link>
-            </Button>
-            <Button
-              size="lg"
-              className="min-h-11 flex-1 gap-2 bg-dashboard-primary font-semibold shadow-lg shadow-dashboard-primary/25 transition hover:bg-dashboard-primary/90 active:opacity-90 hover:shadow-xl hover:shadow-dashboard-primary/20 md:flex-none"
-              asChild
-            >
-              <Link href={`/jobseekers/${record.id}/edit`}>
-                <Pencil className="size-4" />
-                Edit Profile
-              </Link>
-            </Button>
-          </div>
+    <article>
+      {/* Hero — government-archival header */}
+      <header className="space-y-3 pb-12 pt-2">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-5">
+          <Avatar className="size-14 shrink-0 border border-border">
+            <AvatarFallback className="bg-muted text-base font-medium text-foreground">
+              {initials || "?"}
+            </AvatarFallback>
+          </Avatar>
+          <h1 className="min-w-0 font-serif text-[clamp(1.75rem,4vw,3rem)] font-medium leading-[1.05] tracking-[-0.025em] text-foreground break-words">
+            {fullName || "Unnamed jobseeker"}
+          </h1>
         </div>
-      </section>
+        <p data-tabular className="text-[14px] leading-relaxed text-muted-foreground">
+          {subtitleParts.join("  ·  ")}
+        </p>
+        <p className={META_TEXT}>{statusLine}</p>
+        <div className="pt-3">
+          <Button asChild variant="outline" size="sm" className="min-h-11">
+            <Link
+              href={`/jobseekers/${record.id}/edit`}
+              aria-label={`Edit ${fullName || "this"} profile`}
+            >
+              <Pencil className="size-4" />
+              Edit profile
+            </Link>
+          </Button>
+        </div>
+      </header>
 
-      <Accordion
-        type="single"
-        defaultValue="personal"
-        collapsible
-        className="flex flex-col gap-5"
-      >
-        <AccordionItem
-          value="personal"
-          className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition-shadow hover:shadow-md active:shadow-md focus-within:shadow-md dark:border-slate-700/50 dark:bg-slate-900/30"
-        >
-          <AccordionTrigger className="min-h-11 px-6 py-6 text-left hover:no-underline active:bg-slate-100 dark:active:bg-slate-800/50 data-[state=open]:bg-slate-50/80 dark:data-[state=open]:bg-slate-800/30">
-            <div className="flex items-center gap-4">
-              <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-dashboard-primary/10 text-dashboard-primary">
-                <UserIcon className="size-5" />
-              </div>
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                Personal Information
-              </h3>
-            </div>
-          </AccordionTrigger>
-          <AccordionContent className="border-t border-slate-100 bg-slate-50/50 px-6 pb-6 pt-4 dark:border-slate-800 dark:bg-slate-900/20">
-            <div className="grid grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2 lg:grid-cols-4">
-              <div>
-                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">
-                  Date of Birth
-                </p>
-                <p className="text-sm font-medium text-slate-900 dark:text-slate-200">
-                  {formatDate(personalInfo.dateOfBirth)}
-                </p>
-              </div>
-              <div>
-                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">
-                  Place of Birth
-                </p>
-                <p className="text-sm font-medium text-slate-900 dark:text-slate-200">
-                  {(personalInfo.placeOfBirth) || "—"}
-                </p>
-              </div>
-              <div>
-                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">
-                  Religion
-                </p>
-                <p className="text-sm font-medium text-slate-900 dark:text-slate-200">
-                  {(personalInfo.religion) || "—"}
-                </p>
-              </div>
-              <div>
-                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">
-                  Civil Status
-                </p>
-                <p className="text-sm font-medium text-slate-900 dark:text-slate-200">
-                  {formatCivilStatus(personalInfo.civilStatus)}
-                </p>
-              </div>
-              <div>
-                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">
-                  TIN Number
-                </p>
-                <p className="font-mono text-sm font-medium text-slate-900 dark:text-slate-200">
-                  {(personalInfo.tin) || "—"}
-                </p>
-              </div>
-              <div>
-                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">
-                  Height
-                </p>
-                <p className="text-sm font-medium text-slate-900 dark:text-slate-200">
-                  {(personalInfo.height) || "—"}
-                </p>
-              </div>
-              <div className="col-span-1 md:col-span-2">
-                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">
-                  Disability
-                </p>
-                <p className="text-sm font-medium text-slate-900 dark:text-slate-200">
-                  {disabilitySummary(personalInfo.disability)}
-                </p>
-              </div>
-            </div>
-          </AccordionContent>
-        </AccordionItem>
+      {/* Hairline-separated SRS sections, all open by default. */}
+      <Accordion type="multiple" defaultValue={ALL_VALUES}>
+        {/* I — Personal Information (Contact merged in per SRS Section 3.2.2) */}
+        <NumeralSection
+          numeral="I"
+          title="Personal information"
+          value="i"
+          fields={[
+            { label: "Date of birth", value: formatDate(personalInfo.dateOfBirth), numeric: true },
+            { label: "Place of birth", value: personalInfo.placeOfBirth },
+            { label: "Religion", value: personalInfo.religion },
+            { label: "Civil status", value: lookup(CIVIL_STATUS_MAP, personalInfo.civilStatus) },
+            { label: "TIN", value: personalInfo.tin, numeric: true },
+            { label: "Height", value: personalInfo.height, numeric: true },
+            { label: "Disability", value: disabilitySummary(personalInfo.disability), span: 3 },
+            { label: "Contact number", value: personalInfo.contactNumber, numeric: true },
+            { label: "Email address", value: personalInfo.email, span: 2 },
+            { label: "Address", value: fullAddress, span: 3 },
+          ]}
+        />
 
-        <AccordionItem
-          value="contact"
-          className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition-shadow hover:shadow-md active:shadow-md focus-within:shadow-md dark:border-slate-700/50 dark:bg-slate-900/30"
-        >
-          <AccordionTrigger className="min-h-11 px-6 py-6 text-left hover:no-underline active:bg-slate-100 dark:active:bg-slate-800/50 data-[state=open]:bg-slate-50/80 dark:data-[state=open]:bg-slate-800/30">
-            <div className="flex items-center gap-4">
-              <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400">
-                <Phone className="size-5" />
-              </div>
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                Contact Details
-              </h3>
-            </div>
-          </AccordionTrigger>
-          <AccordionContent className="border-t border-slate-100 bg-slate-50/50 px-6 pb-6 pt-4 dark:border-slate-800 dark:bg-slate-900/20">
-            <div className="grid grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2 lg:grid-cols-3">
-              <div>
-                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">
-                  Mobile Number
-                </p>
-                <p className="font-mono text-sm font-medium text-slate-900 dark:text-slate-200">
-                  {(personalInfo.contactNumber) || "—"}
-                </p>
-              </div>
-              <div>
-                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">
-                  Email Address
-                </p>
-                <p className="text-sm font-medium text-dashboard-primary underline underline-offset-2">
-                  {(personalInfo.email) || "—"}
-                </p>
-              </div>
-              <div className="col-span-full">
-                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">
-                  Address
-                </p>
-                <p className="text-sm font-medium text-slate-900 dark:text-slate-200">
-                  {addressLine}
-                </p>
-              </div>
-            </div>
-          </AccordionContent>
-        </AccordionItem>
+        {/* II — Employment Status & Type */}
+        <NumeralSection
+          numeral="II"
+          title="Employment status & type"
+          value="ii"
+          fields={[
+            { label: "Current status", value: lookup(EMPLOYMENT_STATUS_MAP, employment.status) },
+            { label: "Employed type", value: lookup(EMPLOYED_TYPE_MAP, employment.employedType) },
+            { label: "OFW", value: yesNo(employment.isOfw) },
+            { label: "4Ps beneficiary", value: yesNo(employment.is4PsBeneficiary) },
+            { label: "Reason for unemployment", value: employment.unemployedReason },
+            { label: "Job search duration", value: employment.jobSearchDuration, numeric: true },
+          ]}
+        />
 
-        <AccordionItem
-          value="employment"
-          className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition-shadow hover:shadow-md active:shadow-md focus-within:shadow-md dark:border-slate-700/50 dark:bg-slate-900/30"
-        >
-          <AccordionTrigger className="min-h-11 px-6 py-6 text-left hover:no-underline active:bg-slate-100 dark:active:bg-slate-800/50 data-[state=open]:bg-slate-50/80 dark:data-[state=open]:bg-slate-800/30">
-            <div className="flex items-center gap-4">
-              <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
-                <Briefcase className="size-5" />
-              </div>
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                Employment Status
-              </h3>
-            </div>
-          </AccordionTrigger>
-          <AccordionContent className="border-t border-slate-100 bg-slate-50/50 px-6 pb-6 pt-4 dark:border-slate-800 dark:bg-slate-900/20">
-            <div className="grid grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-3">
-              <div>
-                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">
-                  Current Status
-                </p>
-                <span
-                  className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium ${
-                    employment.status === "EMPLOYED"
-                      ? "border-status-positive/30 bg-status-positive/10 text-status-positive"
-                      : "border-status-warning/30 bg-status-warning/10 text-status-warning"
-                  }`}
-                >
-                  {formatEmploymentStatus(employment.status)}
-                </span>
-              </div>
-              <div>
-                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">
-                  Employed Type
-                </p>
-                <p className="text-sm font-medium text-slate-900 dark:text-slate-200">
-                  {employment.employedType === "WAGE"
-                    ? "Wage"
-                    : employment.employedType === "SELF_EMPLOYED"
-                      ? "Self-Employed"
-                      : "—"}
-                </p>
-              </div>
-              <div>
-                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">
-                  OFW
-                </p>
-                <span className="inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                  {employment.isOfw ? "Yes" : "No"}
-                </span>
-              </div>
-              <div>
-                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">
-                  4Ps Beneficiary
-                </p>
-                <span className="inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                  {employment.is4PsBeneficiary ? "Yes" : "No"}
-                </span>
-              </div>
-              <div>
-                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">
-                  Unemployed Reason
-                </p>
-                <p className="text-sm font-medium text-slate-900 dark:text-slate-200">
-                  {(employment.unemployedReason) || "—"}
-                </p>
-              </div>
-              <div>
-                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">
-                  Job Search Duration
-                </p>
-                <p className="text-sm font-medium text-slate-900 dark:text-slate-200">
-                  {(employment.jobSearchDuration) || "—"}
-                </p>
-              </div>
-            </div>
-          </AccordionContent>
-        </AccordionItem>
+        {/* III — Job Preference */}
+        <NumeralSection
+          numeral="III"
+          title="Job preference"
+          value="iii"
+          fields={[
+            { label: "Preferred employment type", value: lookup(EMPLOYMENT_TYPE_MAP, jobPref.employmentType) },
+            { label: "Preferred occupation", value: jobPref.occupation1 },
+            { label: "Second choice", value: jobPref.occupation2 },
+            { label: "Third choice", value: jobPref.occupation3 },
+            {
+              label: "Local locations",
+              value:
+                [jobPref.localLocation1, jobPref.localLocation2, jobPref.localLocation3]
+                  .filter(Boolean)
+                  .join(", ") || undefined,
+              span: 2,
+            },
+            {
+              label: "Overseas locations",
+              value:
+                [jobPref.overseasLocation1, jobPref.overseasLocation2, jobPref.overseasLocation3]
+                  .filter(Boolean)
+                  .join(", ") || undefined,
+              span: 2,
+            },
+          ]}
+        />
 
-        <AccordionItem
-          value="jobpref"
-          className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition-shadow hover:shadow-md active:shadow-md focus-within:shadow-md dark:border-slate-700/50 dark:bg-slate-900/30"
+        {/* IV — Language & Dialect Proficiency */}
+        <NumeralSection
+          numeral="IV"
+          title="Language & dialect proficiency"
+          value="iv"
+          emptyWhen={!hasLanguageData}
         >
-          <AccordionTrigger className="min-h-11 px-6 py-6 text-left hover:no-underline active:bg-slate-100 dark:active:bg-slate-800/50 data-[state=open]:bg-slate-50/80 dark:data-[state=open]:bg-slate-800/30">
-            <div className="flex items-center gap-4">
-              <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400">
-                <Target className="size-5" />
-              </div>
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                Job Preferences
-              </h3>
-            </div>
-          </AccordionTrigger>
-          <AccordionContent className="border-t border-slate-100 bg-slate-50/50 px-6 pb-6 pt-4 dark:border-slate-800 dark:bg-slate-900/20">
-            <div className="flex flex-col gap-4">
-              {[
-                { label: "Preferred occupation", value: jobPref.occupation1 },
-                { label: "Second choice", value: jobPref.occupation2 },
-                { label: "Third choice", value: jobPref.occupation3 },
-              ].map(
-                (item, i) =>
-                  item.value && (
-                    <div
-                      key={i}
-                      className="rounded-lg border border-slate-100 bg-white/40 p-3 dark:border-slate-700 dark:bg-slate-800/40"
-                    >
-                      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                        {item.label}
-                      </p>
-                      <p className="text-base font-bold text-slate-900 dark:text-white">
-                        {item.value}
-                      </p>
-                    </div>
-                  )
-              )}
-              <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-                <div>
-                  <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">
-                    Preferred employment type
-                  </p>
-                  <p className="text-sm font-medium text-slate-900 dark:text-slate-200">
-                    {formatEmploymentType(jobPref.employmentType)}
-                  </p>
-                </div>
-                <div>
-                  <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">
-                    Local locations
-                  </p>
-                  <p className="text-sm font-medium text-slate-900 dark:text-slate-200">
-                    {[jobPref.localLocation1, jobPref.localLocation2, jobPref.localLocation3]
-                      .filter(Boolean)
-                      .join(", ") || "—"}
-                  </p>
-                </div>
-                <div>
-                  <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">
-                    Overseas locations
-                  </p>
-                  <p className="text-sm font-medium text-slate-900 dark:text-slate-200">
-                    {[
-                      jobPref.overseasLocation1,
-                      jobPref.overseasLocation2,
-                      jobPref.overseasLocation3,
-                    ]
-                      .filter(Boolean)
-                      .join(", ") || "—"}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-
-        <AccordionItem
-          value="education"
-          className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition-shadow hover:shadow-md active:shadow-md focus-within:shadow-md dark:border-slate-700/50 dark:bg-slate-900/30"
-        >
-          <AccordionTrigger className="min-h-11 px-6 py-6 text-left hover:no-underline active:bg-slate-100 dark:active:bg-slate-800/50 data-[state=open]:bg-slate-50/80 dark:data-[state=open]:bg-slate-800/30">
-            <div className="flex items-center gap-4">
-              <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
-                <GraduationCap className="size-5" />
-              </div>
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                Educational Background
-              </h3>
-            </div>
-          </AccordionTrigger>
-          <AccordionContent className="border-t border-slate-100 bg-slate-50/50 px-6 pb-6 pt-4 dark:border-slate-800 dark:bg-slate-900/20">
-            <div className="relative space-y-6 border-l-2 border-slate-200 pl-4 dark:border-slate-700">
-              {[
-                {
-                  level: "Tertiary",
-                  course: education.tertiary?.course,
-                  yearGraduated: education.tertiary?.yearGraduated,
-                  yearLastAttended: education.tertiary?.yearLastAttended,
-                },
-                {
-                  level: "Senior High",
-                  course: education.seniorHigh?.strand,
-                  yearGraduated: education.seniorHigh?.yearGraduated,
-                  yearLastAttended: education.seniorHigh?.yearLastAttended,
-                },
-                {
-                  level: "Secondary",
-                  course: undefined,
-                  yearGraduated: education.secondary?.yearGraduated,
-                  yearLastAttended: education.secondary?.yearLastAttended,
-                },
-                {
-                  level: "Elementary",
-                  course: undefined,
-                  yearGraduated: education.elementary?.yearGraduated,
-                  yearLastAttended: education.elementary?.yearLastAttended,
-                },
-                {
-                  level: "Graduate",
-                  course: education.graduate?.course,
-                  yearGraduated: education.graduate?.yearGraduated,
-                  yearLastAttended: education.graduate?.yearLastAttended,
-                },
-              ].map(
-                (item, i) =>
-                  (item.course || item.yearGraduated || item.yearLastAttended) && (
-                    <div key={i} className="relative">
-                      <div className="absolute -left-5.25 top-1 h-3 w-3 rounded-full border-2 border-white bg-dashboard-primary dark:border-slate-900" />
-                      <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
-                        <div>
-                          <h4 className="text-base font-bold text-slate-900 dark:text-white">
-                            {item.course || item.level}
-                          </h4>
-                          <p className="text-sm text-slate-500">{item.level}</p>
-                        </div>
-                        <span className="rounded bg-slate-100 px-2 py-1 text-sm font-medium text-slate-500 dark:bg-slate-800">
-                          {[item.yearLastAttended, item.yearGraduated].filter(Boolean).join(" – ") || "—"}
-                        </span>
-                      </div>
-                    </div>
-                  )
-              )}
-              {!education.tertiary &&
-                !education.seniorHigh &&
-                !education.secondary &&
-                !education.elementary &&
-                !education.graduate && (
-                  <p className="text-sm text-slate-500">No education recorded.</p>
-                )}
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-
-        <AccordionItem
-          value="skills"
-          className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition-shadow hover:shadow-md active:shadow-md focus-within:shadow-md dark:border-slate-700/50 dark:bg-slate-900/30"
-        >
-          <AccordionTrigger className="min-h-11 px-6 py-6 text-left hover:no-underline active:bg-slate-100 dark:active:bg-slate-800/50 data-[state=open]:bg-slate-50/80 dark:data-[state=open]:bg-slate-800/30">
-            <div className="flex items-center gap-4">
-              <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-pink-100 text-pink-600 dark:bg-pink-900/30 dark:text-pink-400">
-                <Award className="size-5" />
-              </div>
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                Skills & Certifications
-              </h3>
-            </div>
-          </AccordionTrigger>
-          <AccordionContent className="border-t border-slate-100 bg-slate-50/50 px-6 pb-6 pt-4 dark:border-slate-800 dark:bg-slate-900/20">
-            <div className="space-y-4">
-              <div>
-                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
-                  Other skills
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {Object.entries(otherSkillsLabels()).map(([key, label]) =>
-                    otherSkills[key as keyof typeof otherSkills] ? (
-                      <span
-                        key={key}
-                        className="rounded-full border border-slate-200 bg-white px-3 py-1 text-sm shadow-sm text-slate-700 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200"
-                      >
-                        {label}
-                      </span>
-                    ) : null
-                  )}
-                  {otherSkills.others && (
-                    <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-sm shadow-sm text-slate-700 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200">
-                      {String(otherSkills.others)}
-                    </span>
-                  )}
-                  {!Object.keys(otherSkills).some((k) => otherSkills[k as keyof typeof otherSkills] && k !== "others") &&
-                    !otherSkills.others && (
-                      <span className="text-sm text-slate-500">None listed.</span>
-                    )}
-                </div>
-              </div>
-              <div>
-                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
-                  Training
-                </p>
-                {training.entries?.length ? (
-                  <ul className="space-y-2">
-                    {training.entries.map((entry, i) => (
-                      <li
-                        key={i}
-                        className="rounded-lg border border-slate-100 bg-white/40 p-3 dark:border-slate-700 dark:bg-slate-800/40"
-                      >
-                        <p className="font-medium text-slate-900 dark:text-white">
-                          {entry.course || "—"}
-                        </p>
-                        <p className="text-sm text-slate-600 dark:text-slate-400">
-                          {entry.institution && `${entry.institution}`}
-                          {entry.hours && ` • ${entry.hours} hrs`}
-                        </p>
-                        {entry.skillsAcquired && (
-                          <p className="mt-1 text-sm text-slate-500">
-                            {entry.skillsAcquired}
-                          </p>
-                        )}
-                      </li>
+          <div className="overflow-x-auto">
+            <table className="w-full text-[14px]">
+              <thead>
+                <tr className="text-left text-[12px] uppercase tracking-wide text-muted-foreground">
+                  <th className="py-2 pr-4 font-normal">Language</th>
+                  {LANG_COLS.map((c) => (
+                    <th key={c} className="py-2 pr-4 font-normal capitalize">{c}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {langGroups.map((g) => (
+                  <tr key={g.name} className="border-t border-border">
+                    <td className="py-2.5 pr-4 text-foreground">{g.name}</td>
+                    {LANG_COLS.map((k) => (
+                      <td key={k} className="py-2.5 pr-4 text-foreground">
+                        {g.data?.[k] ? "Yes" : ""}
+                      </td>
                     ))}
-                  </ul>
-                ) : (
-                  <p className="text-sm text-slate-500">No training recorded.</p>
-                )}
-              </div>
-              <div>
-                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
-                  Eligibility / Licenses
-                </p>
-                {(eligibility.civilService?.length ||
-                  eligibility.professionalLicense?.length) ? (
-                  <div className="grid gap-2 md:grid-cols-2">
-                    {eligibility.civilService?.map((cs, i) => (
-                      <div key={i} className="rounded border border-slate-100 p-2 dark:border-slate-700">
-                        <p className="font-medium">{cs.name || "—"}</p>
-                        <p className="text-xs text-slate-500">{cs.dateTaken || ""}</p>
-                      </div>
-                    ))}
-                    {eligibility.professionalLicense?.map((pl, i) => (
-                      <div key={i} className="rounded border border-slate-100 p-2 dark:border-slate-700">
-                        <p className="font-medium">{pl.name || "—"}</p>
-                        <p className="text-xs text-slate-500">Valid until: {pl.validUntil || "—"}</p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-slate-500">None recorded.</p>
-                )}
-              </div>
-              {certification.signature && (
-                <div>
-                  <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">
-                    Certification
-                  </p>
-                  <p className="text-sm text-slate-700 dark:text-slate-300">
-                    Signed {formatDate(certification.dateSigned)}
-                  </p>
-                </div>
-              )}
-            </div>
-          </AccordionContent>
-        </AccordionItem>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </NumeralSection>
+
+        {/* V — Educational Background */}
+        <NumeralSection
+          numeral="V"
+          title="Educational background"
+          value="v"
+          emptyWhen={eduItems.length === 0}
+        >
+          <ul className="space-y-5">
+            {eduItems.map((item, i) => (
+              <ListEntry
+                key={i}
+                title={item.course || item.level}
+                meta={item.course ? item.level : undefined}
+                trail={[item.last, item.grad].filter(Boolean).join(" – ") || undefined}
+              />
+            ))}
+          </ul>
+        </NumeralSection>
+
+        {/* VI — Technical / Vocational & Other Training */}
+        <NumeralSection
+          numeral="VI"
+          title="Technical / vocational & other training"
+          value="vi"
+          emptyWhen={trainingEntries.length === 0}
+        >
+          <ul className="space-y-5">
+            {trainingEntries.map((entry, i) => (
+              <ListEntry
+                key={i}
+                title={entry.course || "Untitled training"}
+                meta={
+                  [entry.institution, entry.hours ? `${entry.hours} hours` : undefined]
+                    .filter(Boolean)
+                    .join(" · ") || undefined
+                }
+                body={entry.skillsAcquired || undefined}
+              />
+            ))}
+          </ul>
+        </NumeralSection>
+
+        {/* VII — Eligibility / Professional License */}
+        <NumeralSection
+          numeral="VII"
+          title="Eligibility / professional license"
+          value="vii"
+          emptyWhen={csList.length === 0 && plList.length === 0}
+        >
+          <div className="space-y-8">
+            {csList.length > 0 && (
+              <EligibilityList
+                title="Civil service"
+                items={csList.map((cs) => ({
+                  name: cs.name!,
+                  trail: cs.dateTaken ? (formatDate(cs.dateTaken) ?? cs.dateTaken) : undefined,
+                }))}
+              />
+            )}
+            {plList.length > 0 && (
+              <EligibilityList
+                title="Professional license"
+                items={plList.map((pl) => ({
+                  name: pl.name!,
+                  trail: pl.validUntil
+                    ? `Valid until ${formatDate(pl.validUntil) ?? pl.validUntil}`
+                    : undefined,
+                }))}
+              />
+            )}
+          </div>
+        </NumeralSection>
+
+        {/* VIII — Work Experience (last 10 years) */}
+        <NumeralSection
+          numeral="VIII"
+          title="Work experience"
+          value="viii"
+          emptyWhen={workEntries.length === 0}
+        >
+          <ul className="space-y-5">
+            {workEntries.map((w, i) => (
+              <ListEntry
+                key={i}
+                title={w.position || "Untitled position"}
+                meta={[w.companyName, w.address].filter(Boolean).join(" · ") || undefined}
+                body={
+                  w.employmentStatus
+                    ? w.employmentStatus.replace("_", " ").toLowerCase()
+                    : undefined
+                }
+                trail={w.numberOfMonths ? `${w.numberOfMonths} mo` : undefined}
+              />
+            ))}
+          </ul>
+        </NumeralSection>
+
+        {/* IX — Other Skills (without certificate) */}
+        <NumeralSection
+          numeral="IX"
+          title="Other skills"
+          value="ix"
+          emptyWhen={otherSkillsList.length === 0}
+        >
+          <p className="text-[14px] leading-relaxed text-foreground">
+            {otherSkillsList.join(" · ")}
+          </p>
+        </NumeralSection>
+
+        {/* X — Certification / Authorization */}
+        <NumeralSection
+          numeral="X"
+          title="Certification / authorization"
+          value="x"
+          fields={[
+            { label: "Acknowledgement", value: certification.acknowledged ? "Acknowledged" : undefined },
+            { label: "Signed by", value: certification.signature || undefined },
+            {
+              label: "Date signed",
+              value: formatDate(certification.dateSigned) ?? (certification.dateSigned || undefined),
+              numeric: true,
+            },
+          ]}
+        />
+
+        {/* XI — For Use of PESO Only */}
+        <NumeralSection
+          numeral="XI"
+          title="For use of PESO only"
+          value="xi"
+          fields={[
+            {
+              label: "Referral programs",
+              value: referralList.length ? referralList.join(", ") : undefined,
+              span: 3,
+            },
+            { label: "Assessed by", value: pesoUse.assessedBy },
+            { label: "Assessor signature", value: pesoUse.assessorSignature },
+            {
+              label: "Assessment date",
+              value: formatDate(pesoUse.assessmentDate) ?? pesoUse.assessmentDate,
+              numeric: true,
+            },
+          ]}
+        />
       </Accordion>
-    </>
+    </article>
+  );
+}
+
+function EligibilityList({
+  title,
+  items,
+}: {
+  title: string;
+  items: Array<{ name: string; trail?: string }>;
+}) {
+  return (
+    <div>
+      <h3 className="font-serif text-[15px] font-medium tracking-tight text-foreground">
+        {title}
+      </h3>
+      <ul className="mt-3 space-y-2">
+        {items.map((item, i) => (
+          <li
+            key={i}
+            className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1"
+          >
+            <span className="text-[14px] text-foreground">{item.name}</span>
+            {item.trail && (
+              <span data-tabular className={META_TEXT}>{item.trail}</span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
