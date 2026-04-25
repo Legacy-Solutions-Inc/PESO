@@ -8,7 +8,7 @@ import { UsersTable } from "./_components/users-table";
 export default async function UserManagementPage() {
   const adminCheck = await requireAdmin();
   if (adminCheck.error) {
-    redirect("/");
+    redirect("/dashboard");
   }
 
   const result = await getUsersList({
@@ -36,10 +36,10 @@ export default async function UserManagementPage() {
         className="flex items-center text-sm font-medium text-muted-foreground"
       >
         <Link
-          href="/"
+          href="/dashboard"
           className="transition-colors hover:text-foreground"
         >
-          Administration
+          Dashboard
         </Link>
         <ChevronRight
           className="mx-2 size-4 text-muted-foreground/60"

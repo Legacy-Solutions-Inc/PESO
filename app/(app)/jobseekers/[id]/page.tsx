@@ -38,7 +38,7 @@ export default async function JobseekerProfilePage({ params }: PageProps) {
         <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
           <li>
             <Link
-              href="/"
+              href="/dashboard"
               className="transition-colors hover:text-foreground"
             >
               Dashboard

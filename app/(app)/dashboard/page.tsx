@@ -38,7 +38,7 @@ import { Reveal } from "@/components/vanguard/reveal";
 import {
   getDashboardStats,
   getRecentJobseekers,
-} from "./jobseekers/actions";
+} from "../jobseekers/actions";
 
 function calculateTrend(
   current: number,
@@ -114,7 +114,7 @@ export default async function DashboardPage() {
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
                 <Link
-                  href="/"
+                  href="/dashboard"
                   className="transition-colors duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:text-foreground"
                 >
                   Main menu

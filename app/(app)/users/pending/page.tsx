@@ -23,7 +23,7 @@ export default async function PendingApprovalPage() {
   const { data } = await getUserProfile();
 
   if (!data || data.profile.status !== "pending") {
-    redirect("/");
+    redirect("/dashboard");
   }
 
   const submittedAt = formatSubmissionTime(data.profile.created_at);

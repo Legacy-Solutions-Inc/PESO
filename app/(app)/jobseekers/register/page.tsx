@@ -30,7 +30,7 @@ export default async function JobseekerRegisterPage() {
           <ol className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
             <li>
               <Link
-                href="/"
+                href="/dashboard"
                 className="transition-colors duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:text-foreground"
               >
                 Dashboard

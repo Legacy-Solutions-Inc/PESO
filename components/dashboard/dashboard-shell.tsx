@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Briefcase,
   FolderOpen,
   LayoutDashboard,
   LogOut,
+  Newspaper,
   UserPlus,
   Users,
 } from "lucide-react";
@@ -35,9 +37,11 @@ import { KeyboardHelpPopover } from "@/components/dashboard/keyboard-help-popove
 import type { NotificationSummary } from "@/app/(app)/notifications/actions";
 
 const SIDEBAR_NAV_ITEMS = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard, adminOnly: false },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, adminOnly: false },
   { href: "/jobseekers/register", label: "Jobseeker Registration", icon: UserPlus, adminOnly: false },
   { href: "/jobseekers", label: "Jobseeker Records", icon: FolderOpen, adminOnly: false },
+  { href: "/admin/news", label: "News & Announcements", icon: Newspaper, adminOnly: true },
+  { href: "/admin/jobs", label: "Job Postings", icon: Briefcase, adminOnly: true },
   { href: "/users", label: "User Management", icon: Users, adminOnly: true },
 ] as const;
 
@@ -108,7 +112,7 @@ export function DashboardShell({
             <SidebarGroupContent>
               <SidebarMenu className="gap-1">
                 {SIDEBAR_NAV_ITEMS.filter(item => !item.adminOnly || userRole === "admin").map(({ href, label, icon: Icon }) => {
-                  const isDashboardActive = href === "/" && pathname === "/";
+                  const isDashboardActive = href === "/dashboard" && pathname === "/dashboard";
                   const isRegistrationActive =
                     href === "/jobseekers/register" &&
                     (pathname === "/jobseekers/register" || pathname.startsWith("/jobseekers/register/"));
@@ -120,7 +124,17 @@ export function DashboardShell({
                     href === "/users" &&
                     pathname.startsWith("/users") &&
                     !pathname.startsWith("/users/pending");
-                  const isActive = isDashboardActive || isRegistrationActive || isRecordsActive || isUsersActive;
+                  const isAdminNewsActive =
+                    href === "/admin/news" && pathname.startsWith("/admin/news");
+                  const isAdminJobsActive =
+                    href === "/admin/jobs" && pathname.startsWith("/admin/jobs");
+                  const isActive =
+                    isDashboardActive ||
+                    isRegistrationActive ||
+                    isRecordsActive ||
+                    isUsersActive ||
+                    isAdminNewsActive ||
+                    isAdminJobsActive;
 
                   return (
                     <SidebarMenuItem key={label}>
@@ -128,7 +142,7 @@ export function DashboardShell({
                         asChild
                         isActive={isActive}
                         className={cn(
-                          href !== "/" &&
+                          href !== "/dashboard" &&
                             "font-medium text-slate-600 hover:bg-slate-100 hover:text-dashboard-primary focus-visible:ring-2 focus-visible:ring-dashboard-primary dark:text-slate-300 dark:hover:bg-slate-800/50",
                           isActive &&
                             "bg-dashboard-primary font-semibold text-white shadow-sm"

@@ -1,7 +1,21 @@
-// Extracted for testing and to ensure secure fetching pattern (avoiding listUsers)
-// Using 'any' for adminClient to avoid importing @supabase/supabase-js which might fail in test environment
+// Extracted for testing and to ensure secure fetching pattern (avoiding listUsers).
+// Typed with the minimum admin-client surface we exercise so tests can pass a mock
+// without depending on @supabase/supabase-js inside Node's strip-types runner.
+interface AdminUserLookup {
+  auth: {
+    admin: {
+      getUserById(
+        userId: string,
+      ): Promise<{
+        data: { user: { email?: string | null } | null } | null;
+        error: { message: string } | null;
+      }>;
+    };
+  };
+}
+
 export async function fetchUserEmails(
-  adminClient: any,
+  adminClient: AdminUserLookup,
   userIds: string[]
 ): Promise<Record<string, string>> {
   const emailByUserId: Record<string, string> = {};
