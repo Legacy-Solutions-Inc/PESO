@@ -22,6 +22,7 @@ import {
   jobseekerIdSchema,
   jobseekerIdsSchema,
 } from "@/lib/validations/jobseeker-actions";
+import { logger } from "@/lib/logger";
 
 export interface JobseekerFilters {
   // Quick search (indexed fields)
@@ -885,14 +886,22 @@ export async function deleteJobseeker(
     });
 
     if (error) {
-      console.error("deleteJobseeker rpc error:", error.code, error.message);
+      logger.error("deleteJobseeker rpc failed", {
+        action: "deleteJobseeker",
+        code: error.code ?? "RPC_ERROR",
+        rpcMessage: error.message,
+      });
       return { error: "Failed to delete record" };
     }
 
     revalidatePath("/jobseekers", "layout");
     return { success: true };
   } catch (err) {
-    console.error("deleteJobseeker unexpected error:", err);
+    logger.error("deleteJobseeker unexpected error", {
+      action: "deleteJobseeker",
+      code: "UNEXPECTED",
+      errorName: err instanceof Error ? err.name : "Unknown",
+    });
     return { error: "Failed to delete record" };
   }
 }
@@ -919,11 +928,12 @@ export async function bulkDeleteJobseekers(
     );
 
     if (error) {
-      console.error(
-        "bulkDeleteJobseekers rpc error:",
-        error.code,
-        error.message
-      );
+      logger.error("bulkDeleteJobseekers rpc failed", {
+        action: "bulkDeleteJobseekers",
+        code: error.code ?? "RPC_ERROR",
+        rpcMessage: error.message,
+        idsCount: parsed.data.length,
+      });
       return { error: "Failed to delete records" };
     }
 
@@ -933,7 +943,11 @@ export async function bulkDeleteJobseekers(
       count: typeof data === "number" ? data : undefined,
     };
   } catch (err) {
-    console.error("bulkDeleteJobseekers unexpected error:", err);
+    logger.error("bulkDeleteJobseekers unexpected error", {
+      action: "bulkDeleteJobseekers",
+      code: "UNEXPECTED",
+      errorName: err instanceof Error ? err.name : "Unknown",
+    });
     return { error: "Failed to delete records" };
   }
 }
