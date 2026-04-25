@@ -13,6 +13,7 @@ import { HairlineIcon } from "@/components/vanguard/hairline-icon";
 import { PillLink } from "@/components/vanguard/pill-cta";
 import { Reveal } from "@/components/vanguard/reveal";
 import { parseJobseekersQuery } from "@/lib/validations/jobseekers-query";
+import { getUserProfile } from "@/lib/auth/get-user-profile";
 
 interface PageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -22,7 +23,13 @@ export default async function JobseekersPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const { page, pageSize, filters } = parseJobseekersQuery(params);
 
-  const result = await getJobseekers({ page, pageSize, ...filters });
+  const [profileResult, result] = await Promise.all([
+    getUserProfile(),
+    getJobseekers({ page, pageSize, ...filters }),
+  ]);
+
+  const currentUserRole: "admin" | "encoder" | "viewer" =
+    profileResult.data?.profile.role ?? "viewer";
 
   if (result.error || !result.data) {
     return (
@@ -70,6 +77,7 @@ export default async function JobseekersPage({ searchParams }: PageProps) {
             initialTotal={result.data.total}
             initialPage={page}
             pageSize={pageSize}
+            currentUserRole={currentUserRole}
           />
         </BezelSurface>
       </Reveal>

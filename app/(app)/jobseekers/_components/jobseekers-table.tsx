@@ -34,6 +34,7 @@ import {
 import { AdvancedFilter } from "./advanced-filter";
 import { ExportButton } from "./export-button";
 import { BulkActions } from "./bulk-actions";
+import { DeleteRowAction } from "./delete-row-action";
 
 interface JobseekerRecord {
   id: number;
@@ -59,6 +60,7 @@ interface JobseekersTableProps {
   initialTotal: number;
   initialPage: number;
   pageSize: number;
+  currentUserRole: "admin" | "encoder" | "viewer";
 }
 
 export function JobseekersTable({
@@ -66,11 +68,13 @@ export function JobseekersTable({
   initialTotal,
   initialPage,
   pageSize,
+  currentUserRole,
 }: JobseekersTableProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const isAdmin = currentUserRole === "admin";
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [searchValue, setSearchValue] = useState(searchParams.get("search") || "");
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -244,6 +248,7 @@ export function JobseekersTable({
             <BulkActions
               selectedIds={Array.from(selectedIds)}
               onComplete={() => setSelectedIds(new Set())}
+              isAdmin={isAdmin}
             />
           )}
         </div>
@@ -291,19 +296,31 @@ export function JobseekersTable({
               {initialData.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="h-32 text-center">
-                    <div className="flex flex-col items-center justify-center gap-2">
+                    <div className="flex flex-col items-center justify-center gap-2 sm:flex-row">
                       <p className="text-slate-500">No jobseekers found</p>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="min-h-11"
-                        onClick={() => {
-                          setSearchValue("");
-                          router.push("/jobseekers");
-                        }}
-                      >
-                        Clear Filters
-                      </Button>
+                      <div className="flex flex-wrap items-center justify-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="min-h-11"
+                          onClick={() => {
+                            setSearchValue("");
+                            router.push("/jobseekers");
+                          }}
+                        >
+                          Clear Filters
+                        </Button>
+                        {initialPage > 1 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="min-h-11"
+                            onClick={() => handlePageChange(initialPage - 1)}
+                          >
+                            Go to previous page
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -409,6 +426,13 @@ export function JobseekersTable({
                               <p>Edit record</p>
                             </TooltipContent>
                           </Tooltip>
+
+                          <DeleteRowAction
+                            id={jobseeker.id}
+                            surname={jobseeker.surname}
+                            firstName={jobseeker.first_name}
+                            isAdmin={isAdmin}
+                          />
                         </div>
                       </TableCell>
                     </TableRow>

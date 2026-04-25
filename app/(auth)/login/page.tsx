@@ -69,9 +69,9 @@ export default function LoginPage({
 
           <Reveal delay={200}>
             <h1 className="mt-5 font-serif text-[clamp(2.75rem,6vw,4.75rem)] font-medium leading-[0.98] tracking-[-0.03em] text-foreground">
-              The jobseeker registry,
+              PESO
               <span className="block text-foreground/55">
-                handled with care.
+                Municipality of Lambunao
               </span>
             </h1>
           </Reveal>

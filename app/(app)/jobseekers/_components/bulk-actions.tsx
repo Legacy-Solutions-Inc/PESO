@@ -19,6 +19,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 import { bulkDeleteJobseekers } from "../actions";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
@@ -26,9 +31,14 @@ import { useRouter } from "next/navigation";
 interface BulkActionsProps {
   selectedIds: number[];
   onComplete: () => void;
+  isAdmin: boolean;
 }
 
-export function BulkActions({ selectedIds, onComplete }: BulkActionsProps) {
+export function BulkActions({
+  selectedIds,
+  onComplete,
+  isAdmin,
+}: BulkActionsProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
@@ -58,6 +68,35 @@ export function BulkActions({ selectedIds, onComplete }: BulkActionsProps) {
       router.refresh();
     });
   };
+
+  if (!isAdmin) {
+    return (
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-slate-600">
+          {selectedIds.length} selected
+        </span>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="min-h-11"
+                aria-disabled="true"
+                disabled
+              >
+                Bulk Actions
+              </Button>
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Admin only</p>
+          </TooltipContent>
+        </Tooltip>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -95,7 +134,7 @@ export function BulkActions({ selectedIds, onComplete }: BulkActionsProps) {
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This will permanently delete {selectedIds.length} jobseeker
-              record(s). This action cannot be undone.
+              record(s). This action cannot be undone and will be logged.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
