@@ -8,7 +8,12 @@ import { test, describe } from "node:test";
 /**
  * Logic for requireActiveUser
  */
-function validateActiveUser(authResult: any) {
+interface AuthResultLike {
+  data: { profile: { status: string; role: string } } | null;
+  error: string | null;
+}
+
+function validateActiveUser(authResult: AuthResultLike) {
   const { data, error } = authResult;
 
   if (error || !data) {
@@ -29,7 +34,7 @@ function validateActiveUser(authResult: any) {
 /**
  * Logic for requireAdmin
  */
-function validateAdmin(authResult: any) {
+function validateAdmin(authResult: AuthResultLike) {
   const { data, error } = authResult;
 
   if (error || !data) {

@@ -34,7 +34,7 @@ export default function AppErrorBoundary({
             Try again
           </Button>
           <Button type="button" variant="outline" asChild>
-            <a href="/">Go to dashboard</a>
+            <a href="/dashboard">Go to dashboard</a>
           </Button>
         </div>
       </div>

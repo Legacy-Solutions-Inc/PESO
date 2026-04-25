@@ -34,6 +34,7 @@ import {
 import { AdvancedFilter } from "./advanced-filter";
 import { ExportButton } from "./export-button";
 import { BulkActions } from "./bulk-actions";
+import { DeleteRowAction } from "./delete-row-action";
 
 interface JobseekerRecord {
   id: number;
@@ -59,6 +60,7 @@ interface JobseekersTableProps {
   initialTotal: number;
   initialPage: number;
   pageSize: number;
+  currentUserRole: "admin" | "encoder" | "viewer";
 }
 
 export function JobseekersTable({
@@ -66,11 +68,13 @@ export function JobseekersTable({
   initialTotal,
   initialPage,
   pageSize,
+  currentUserRole,
 }: JobseekersTableProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const isAdmin = currentUserRole === "admin";
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [searchValue, setSearchValue] = useState(searchParams.get("search") || "");
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -185,6 +189,10 @@ export function JobseekersTable({
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
           <Input
             ref={inputRef}
+            type="search"
+            inputMode="search"
+            autoComplete="off"
+            spellCheck={false}
             placeholder="Search by surname or first name…"
             aria-label="Search jobseekers by name"
             value={searchValue}
@@ -244,6 +252,7 @@ export function JobseekersTable({
             <BulkActions
               selectedIds={Array.from(selectedIds)}
               onComplete={() => setSelectedIds(new Set())}
+              isAdmin={isAdmin}
             />
           )}
         </div>
@@ -279,11 +288,11 @@ export function JobseekersTable({
                   />
                 </TableHead>
                 <TableHead>Name</TableHead>
-                <TableHead>Age</TableHead>
-                <TableHead>Sex</TableHead>
-                <TableHead>Barangay</TableHead>
+                <TableHead className="hidden md:table-cell">Age</TableHead>
+                <TableHead className="hidden lg:table-cell">Sex</TableHead>
+                <TableHead className="hidden md:table-cell">Barangay</TableHead>
                 <TableHead>Employment Status</TableHead>
-                <TableHead>Date Registered</TableHead>
+                <TableHead className="hidden lg:table-cell">Date Registered</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -291,19 +300,31 @@ export function JobseekersTable({
               {initialData.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="h-32 text-center">
-                    <div className="flex flex-col items-center justify-center gap-2">
+                    <div className="flex flex-col items-center justify-center gap-2 sm:flex-row">
                       <p className="text-slate-500">No jobseekers found</p>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="min-h-11"
-                        onClick={() => {
-                          setSearchValue("");
-                          router.push("/jobseekers");
-                        }}
-                      >
-                        Clear Filters
-                      </Button>
+                      <div className="flex flex-wrap items-center justify-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="min-h-11"
+                          onClick={() => {
+                            setSearchValue("");
+                            router.push("/jobseekers");
+                          }}
+                        >
+                          Clear Filters
+                        </Button>
+                        {initialPage > 1 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="min-h-11"
+                            onClick={() => handlePageChange(initialPage - 1)}
+                          >
+                            Go to previous page
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -337,14 +358,17 @@ export function JobseekersTable({
                               {jobseeker.surname}, {jobseeker.first_name}
                             </div>
                             <div className="text-xs text-slate-500">
-                              ID: NSRP-{jobseeker.id}
+                              <span className="hidden sm:inline">ID: </span>NSRP-{jobseeker.id}
+                            </div>
+                            <div className="mt-0.5 text-xs text-slate-500 md:hidden">
+                              {age} · {jobseeker.sex} · {barangay}
                             </div>
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="tabular-nums">{age}</TableCell>
-                      <TableCell>{jobseeker.sex}</TableCell>
-                      <TableCell>{barangay}</TableCell>
+                      <TableCell className="hidden tabular-nums md:table-cell">{age}</TableCell>
+                      <TableCell className="hidden lg:table-cell">{jobseeker.sex}</TableCell>
+                      <TableCell className="hidden md:table-cell">{barangay}</TableCell>
                       <TableCell>
                         <span
                           className={cn(
@@ -361,7 +385,7 @@ export function JobseekersTable({
                           {jobseeker.employment_status}
                         </span>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden lg:table-cell">
                         {formatDate(new Date(jobseeker.created_at))}
                       </TableCell>
                       <TableCell className="text-right">
@@ -409,6 +433,13 @@ export function JobseekersTable({
                               <p>Edit record</p>
                             </TooltipContent>
                           </Tooltip>
+
+                          <DeleteRowAction
+                            id={jobseeker.id}
+                            surname={jobseeker.surname}
+                            firstName={jobseeker.first_name}
+                            isAdmin={isAdmin}
+                          />
                         </div>
                       </TableCell>
                     </TableRow>

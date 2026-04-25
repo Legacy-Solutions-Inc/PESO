@@ -68,7 +68,11 @@ export function UsersTable({
           <Input
             className="block w-full border-none bg-slate-100/50 pl-10 pr-3 text-sm font-medium placeholder-slate-500 focus:bg-white focus:ring-2 focus:ring-dashboard-primary/20 dark:bg-slate-800/50"
             placeholder="Search users by name or email..."
-            type="text"
+            type="search"
+            inputMode="search"
+            autoComplete="off"
+            spellCheck={false}
+            aria-label="Search users by name or email"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -110,10 +114,10 @@ export function UsersTable({
               <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-slate-500">
                 Email
               </th>
-              <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-slate-500">
+              <th className="hidden py-4 px-6 text-xs font-bold uppercase tracking-wider text-slate-500 sm:table-cell">
                 Role
               </th>
-              <th className="py-4 px-6 text-xs font-bold uppercase tracking-wider text-slate-500">
+              <th className="hidden py-4 px-6 text-xs font-bold uppercase tracking-wider text-slate-500 md:table-cell">
                 Status
               </th>
               <th className="py-4 px-6 text-right text-xs font-bold uppercase tracking-wider text-slate-500">
@@ -134,25 +138,31 @@ export function UsersTable({
                   key={user.id}
                   className="group transition-colors hover:bg-white/60 dark:hover:bg-slate-800/50"
                 >
-                  <td className="py-4 px-6 align-middle">
+                  <td className="py-4 px-4 align-middle sm:px-6">
                     <div className="flex items-center gap-3">
-                      <Avatar className="h-9 w-9 border border-slate-200 dark:border-slate-700">
+                      <Avatar className="h-9 w-9 shrink-0 border border-slate-200 dark:border-slate-700">
                         <AvatarFallback className="bg-linear-to-br from-dashboard-primary/20 to-dashboard-primary/5 text-xs font-bold text-dashboard-primary">
                           {getInitials(user)}
                         </AvatarFallback>
                       </Avatar>
-                      <p className="font-medium text-slate-900 dark:text-white">
-                        {getDisplayName(user)}
-                      </p>
+                      <div className="min-w-0">
+                        <p className="break-words font-medium text-slate-900 dark:text-white">
+                          {getDisplayName(user)}
+                        </p>
+                        <div className="mt-1 flex flex-wrap gap-1.5 sm:hidden">
+                          <RoleBadge role={user.profile.role} />
+                          <StatusBadge status={user.profile.status} />
+                        </div>
+                      </div>
                     </div>
                   </td>
-                  <td className="py-4 px-6 align-middle">
+                  <td className="hidden py-4 px-6 align-middle sm:table-cell">
                     <RoleBadge role={user.profile.role} />
                   </td>
-                  <td className="py-4 px-6 align-middle">
+                  <td className="hidden py-4 px-6 align-middle md:table-cell">
                     <StatusBadge status={user.profile.status} />
                   </td>
-                  <td className="py-4 px-6 align-middle text-right">
+                  <td className="py-4 px-4 align-middle text-right sm:px-6">
                     <UserActionsMenu
                       userId={user.id}
                       currentRole={user.profile.role}
@@ -177,7 +187,7 @@ export function UsersTable({
           <Button
             variant="outline"
             size="sm"
-            className="border-slate-300 bg-white text-slate-500 hover:bg-slate-50"
+            className="min-h-11 border-slate-300 bg-white text-slate-500 hover:bg-slate-50 active:bg-slate-100"
             disabled={initialPage === 1}
           >
             Previous
@@ -185,7 +195,7 @@ export function UsersTable({
           <Button
             variant="outline"
             size="sm"
-            className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+            className="min-h-11 border-slate-300 bg-white text-slate-700 hover:bg-slate-50 active:bg-slate-100"
             disabled={filteredUsers.length < pageSize}
           >
             Next

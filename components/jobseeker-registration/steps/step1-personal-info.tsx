@@ -160,7 +160,7 @@ export function Step1PersonalInfo() {
                   <RadioGroup
                     onValueChange={field.onChange}
                     defaultValue={field.value}
-                    className="flex gap-4"
+                    className="flex flex-col gap-2 sm:flex-row sm:gap-4"
                     required
                   >
                     {SEX_OPTIONS.map((sex) => (
@@ -246,7 +246,7 @@ export function Step1PersonalInfo() {
                 <FormItem>
                   <FormLabel>Barangay</FormLabel>
                   <FormControl>
-                    <Input placeholder="Barangay name" {...field} />
+                    <Input placeholder="Barangay name" autoComplete="address-level3" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -296,7 +296,7 @@ export function Step1PersonalInfo() {
                 <FormItem>
                   <FormLabel>TIN (Tax Identification Number)</FormLabel>
                   <FormControl>
-                    <Input placeholder="000-000-000-000" {...field} />
+                    <Input inputMode="numeric" pattern="[0-9-]*" placeholder="000-000-000-000" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -367,7 +367,7 @@ export function Step1PersonalInfo() {
                 <FormItem>
                   <FormLabel>Height (in feet)</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" placeholder="5.5" {...field} />
+                    <Input type="text" inputMode="decimal" placeholder="5.5" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -381,7 +381,7 @@ export function Step1PersonalInfo() {
                 <FormItem>
                   <FormLabel>Contact Number</FormLabel>
                   <FormControl>
-                    <Input type="tel" placeholder="09XX XXX XXXX" autoComplete="tel" {...field} />
+                    <Input type="tel" inputMode="tel" autoComplete="tel" placeholder="09XX XXX XXXX" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -395,7 +395,16 @@ export function Step1PersonalInfo() {
                 <FormItem className="md:col-span-2">
                   <FormLabel>Email Address</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="juan.delacruz@email.com" autoComplete="email" required {...field} />
+                    <Input
+                      type="email"
+                      inputMode="email"
+                      autoComplete="email"
+                      autoCapitalize="none"
+                      spellCheck={false}
+                      placeholder="juan.delacruz@email.com"
+                      required
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

@@ -18,6 +18,11 @@ import {
   getWorkExp,
 } from "./csv-helpers";
 import { applyJobseekerFilters } from "./filter-query";
+import {
+  jobseekerIdSchema,
+  jobseekerIdsSchema,
+} from "@/lib/validations/jobseeker-actions";
+import { logger } from "@/lib/logger";
 
 export interface JobseekerFilters {
   // Quick search (indexed fields)
@@ -864,60 +869,86 @@ export async function exportJobseekersCSV(
 export async function deleteJobseeker(
   id: number
 ): Promise<{ success?: boolean; error?: string }> {
-  try {
-    const auth = await requireAdmin();
-    if (auth.error) {
-      return { error: auth.error };
-    }
+  const parsed = jobseekerIdSchema.safeParse(id);
+  if (!parsed.success) {
+    return { error: "Invalid jobseeker id" };
+  }
 
+  const auth = await requireAdmin();
+  if (auth.error) {
+    return { error: auth.error };
+  }
+
+  try {
     const supabase = await createClient();
-    const { error } = await supabase
-      .from("jobseekers")
-      .delete()
-      .eq("id", id);
+    const { error } = await supabase.rpc("delete_jobseeker_with_audit", {
+      p_id: parsed.data,
+    });
 
     if (error) {
-      console.error("Delete error:", error);
-      return { error: error.message };
+      logger.error("deleteJobseeker rpc failed", {
+        action: "deleteJobseeker",
+        code: error.code ?? "RPC_ERROR",
+        rpcMessage: error.message,
+      });
+      return { error: "Failed to delete record" };
     }
 
+    revalidatePath("/jobseekers", "layout");
     return { success: true };
-  } catch (error) {
-    console.error("deleteJobseeker error:", error);
-    if (error instanceof Error) {
-      return { error: error.message };
-    }
-    return { error: "Failed to delete jobseeker" };
+  } catch (err) {
+    logger.error("deleteJobseeker unexpected error", {
+      action: "deleteJobseeker",
+      code: "UNEXPECTED",
+      errorName: err instanceof Error ? err.name : "Unknown",
+    });
+    return { error: "Failed to delete record" };
   }
 }
 
 export async function bulkDeleteJobseekers(
   ids: number[]
-): Promise<{ success?: boolean; error?: string }> {
-  try {
-    const auth = await requireAdmin();
-    if (auth.error) {
-      return { error: auth.error };
-    }
+): Promise<{ success?: boolean; error?: string; count?: number }> {
+  const parsed = jobseekerIdsSchema.safeParse(ids);
+  if (!parsed.success) {
+    const firstIssue = parsed.error.issues[0];
+    return { error: firstIssue?.message ?? "Invalid ids payload" };
+  }
 
+  const auth = await requireAdmin();
+  if (auth.error) {
+    return { error: auth.error };
+  }
+
+  try {
     const supabase = await createClient();
-    const { error } = await supabase
-      .from("jobseekers")
-      .delete()
-      .in("id", ids);
+    const { data, error } = await supabase.rpc(
+      "bulk_delete_jobseekers_with_audit",
+      { p_ids: parsed.data }
+    );
 
     if (error) {
-      console.error("Bulk delete error:", error);
-      return { error: error.message };
+      logger.error("bulkDeleteJobseekers rpc failed", {
+        action: "bulkDeleteJobseekers",
+        code: error.code ?? "RPC_ERROR",
+        rpcMessage: error.message,
+        idsCount: parsed.data.length,
+      });
+      return { error: "Failed to delete records" };
     }
 
-    return { success: true };
-  } catch (error) {
-    console.error("bulkDeleteJobseekers error:", error);
-    if (error instanceof Error) {
-      return { error: error.message };
-    }
-    return { error: "Failed to delete jobseekers" };
+    revalidatePath("/jobseekers", "layout");
+    return {
+      success: true,
+      count: typeof data === "number" ? data : undefined,
+    };
+  } catch (err) {
+    logger.error("bulkDeleteJobseekers unexpected error", {
+      action: "bulkDeleteJobseekers",
+      code: "UNEXPECTED",
+      errorName: err instanceof Error ? err.name : "Unknown",
+    });
+    return { error: "Failed to delete records" };
   }
 }
 

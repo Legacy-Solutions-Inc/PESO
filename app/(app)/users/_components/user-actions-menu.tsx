@@ -113,7 +113,7 @@ export function UserActionsMenu({
         <button
           type="button"
           onClick={() => setIsRoleDialogOpen(true)}
-          className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-primary active:bg-accent/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
           aria-label={`Edit role for ${userEmail}`}
         >
           <Edit className="h-4 w-4" aria-hidden />
@@ -124,7 +124,7 @@ export function UserActionsMenu({
             type="button"
             onClick={handleActivatePending}
             disabled={isLoading}
-            className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-status-positive disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-status-positive active:bg-accent/70 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
             aria-label={`Activate ${userEmail}`}
           >
             {isLoading ? (
@@ -137,7 +137,7 @@ export function UserActionsMenu({
           <button
             type="button"
             onClick={() => setIsStatusDialogOpen(true)}
-            className={`rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${
+            className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent active:bg-accent/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${
               currentStatus === "active"
                 ? "hover:text-destructive"
                 : "hover:text-status-positive"

@@ -7,13 +7,16 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --experimental-strip-types --test \"hooks/**/*.test.ts\" \"lib/**/*.test.ts\" \"app/**/*.test.ts\""
+    "test": "node --experimental-strip-types --test \"hooks/**/*.test.ts\" \"lib/**/*.test.ts\" \"app/**/*.test.ts\"",
+    "test:e2e": "playwright test",
+    "rls-smoke": "node --experimental-strip-types scripts/rls-smoke.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.95.3",
     "@tanstack/react-table": "^8.21.3",
+    "browser-image-compression": "^2.0.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
@@ -29,6 +32,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

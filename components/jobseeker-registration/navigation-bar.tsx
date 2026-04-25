@@ -51,13 +51,14 @@ export function NavigationBar({
     : "Submitting…";
 
   return (
-    <div className="sticky bottom-0 z-30 -mx-6 mt-8 border-t border-border bg-card px-6 py-4 shadow-sm lg:-mx-8 lg:px-8">
-      <div className="flex items-center justify-between gap-4">
+    <div className="sticky bottom-0 z-30 -mx-4 mt-8 border-t border-border bg-card/95 px-4 py-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/80 sm:-mx-6 sm:px-6 sm:py-4 lg:-mx-8 lg:px-8">
+      <div className="grid grid-cols-2 items-center gap-2 sm:flex sm:justify-between sm:gap-4">
         <Button
           type="button"
           onClick={onPrevious}
           disabled={isFirstStep}
           variant="outline"
+          className="min-h-11"
         >
           <ChevronLeft className="size-4" aria-hidden />
           Previous
@@ -77,13 +78,17 @@ export function NavigationBar({
 
         {isLastStep ? (
           <Button type="submit" disabled={isSubmitting} className="min-h-11">
-            {isSubmitting ? lastStepButtonSubmittingLabel : lastStepButtonLabel}
-            <ChevronRight className="size-4" aria-hidden />
+            <span className="truncate">
+              {isSubmitting ? lastStepButtonSubmittingLabel : lastStepButtonLabel}
+            </span>
+            <ChevronRight className="size-4 shrink-0" aria-hidden />
           </Button>
         ) : (
           <Button type="button" onClick={onNext} className="min-h-11">
-            {nextStepName ? `Next: ${nextStepName}` : "Next"}
-            <ChevronRight className="size-4" aria-hidden />
+            <span className="truncate">
+              {nextStepName ? `Next: ${nextStepName}` : "Next"}
+            </span>
+            <ChevronRight className="size-4 shrink-0" aria-hidden />
           </Button>
         )}
       </div>

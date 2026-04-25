@@ -61,7 +61,10 @@ export function ForgotPasswordForm({
         name="email"
         label="Email"
         type="email"
+        inputMode="email"
         autoComplete="email"
+        autoCapitalize="none"
+        spellCheck={false}
         required
         placeholder="you@lambunao.gov.ph"
         icon={Mail}

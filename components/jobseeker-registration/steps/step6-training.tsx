@@ -122,7 +122,7 @@ export function Step6Training() {
                         <FormItem>
                           <FormLabel>Hours of Training</FormLabel>
                           <FormControl>
-                            <Input type="number" placeholder="120" {...field} />
+                            <Input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="120" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

@@ -38,7 +38,7 @@ import { Reveal } from "@/components/vanguard/reveal";
 import {
   getDashboardStats,
   getRecentJobseekers,
-} from "./jobseekers/actions";
+} from "../jobseekers/actions";
 
 function calculateTrend(
   current: number,
@@ -114,7 +114,7 @@ export default async function DashboardPage() {
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
                 <Link
-                  href="/"
+                  href="/dashboard"
                   className="transition-colors duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:text-foreground"
                 >
                   Main menu
@@ -139,7 +139,7 @@ export default async function DashboardPage() {
                 System overview
               </EyebrowTag>
               <h1 className="mt-5 font-serif text-[clamp(2.25rem,4.2vw,3.5rem)] font-medium leading-[1.02] tracking-[-0.02em] text-foreground">
-                A quiet pulse on Lambunao’s
+                Lambunao’s
                 <span className="block text-foreground/55">
                   jobseeker registry.
                 </span>
@@ -427,11 +427,11 @@ export default async function DashboardPage() {
                               className={cn(
                                 "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-medium ring-1 ring-inset",
                                 statusTone === "positive" &&
-                                  "bg-status-positive/10 text-status-positive ring-status-positive/20",
+                                "bg-status-positive/10 text-status-positive ring-status-positive/20",
                                 statusTone === "warning" &&
-                                  "bg-status-warning/12 text-status-warning ring-status-warning/25",
+                                "bg-status-warning/12 text-status-warning ring-status-warning/25",
                                 statusTone === "muted" &&
-                                  "bg-foreground/[0.04] text-muted-foreground ring-foreground/[0.06]",
+                                "bg-foreground/[0.04] text-muted-foreground ring-foreground/[0.06]",
                               )}
                             >
                               <span
@@ -439,9 +439,9 @@ export default async function DashboardPage() {
                                 className={cn(
                                   "size-1 rounded-full",
                                   statusTone === "positive" &&
-                                    "bg-status-positive",
+                                  "bg-status-positive",
                                   statusTone === "warning" &&
-                                    "bg-status-warning",
+                                  "bg-status-warning",
                                   statusTone === "muted" && "bg-muted-foreground",
                                 )}
                               />
@@ -604,11 +604,11 @@ function TrendPill({
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11.5px] font-medium ring-1 ring-inset",
         direction === true &&
-          "bg-status-positive/10 text-status-positive ring-status-positive/20",
+        "bg-status-positive/10 text-status-positive ring-status-positive/20",
         direction === false &&
-          "bg-destructive/[0.08] text-destructive ring-destructive/15",
+        "bg-destructive/[0.08] text-destructive ring-destructive/15",
         direction === null &&
-          "bg-foreground/[0.04] text-muted-foreground ring-foreground/[0.06]",
+        "bg-foreground/[0.04] text-muted-foreground ring-foreground/[0.06]",
       )}
     >
       {Icon ? <HairlineIcon icon={Icon} className="size-3" /> : null}

@@ -41,7 +41,12 @@ export function NotificationBell({
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" sideOffset={8} className="w-64">
+      <DropdownMenuContent
+        align="end"
+        sideOffset={8}
+        collisionPadding={8}
+        className="w-[min(16rem,calc(100vw-1rem))]"
+      >
         <DropdownMenuLabel>Notifications</DropdownMenuLabel>
         {hasItems ? (
           <DropdownMenuItem asChild>
