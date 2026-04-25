@@ -399,7 +399,7 @@ export function JobseekerRegistrationFormLayout({
   });
 
   const mainContent = (
-    <main className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-6 lg:p-8">
+    <main className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-5xl">
         <FormProvider {...formMethods}>
           <form onSubmit={onSubmit} className="space-y-8" noValidate>

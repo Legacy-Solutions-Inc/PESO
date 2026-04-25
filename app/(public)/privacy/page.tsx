@@ -103,7 +103,7 @@ export default function PrivacyNoticePage() {
             Protection Officer at the office above, or via email to{" "}
             {/* TODO: replace placeholder address with the verified DPO email. */}
             <span className="rounded-sm bg-foreground/[0.04] px-1.5 py-0.5 font-mono text-[13px]">
-              dpo@peso-lambunao.example
+              dpo@peso-lambunao
             </span>
             .
           </p>

@@ -68,7 +68,7 @@ export function Step5Education() {
                 <RadioGroup
                   onValueChange={(value) => field.onChange(value === "true")}
                   value={field.value ? "true" : "false"}
-                  className="flex gap-4"
+                  className="flex flex-col gap-2 sm:flex-row sm:gap-4"
                 >
                   <div className="flex items-center gap-2">
                     <RadioGroupItem value="true" id="in-school-yes" />
@@ -88,7 +88,7 @@ export function Step5Education() {
         {/* Education Levels Tabs */}
         <div className="mt-8">
           <Tabs defaultValue="elementary" className="w-full">
-            <TabsList className="grid w-full grid-cols-4 lg:grid-cols-5">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
               <TabsTrigger value="elementary">Elementary</TabsTrigger>
               <TabsTrigger value="secondary">Secondary</TabsTrigger>
               <TabsTrigger value="senior-high">Senior High</TabsTrigger>
@@ -107,7 +107,7 @@ export function Step5Education() {
                     <FormItem>
                       <FormLabel>Year Graduated</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="2010" {...field} />
+                        <Input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="2010" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -145,7 +145,7 @@ export function Step5Education() {
                     <FormItem>
                       <FormLabel>Year Last Attended</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="2010" {...field} />
+                        <Input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="2010" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -167,7 +167,7 @@ export function Step5Education() {
                       <RadioGroup
                         onValueChange={field.onChange}
                         value={field.value}
-                        className="flex gap-6"
+                        className="flex flex-col gap-2 sm:flex-row sm:gap-6"
                       >
                         <div className="flex items-center gap-2">
                           <RadioGroupItem value="K12" id="secondary-k12" />
@@ -191,7 +191,7 @@ export function Step5Education() {
                     <FormItem>
                       <FormLabel>Year Graduated</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="2014" {...field} />
+                        <Input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="2014" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -228,7 +228,7 @@ export function Step5Education() {
                     <FormItem>
                       <FormLabel>Year Last Attended</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="2014" {...field} />
+                        <Input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="2014" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -261,7 +261,7 @@ export function Step5Education() {
                     <FormItem>
                       <FormLabel>Year Graduated</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="2022" {...field} />
+                        <Input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="2022" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -301,7 +301,7 @@ export function Step5Education() {
                     <FormItem>
                       <FormLabel>Year Last Attended</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="2022" {...field} />
+                        <Input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="2022" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -334,7 +334,7 @@ export function Step5Education() {
                     <FormItem>
                       <FormLabel>Year Graduated</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="2024" {...field} />
+                        <Input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="2024" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -371,7 +371,7 @@ export function Step5Education() {
                     <FormItem>
                       <FormLabel>Year Last Attended</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="2024" {...field} />
+                        <Input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="2024" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -407,7 +407,7 @@ export function Step5Education() {
                     <FormItem>
                       <FormLabel>Year Graduated</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="2026" {...field} />
+                        <Input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="2026" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -420,7 +420,7 @@ export function Step5Education() {
                     <FormItem>
                       <FormLabel>Year Last Attended</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="2026" {...field} />
+                        <Input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="2026" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

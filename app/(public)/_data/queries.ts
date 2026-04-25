@@ -7,13 +7,26 @@ import type {
 } from "@/lib/validations/job-posting";
 
 /**
- * Public-surface read helpers. RLS already restricts anon to
- *  - news_posts: status='published' AND published_at <= now()
- *  - job_postings: status='active' AND application_deadline >= today
- * but we explicitly project only public-safe columns so admin user IDs
- * (`author_id`, `created_by`) never reach the client. The audit on the
- * migration flagged these as PII linkage to auth.users.
+ * Public-surface read helpers.
+ *
+ * RLS allows admins to read every row of news_posts and job_postings, so
+ * we cannot lean on RLS alone to scope the public surface — an admin
+ * browsing /, /news, /jobs would otherwise see drafts and expired
+ * postings that the detail pages then 404 via the visibility predicate.
+ * Every query below explicitly filters to anon-visible rows so the list
+ * and detail surfaces stay consistent regardless of who is logged in.
+ *
+ * We also project only public-safe columns so admin user IDs
+ * (`author_id`, `created_by`) never reach the client.
  */
+
+function nowIso(): string {
+  return new Date().toISOString();
+}
+
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 const NEWS_PUBLIC_COLS =
   "id, caption, photos, published_at, is_pinned, status, created_at";
@@ -57,13 +70,16 @@ export interface PublicJobPosting {
   updated_at: string;
 }
 
-/** Most-recently-published pinned post, or null if none is pinned. */
+/** Most-recently-published pinned post that is currently visible to anon. */
 export async function getPinnedNewsPost(): Promise<PublicNewsPost | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("news_posts")
     .select(NEWS_PUBLIC_COLS)
     .eq("is_pinned", true)
+    .eq("status", "published")
+    .not("published_at", "is", null)
+    .lte("published_at", nowIso())
     .order("published_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -87,6 +103,9 @@ export async function getLatestNewsPosts(
     .from("news_posts")
     .select(NEWS_PUBLIC_COLS)
     .eq("is_pinned", false)
+    .eq("status", "published")
+    .not("published_at", "is", null)
+    .lte("published_at", nowIso())
     .order("published_at", { ascending: false })
     .limit(limit);
   if (excludeId !== undefined) {
@@ -120,6 +139,9 @@ export async function listPublicNewsPaginated(
   const { data, count, error } = await supabase
     .from("news_posts")
     .select(NEWS_PUBLIC_COLS, { count: "exact" })
+    .eq("status", "published")
+    .not("published_at", "is", null)
+    .lte("published_at", nowIso())
     .order("is_pinned", { ascending: false })
     .order("published_at", { ascending: false })
     .range(start, start + safeSize - 1);
@@ -160,12 +182,14 @@ export async function getPublicNewsPostById(
   return (data ?? null) as PublicNewsPost | null;
 }
 
-/** Up to N active, future-deadline job postings ordered most-recent first. */
+/** Up to N active, not-past-deadline job postings ordered most-recent first. */
 export async function getActiveJobs(limit: number): Promise<PublicJobPosting[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("job_postings")
     .select(JOB_PUBLIC_COLS)
+    .eq("status", "active")
+    .gte("application_deadline", todayIso())
     .order("posted_at", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -201,7 +225,10 @@ export async function listPublicJobsPaginated(
 
   let query = supabase
     .from("job_postings")
-    .select(JOB_PUBLIC_COLS, { count: "exact" });
+    .select(JOB_PUBLIC_COLS, { count: "exact" })
+    // Anon-visibility floor: same predicate the detail page uses.
+    .eq("status", "active")
+    .gte("application_deadline", todayIso());
 
   if (filters.employmentType) {
     query = query.eq("employment_type", filters.employmentType);

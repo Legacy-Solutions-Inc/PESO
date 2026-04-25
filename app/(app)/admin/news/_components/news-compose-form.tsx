@@ -27,6 +27,7 @@ import {
   type NewsPostStatus,
   type PhotoEntry,
 } from "@/lib/validations/news-post";
+import { publicMediaUrl } from "@/lib/storage/public-url";
 import { NewsPhotoUploader, type PhotoSlot } from "./news-photo-uploader";
 
 interface NewsComposeFormProps {
@@ -38,30 +39,26 @@ interface NewsComposeFormProps {
     status: NewsPostStatus;
     photos: PhotoEntry[];
   };
-  /** Resolves a storage path to its public URL for previewing existing photos. */
-  resolveStorageUrl: (path: string) => string;
 }
 
 type SubmitIntent = "save_draft" | "publish" | "unpublish" | "archive";
 
-function makeLocalId(): string {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return crypto.randomUUID();
-  }
-  return Math.random().toString(36).slice(2);
-}
+type SubmitPhase = "idle" | "uploading" | "saving";
 
-function photosToSlots(
-  photos: PhotoEntry[],
-  resolve: (path: string) => string,
-): PhotoSlot[] {
+// Stable localId for already-persisted photos: the storage path is unique
+// per photo, so using it as the React key + slot id is hydration-safe
+// (server and client produce identical strings). Brand-new slots created
+// from a user upload generate a UUID inside the uploader — that path runs
+// only on the client, after hydration, so randomUUID() is fine there.
+function photosToSlots(photos: PhotoEntry[]): PhotoSlot[] {
   return [...photos]
     .sort((a, b) => a.display_order - b.display_order)
     .map((p) => ({
-      localId: makeLocalId(),
+      localId: `path:${p.path}`,
       path: p.path,
       altText: p.alt_text,
-      previewUrl: resolve(p.path),
+      previewUrl: publicMediaUrl(p.path),
+      compressing: false,
     }));
 }
 
@@ -85,7 +82,6 @@ function slotsToEntries(
 export function NewsComposeForm({
   mode,
   initial,
-  resolveStorageUrl,
 }: NewsComposeFormProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -95,8 +91,14 @@ export function NewsComposeForm({
   const [caption, setCaption] = useState(initial?.caption ?? "");
   const [isPinned, setIsPinned] = useState(initial?.is_pinned ?? false);
   const [photos, setPhotos] = useState<PhotoSlot[]>(() =>
-    initial ? photosToSlots(initial.photos, resolveStorageUrl) : [],
+    initial ? photosToSlots(initial.photos) : [],
   );
+  const [phase, setPhase] = useState<SubmitPhase>("idle");
+  const [activeIntent, setActiveIntent] = useState<SubmitIntent | null>(null);
+
+  const compressingCount = photos.filter((p) => p.compressing).length;
+  const erroredCount = photos.filter((p) => p.compressionError).length;
+  const photosBlockSubmit = compressingCount > 0 || erroredCount > 0;
 
   // Autosize the caption textarea on every input.
   useEffect(() => {
@@ -166,84 +168,116 @@ export function NewsComposeForm({
       });
       return;
     }
+    if (compressingCount > 0) {
+      toast({
+        title: "Photos still compressing",
+        description: `${compressingCount} photo${compressingCount === 1 ? "" : "s"} not ready yet — wait a moment.`,
+      });
+      return;
+    }
+    if (erroredCount > 0) {
+      toast({
+        title: "Remove failed photos first",
+        description: `${erroredCount} photo${erroredCount === 1 ? "" : "s"} could not be compressed. Remove them before saving.`,
+      });
+      return;
+    }
+    setActiveIntent(intent);
     startTransition(async () => {
       let postId = initial?.id;
       const currentStatus: NewsPostStatus = initial?.status ?? "draft";
 
-      if (mode === "new") {
-        const created = await createNewsPost({
-          caption: caption.trim(),
-          is_pinned: isPinned,
-        });
-        if (!created.data) {
+      try {
+        if (mode === "new") {
+          const created = await createNewsPost({
+            caption: caption.trim(),
+            is_pinned: isPinned,
+          });
+          if (!created.data) {
+            toast({
+              title: "Could not create post",
+              description: created.error ?? "Unknown error",
+            });
+            return;
+          }
+          postId = created.data.id;
+        }
+
+        if (postId === undefined) {
+          toast({ title: "Internal error: missing id" });
+          return;
+        }
+
+        setPhase("uploading");
+        const upload = await uploadPendingPhotos(postId);
+        if (upload.error) {
           toast({
-            title: "Could not create post",
-            description: created.error ?? "Unknown error",
+            title: "Photo upload failed",
+            description: upload.error,
           });
           return;
         }
-        postId = created.data.id;
-      }
 
-      if (postId === undefined) {
-        toast({ title: "Internal error: missing id" });
-        return;
-      }
+        setPhase("saving");
+        const photoEntries = slotsToEntries(photos, upload.map);
 
-      const upload = await uploadPendingPhotos(postId);
-      if (upload.error) {
-        toast({
-          title: "Photo upload failed",
-          description: upload.error,
+        const updated = await updateNewsPost(postId, {
+          caption: caption.trim(),
+          is_pinned: isPinned,
+          photos: photoEntries,
         });
-        return;
-      }
+        if (!updated.data) {
+          toast({
+            title: "Could not save",
+            description: updated.error ?? "Unknown error",
+          });
+          return;
+        }
 
-      const photoEntries = slotsToEntries(photos, upload.map);
+        const transitionResult = await applyStatusIntent(
+          postId,
+          intent,
+          currentStatus,
+        );
+        if (!transitionResult.ok) {
+          toast({
+            title: "Status change failed",
+            description: transitionResult.error,
+          });
+          return;
+        }
 
-      const updated = await updateNewsPost(postId, {
-        caption: caption.trim(),
-        is_pinned: isPinned,
-        photos: photoEntries,
-      });
-      if (!updated.data) {
         toast({
-          title: "Could not save",
-          description: updated.error ?? "Unknown error",
+          title:
+            intent === "publish"
+              ? "Published"
+              : intent === "unpublish"
+                ? "Moved to draft"
+                : intent === "archive"
+                  ? "Archived"
+                  : "Saved",
         });
-        return;
-      }
 
-      const transitionResult = await applyStatusIntent(
-        postId,
-        intent,
-        currentStatus,
-      );
-      if (!transitionResult.ok) {
-        toast({
-          title: "Status change failed",
-          description: transitionResult.error,
-        });
-        return;
-      }
-
-      toast({
-        title:
-          intent === "publish"
-            ? "Published"
-            : intent === "unpublish"
-              ? "Moved to draft"
-              : intent === "archive"
-                ? "Archived"
-                : "Saved",
-      });
-
-      if (mode === "new") {
-        router.replace(`/admin/news/${postId}/edit`);
-      } else {
-        router.refresh();
+        if (mode === "new") {
+          router.replace(`/admin/news/${postId}/edit`);
+        } else {
+          router.refresh();
+        }
+      } finally {
+        setPhase("idle");
+        setActiveIntent(null);
       }
     });
+  }
+
+  function labelFor(
+    intent: SubmitIntent,
+    fallback: string,
+  ): string {
+    if (activeIntent !== intent) return fallback;
+    if (phase === "uploading") return "Uploading…";
+    if (phase === "saving") return "Saving…";
+    return fallback;
   }
 
   const counterTone = useMemo(() => {
@@ -286,7 +320,6 @@ export function NewsComposeForm({
         <NewsPhotoUploader
           value={photos}
           onChange={setPhotos}
-          resolveStorageUrl={resolveStorageUrl}
           disabled={isPending}
         />
       </section>
@@ -310,60 +343,101 @@ export function NewsComposeForm({
         </p>
       </section>
 
-      <div className="flex flex-wrap items-center gap-2 border-t border-border pt-6">
-        <Button
-          type="button"
-          onClick={() => handleSubmit("save_draft")}
-          disabled={isPending || captionEmpty || captionTooLong}
-          variant="outline"
-          className="gap-2"
-        >
-          {isPending ? (
-            <Loader2 className="size-4 animate-spin" aria-hidden />
-          ) : (
-            <Save className="size-4" aria-hidden />
-          )}
-          {mode === "new" ? "Save draft" : "Save changes"}
-        </Button>
-        <Button
-          type="button"
-          onClick={() => handleSubmit("publish")}
-          disabled={isPending || captionEmpty || captionTooLong}
-          className="gap-2"
-        >
-          {isPending ? (
-            <Loader2 className="size-4 animate-spin" aria-hidden />
-          ) : status === "published" ? (
-            <CheckCircle2 className="size-4" aria-hidden />
-          ) : (
-            <Send className="size-4" aria-hidden />
-          )}
-          {status === "published" ? "Save & re-publish" : "Publish"}
-        </Button>
-        {showUnpublish ? (
+      <div className="space-y-3 border-t border-border pt-6">
+        {photosBlockSubmit ? (
+          <p
+            data-tabular
+            className={cn(
+              "text-[12.5px]",
+              erroredCount > 0
+                ? "text-destructive"
+                : "text-muted-foreground",
+            )}
+          >
+            {erroredCount > 0
+              ? `${erroredCount} photo${erroredCount === 1 ? "" : "s"} failed to compress — remove and retry before saving.`
+              : `Compressing ${compressingCount} photo${compressingCount === 1 ? "" : "s"}…`}
+          </p>
+        ) : null}
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             type="button"
-            onClick={() => handleSubmit("unpublish")}
-            disabled={isPending}
+            onClick={() => handleSubmit("save_draft")}
+            disabled={
+              isPending ||
+              captionEmpty ||
+              captionTooLong ||
+              photosBlockSubmit
+            }
             variant="outline"
             className="gap-2"
           >
-            <EyeOff className="size-4" aria-hidden />
-            Unpublish
+            {isPending && activeIntent === "save_draft" ? (
+              <Loader2 className="size-4 animate-spin" aria-hidden />
+            ) : (
+              <Save className="size-4" aria-hidden />
+            )}
+            {labelFor(
+              "save_draft",
+              mode === "new" ? "Save draft" : "Save changes",
+            )}
           </Button>
-        ) : null}
-        {showArchive ? (
           <Button
             type="button"
-            onClick={() => handleSubmit("archive")}
-            disabled={isPending}
-            variant="outline"
+            onClick={() => handleSubmit("publish")}
+            disabled={
+              isPending ||
+              captionEmpty ||
+              captionTooLong ||
+              photosBlockSubmit
+            }
             className="gap-2"
           >
-            <Archive className="size-4" aria-hidden />
-            Archive
+            {isPending && activeIntent === "publish" ? (
+              <Loader2 className="size-4 animate-spin" aria-hidden />
+            ) : status === "published" ? (
+              <CheckCircle2 className="size-4" aria-hidden />
+            ) : (
+              <Send className="size-4" aria-hidden />
+            )}
+            {labelFor(
+              "publish",
+              status === "published" ? "Save & re-publish" : "Publish",
+            )}
           </Button>
-        ) : null}
+          {showUnpublish ? (
+            <Button
+              type="button"
+              onClick={() => handleSubmit("unpublish")}
+              disabled={isPending || photosBlockSubmit}
+              variant="outline"
+              className="gap-2"
+            >
+              {isPending && activeIntent === "unpublish" ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+              ) : (
+                <EyeOff className="size-4" aria-hidden />
+              )}
+              {labelFor("unpublish", "Unpublish")}
+            </Button>
+          ) : null}
+          {showArchive ? (
+            <Button
+              type="button"
+              onClick={() => handleSubmit("archive")}
+              disabled={isPending || photosBlockSubmit}
+              variant="outline"
+              className="gap-2"
+            >
+              {isPending && activeIntent === "archive" ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+              ) : (
+                <Archive className="size-4" aria-hidden />
+              )}
+              {labelFor("archive", "Archive")}
+            </Button>
+          ) : null}
+        </div>
       </div>
     </div>
   );

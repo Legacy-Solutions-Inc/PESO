@@ -2,7 +2,6 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { AdminsOnlyView } from "@/components/admin/admins-only-view";
-import { publicMediaUrl } from "@/lib/storage/public-url";
 import { NewsComposeForm } from "../_components/news-compose-form";
 
 export default async function NewNewsPostPage() {
@@ -43,7 +42,7 @@ export default async function NewNewsPostPage() {
         </p>
       </header>
 
-      <NewsComposeForm mode="new" resolveStorageUrl={publicMediaUrl} />
+      <NewsComposeForm mode="new" />
     </div>
   );
 }

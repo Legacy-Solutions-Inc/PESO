@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowUpRight,
@@ -136,28 +137,50 @@ function Hero({ activeJobsCount }: { activeJobsCount: number }) {
       <div className="relative mx-auto grid w-full max-w-6xl gap-16 px-6 py-24 md:grid-cols-12 md:gap-12 md:px-10 md:py-32 lg:gap-20 lg:py-40">
         {/* —— Left: editorial wordmark column —— */}
         <div className="md:col-span-7">
-          <Reveal delay={40}>
-            <EyebrowTag tone="primary" dot>
+          <Reveal>
+            <div className="flex items-center gap-4">
+              <span
+                aria-hidden
+                className="relative flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-background ring-1 ring-inset ring-foreground/15 shadow-[0_8px_24px_-12px_oklch(0.22_0.015_60_/_0.28)]"
+              >
+                <Image
+                  src="/lambunao-seal.png"
+                  alt=""
+                  width={80}
+                  height={80}
+                  className="size-full object-contain p-1.5"
+                  priority
+                />
+              </span>
+              <span className="flex flex-col text-[10px] font-medium uppercase leading-snug tracking-[0.2em] text-muted-foreground">
+                <span>Republic of the Philippines</span>
+                <span className="text-foreground/70">
+                  Municipality of Lambunao &middot; Iloilo
+                </span>
+              </span>
+            </div>
+          </Reveal>
+          <Reveal delay={120}>
+            <EyebrowTag tone="primary" dot className="mt-8">
               DOLE · National Skills Registration Program
             </EyebrowTag>
           </Reveal>
-          <Reveal delay={140}>
+          <Reveal delay={220}>
             <h1 className="mt-7 font-serif text-[clamp(3rem,7.5vw,6.25rem)] font-medium leading-[0.95] tracking-[-0.035em] text-foreground">
               PESO
-              <span className="block text-foreground/55">
-                Municipality of
+              <span className="mt-3 block font-serif text-[clamp(1.25rem,2.1vw,1.875rem)] font-normal leading-snug tracking-[-0.01em] text-foreground/55">
+                Municipality of Lambunao
               </span>
-              <span className="block">Lambunao.</span>
             </h1>
           </Reveal>
-          <Reveal delay={240}>
+          <Reveal delay={320}>
             <p className="mt-8 max-w-xl text-[16px] leading-relaxed text-foreground/85">
               The Public Employment Service Office publishes verified job
               openings and department announcements here, curated by PESO
               staff for residents of Lambunao and Region&nbsp;VI.
             </p>
           </Reveal>
-          <Reveal delay={340}>
+          <Reveal delay={420}>
             <div className="mt-10 flex flex-wrap items-center gap-3">
               <PillLink
                 href="/jobs"
@@ -406,9 +429,8 @@ function NewsBentoCard({
       radius="2xl"
       shellPadding="1.5"
       tone="card"
-      innerClassName={`flex h-full flex-col overflow-hidden ${
-        feature ? "p-7 sm:p-8" : "p-6"
-      }`}
+      innerClassName={`flex h-full flex-col overflow-hidden ${feature ? "p-7 sm:p-8" : "p-6"
+        }`}
     >
       <div className="flex items-baseline justify-between gap-3">
         <EyebrowTag tone={feature ? "primary" : "default"}>
@@ -441,11 +463,10 @@ function NewsBentoCard({
 
       <div className="mt-6 flex-1">
         <p
-          className={`whitespace-pre-line ${
-            feature
-              ? "text-[15.5px] leading-relaxed"
-              : "text-[14.5px] leading-relaxed"
-          } text-foreground/90`}
+          className={`whitespace-pre-line ${feature
+            ? "text-[15.5px] leading-relaxed"
+            : "text-[14.5px] leading-relaxed"
+            } text-foreground/90`}
         >
           <SafeText>{display}</SafeText>
         </p>

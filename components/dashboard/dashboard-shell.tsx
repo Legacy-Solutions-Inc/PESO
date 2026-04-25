@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -28,6 +29,7 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -80,6 +82,7 @@ export function DashboardShell({
 
   return (
     <SidebarProvider style={{ "--sidebar-width": sidebarWidth } as React.CSSProperties}>
+      <CloseDrawerOnRouteChange />
       <Sidebar
         className="flex flex-col border-r border-slate-200/80 bg-white shadow-sm dark:border-slate-700/50 dark:bg-slate-900"
         variant="sidebar"
@@ -190,15 +193,18 @@ export function DashboardShell({
         </SidebarFooter>
       </Sidebar>
       <SidebarInset className="overflow-hidden">
-        <header className="sticky top-0 z-50 flex h-16 shrink-0 items-center justify-between border-b border-slate-200/80 bg-white px-6 shadow-sm dark:border-slate-700/50 dark:bg-slate-900">
-          <div className="flex min-w-0 flex-1 items-center gap-4">
-            <SidebarTrigger className="lg:hidden shrink-0" />
-            <p className="min-w-0 truncate text-lg font-medium text-foreground">
+        <header className="sticky top-0 z-50 flex h-16 shrink-0 items-center justify-between gap-2 border-b border-slate-200/80 bg-white px-3 shadow-sm sm:px-6 dark:border-slate-700/50 dark:bg-slate-900">
+          <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-4">
+            <SidebarTrigger
+              className="min-h-11 min-w-11 shrink-0 lg:hidden"
+              aria-label="Open navigation menu"
+            />
+            <p className="min-w-0 truncate text-base font-medium text-foreground sm:text-lg">
               <span className="sm:hidden">NSRP System</span>
               <span className="hidden sm:inline">NSRP Jobseeker Registration System</span>
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             <KeyboardHelpPopover />
             <NotificationBell
               pendingUserCount={notificationSummary.pendingUserCount}
@@ -215,10 +221,23 @@ export function DashboardShell({
             </div>
           </div>
         </header>
-        <main className="custom-scrollbar relative z-0 min-h-0 flex-1 overflow-x-hidden overflow-y-auto bg-dashboard-surface p-6 lg:p-8">
+        <main className="custom-scrollbar relative z-0 min-h-0 flex-1 overflow-x-hidden overflow-y-auto bg-dashboard-surface p-4 sm:p-6 lg:p-8">
           {children}
         </main>
       </SidebarInset>
     </SidebarProvider>
   );
+}
+
+function CloseDrawerOnRouteChange() {
+  const pathname = usePathname();
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  useEffect(() => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  }, [pathname, isMobile, setOpenMobile]);
+
+  return null;
 }

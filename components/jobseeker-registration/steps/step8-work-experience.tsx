@@ -151,7 +151,7 @@ export function Step8WorkExperience() {
                         <FormItem>
                           <FormLabel>Number of Months</FormLabel>
                           <FormControl>
-                            <Input type="number" placeholder="12" {...field} />
+                            <Input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="12" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

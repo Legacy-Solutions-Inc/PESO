@@ -189,6 +189,10 @@ export function JobseekersTable({
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
           <Input
             ref={inputRef}
+            type="search"
+            inputMode="search"
+            autoComplete="off"
+            spellCheck={false}
             placeholder="Search by surname or first name…"
             aria-label="Search jobseekers by name"
             value={searchValue}
@@ -284,11 +288,11 @@ export function JobseekersTable({
                   />
                 </TableHead>
                 <TableHead>Name</TableHead>
-                <TableHead>Age</TableHead>
-                <TableHead>Sex</TableHead>
-                <TableHead>Barangay</TableHead>
+                <TableHead className="hidden md:table-cell">Age</TableHead>
+                <TableHead className="hidden lg:table-cell">Sex</TableHead>
+                <TableHead className="hidden md:table-cell">Barangay</TableHead>
                 <TableHead>Employment Status</TableHead>
-                <TableHead>Date Registered</TableHead>
+                <TableHead className="hidden lg:table-cell">Date Registered</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -354,14 +358,17 @@ export function JobseekersTable({
                               {jobseeker.surname}, {jobseeker.first_name}
                             </div>
                             <div className="text-xs text-slate-500">
-                              ID: NSRP-{jobseeker.id}
+                              <span className="hidden sm:inline">ID: </span>NSRP-{jobseeker.id}
+                            </div>
+                            <div className="mt-0.5 text-xs text-slate-500 md:hidden">
+                              {age} · {jobseeker.sex} · {barangay}
                             </div>
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="tabular-nums">{age}</TableCell>
-                      <TableCell>{jobseeker.sex}</TableCell>
-                      <TableCell>{barangay}</TableCell>
+                      <TableCell className="hidden tabular-nums md:table-cell">{age}</TableCell>
+                      <TableCell className="hidden lg:table-cell">{jobseeker.sex}</TableCell>
+                      <TableCell className="hidden md:table-cell">{barangay}</TableCell>
                       <TableCell>
                         <span
                           className={cn(
@@ -378,7 +385,7 @@ export function JobseekersTable({
                           {jobseeker.employment_status}
                         </span>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden lg:table-cell">
                         {formatDate(new Date(jobseeker.created_at))}
                       </TableCell>
                       <TableCell className="text-right">

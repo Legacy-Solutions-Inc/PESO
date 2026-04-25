@@ -98,7 +98,7 @@ export function Step2Employment() {
                     <RadioGroup
                       onValueChange={field.onChange}
                       defaultValue={field.value}
-                      className="flex gap-4"
+                      className="flex flex-col gap-2 sm:flex-row sm:gap-4"
                     >
                       <div className="flex items-center gap-2">
                         <RadioGroupItem value="WAGE" id="wage" />
@@ -256,7 +256,7 @@ export function Step2Employment() {
                 <FormItem>
                   <FormLabel>How long have you been looking for work? (months)</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="6" {...field} />
+                    <Input type="text" inputMode="numeric" pattern="[0-9]*" placeholder="6" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -281,7 +281,7 @@ export function Step2Employment() {
                     <RadioGroup
                       onValueChange={(value) => field.onChange(value === "true")}
                       value={field.value ? "true" : "false"}
-                      className="flex gap-4"
+                      className="flex flex-col gap-2 sm:flex-row sm:gap-4"
                     >
                       <div className="flex items-center gap-2">
                         <RadioGroupItem value="true" id="ofw-yes" />
@@ -324,7 +324,7 @@ export function Step2Employment() {
                     <RadioGroup
                       onValueChange={(value) => field.onChange(value === "true")}
                       value={field.value ? "true" : "false"}
-                      className="flex gap-4"
+                      className="flex flex-col gap-2 sm:flex-row sm:gap-4"
                     >
                       <div className="flex items-center gap-2">
                         <RadioGroupItem value="true" id="former-ofw-yes" />
@@ -390,7 +390,7 @@ export function Step2Employment() {
                     <RadioGroup
                       onValueChange={(value) => field.onChange(value === "true")}
                       value={field.value ? "true" : "false"}
-                      className="flex gap-4"
+                      className="flex flex-col gap-2 sm:flex-row sm:gap-4"
                     >
                       <div className="flex items-center gap-2">
                         <RadioGroupItem value="true" id="4ps-yes" />

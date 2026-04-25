@@ -45,7 +45,25 @@ export default async function EditJobPostingPage({ params }: PageProps) {
     getJobActivity(numericId),
   ]);
 
-  if (postingResult.error === "Not found" || !postingResult.data) notFound();
+  if (postingResult.error === "Not found") notFound();
+  if (!postingResult.data) {
+    return (
+      <div className="mx-auto w-full max-w-3xl space-y-6 pt-4">
+        <p
+          role="alert"
+          className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+        >
+          Could not load posting #{numericId}: {postingResult.error}
+        </p>
+        <Link
+          href="/admin/jobs"
+          className="inline-flex items-center gap-1.5 text-[13px] font-medium text-foreground/80 underline-offset-4 hover:underline"
+        >
+          ← Back to jobs
+        </Link>
+      </div>
+    );
+  }
 
   const job = postingResult.data;
   const activity = activityResult.data ?? [];

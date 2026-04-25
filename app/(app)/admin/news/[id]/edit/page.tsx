@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { AdminsOnlyView } from "@/components/admin/admins-only-view";
-import { publicMediaUrl } from "@/lib/storage/public-url";
 import {
   Tabs,
   TabsContent,
@@ -43,7 +42,28 @@ export default async function EditNewsPostPage({ params }: PageProps) {
     getNewsActivity(numericId),
   ]);
 
-  if (postResult.error === "Not found" || !postResult.data) notFound();
+  // Only treat a real "Not found" as a 404. Other failures (auth glitches,
+  // missing actor email, RLS denial, transient DB errors) get surfaced
+  // explicitly so they aren't disguised as broken links.
+  if (postResult.error === "Not found") notFound();
+  if (!postResult.data) {
+    return (
+      <div className="mx-auto w-full max-w-3xl space-y-6 pt-4">
+        <p
+          role="alert"
+          className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+        >
+          Could not load post #{numericId}: {postResult.error}
+        </p>
+        <Link
+          href="/admin/news"
+          className="inline-flex items-center gap-1.5 text-[13px] font-medium text-foreground/80 underline-offset-4 hover:underline"
+        >
+          ← Back to news
+        </Link>
+      </div>
+    );
+  }
 
   const post = postResult.data;
   const activity = activityResult.data ?? [];
@@ -120,7 +140,6 @@ export default async function EditNewsPostPage({ params }: PageProps) {
               status: post.status,
               photos: post.photos,
             }}
-            resolveStorageUrl={publicMediaUrl}
           />
         </TabsContent>
         <TabsContent value="activity" className="pt-6">

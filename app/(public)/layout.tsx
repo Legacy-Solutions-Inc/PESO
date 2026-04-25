@@ -24,7 +24,7 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
 function PublicHeader() {
   return (
     <header className="border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-6 px-6 py-4 md:py-5">
+      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:gap-6 sm:px-6 md:py-5 lg:px-8">
         <Link
           href="/"
           aria-label="PESO Lambunao home"
@@ -56,7 +56,7 @@ function PublicHeader() {
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className="rounded-md px-3 py-2 text-[13.5px] font-medium text-foreground/75 transition-colors hover:bg-foreground/[0.04] hover:text-foreground focus-visible:bg-foreground/[0.04] focus-visible:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+                  className="inline-flex min-h-11 items-center rounded-md px-3 py-2 text-[13.5px] font-medium text-foreground/75 transition-colors hover:bg-foreground/[0.04] hover:text-foreground active:bg-foreground/[0.08] focus-visible:bg-foreground/[0.04] focus-visible:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
                 >
                   {item.label}
                 </Link>
@@ -65,7 +65,7 @@ function PublicHeader() {
             <li>
               <Link
                 href="/login"
-                className="ml-1 inline-flex items-center rounded-md border border-border bg-card px-3 py-2 text-[13.5px] font-medium text-foreground transition-colors hover:bg-foreground/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 sm:ml-2"
+                className="ml-1 inline-flex min-h-11 items-center rounded-md border border-border bg-card px-3 py-2 text-[13.5px] font-medium text-foreground transition-colors hover:bg-foreground/[0.04] active:bg-foreground/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 sm:ml-2"
               >
                 Sign in
               </Link>
@@ -81,7 +81,7 @@ function PublicFooter() {
   const year = new Date().getFullYear();
   return (
     <footer className="mt-16 border-t border-border bg-card/40">
-      <div className="mx-auto grid w-full max-w-6xl gap-10 px-6 py-12 md:grid-cols-3">
+      <div className="mx-auto grid w-full max-w-6xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-3 lg:px-8">
         <div className="space-y-3">
           <p className="font-serif text-[1rem] font-medium tracking-tight text-foreground">
             PESO Lambunao
@@ -141,7 +141,7 @@ function PublicFooter() {
       <div className="border-t border-border">
         <p
           data-tabular
-          className="mx-auto w-full max-w-6xl px-6 py-5 text-[12px] text-muted-foreground"
+          className="mx-auto w-full max-w-6xl px-4 py-5 text-[12px] text-muted-foreground sm:px-6 lg:px-8"
         >
           &copy; {year} PESO Lambunao &middot; Department of Labor and
           Employment, Republic of the Philippines.

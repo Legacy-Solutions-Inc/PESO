@@ -21,6 +21,11 @@ Defer to these files — do not duplicate them here:
 - `.cursor/rules/project-conventions.mdc` — one-line summary per stack.
 - `.cursor/rules/requirements-baseline.mdc` — SRS-first rule.
 
+## Responsive conventions
+
+- `docs/responsive-conventions.md` — breakpoints, container, touch targets (44×44), input UX defaults (inputMode/autoComplete/autoCapitalize), table-card pattern, sidebar drawer, step-wizard pattern, reduced motion, test matrix. **Every UI change must comply.**
+- `docs/responsive-audit-2026-04-25.md` — most recent P0–P3 audit per surface.
+
 ## Guard rails (re-read every session)
 
 1. **Never paste real jobseeker PII** (names, birthdays, addresses, phone, email) into prompts, fixtures, or seed data. Use synthetic values.
